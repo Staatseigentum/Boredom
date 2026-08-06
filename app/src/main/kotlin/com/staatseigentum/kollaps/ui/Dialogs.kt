@@ -17,13 +17,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,6 +34,7 @@ import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.SpaceElevated
+import com.staatseigentum.kollaps.ui.theme.Starlight
 
 /** Shown once on return: what the collectors brought in while the app was closed. */
 @Composable
@@ -41,7 +42,8 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = SpaceElevated,
-        title = { Text("Willkommen zurück") },
+        shape = RectangleShape,
+        title = { PixelLabel("Willkommen zurück", color = Starlight, size = 16) },
         text = {
             Column {
                 Text(
@@ -63,7 +65,7 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Weiter geht's") }
+            PixelButton(label = "Weiter geht's", onClick = onDismiss, accent = Ember)
         },
     )
 }

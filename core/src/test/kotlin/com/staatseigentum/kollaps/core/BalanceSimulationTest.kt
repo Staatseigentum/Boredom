@@ -88,9 +88,10 @@ class BalanceSimulationTest {
 
         assertTrue(run.reachedBlackHole, "Schwarzes Loch war in 30 Tagen nicht erreichbar")
 
+        // Das Ziel ist eine Leiter, die aktiv gespielt rund vier Stunden trägt.
         val hours = run.tierTimes.getValue(Tiers.last.index) / 3_600.0
-        assertTrue(hours > 1.0, "Endgame nach nur $hours Stunden — viel zu schnell")
-        assertTrue(hours < 72.0, "Endgame erst nach $hours Stunden — viel zu zäh")
+        assertTrue(hours > 3.5, "Endgame schon nach $hours Stunden — zu kurz")
+        assertTrue(hours < 4.5, "Endgame erst nach $hours Stunden — zu zäh")
     }
 
     @Test

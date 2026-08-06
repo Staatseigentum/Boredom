@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,8 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -59,7 +58,9 @@ import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Space
 import kotlinx.coroutines.launch
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 @Composable
 fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
@@ -183,13 +184,12 @@ private fun Header(state: GameState, stats: Stats) {
 
         Spacer(Modifier.height(6.dp))
 
-        LinearProgressIndicator(
-            progress = { stats.tierProgress },
+        PixelBar(
+            progress = stats.tierProgress,
+            color = Color(stats.tier.glowColor),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(6.dp),
-            color = Color(stats.tier.glowColor),
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                .height(10.dp),
         )
 
         if (next != null) {
@@ -272,15 +272,23 @@ private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit)
     // Its own full-size box, so the offsets below are measured from the top left of the tap
     // area and not from the centre where the planet sits.
     Box(modifier = Modifier.fillMaxSize()) {
+        // A ring of blocks flying outwards, rather than a smooth expanding circle.
         Canvas(modifier = Modifier.fillMaxSize()) {
             val p = progress.value
-            drawCircle(
-                color = color,
-                radius = 16.dp.toPx() + p * 46.dp.toPx(),
-                center = effect.position,
-                alpha = (1f - p) * 0.5f,
-                style = Stroke(width = 2.dp.toPx() * (1f - p) + 0.5f),
-            )
+            val radius = 12.dp.toPx() + p * 48.dp.toPx()
+            val block = 5.dp.toPx() * (1f - p * 0.5f)
+            val alpha = (1f - p) * 0.9f
+            for (index in 0 until SHOCKWAVE_BLOCKS) {
+                val angle = index.toFloat() / SHOCKWAVE_BLOCKS * TWO_PI
+                drawRect(
+                    color = color.copy(alpha = alpha),
+                    topLeft = Offset(
+                        effect.position.x + cos(angle) * radius - block / 2f,
+                        effect.position.y + sin(angle) * radius - block / 2f,
+                    ),
+                    size = Size(block, block),
+                )
+            }
         }
 
         Text(
@@ -301,3 +309,6 @@ private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit)
         )
     }
 }
+
+private const val SHOCKWAVE_BLOCKS = 14
+private const val TWO_PI = 6.2831855f

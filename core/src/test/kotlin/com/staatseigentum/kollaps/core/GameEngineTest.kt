@@ -184,7 +184,9 @@ class GameEngineTest {
 
     @Test
     fun `collapsing is refused before the black hole`() {
-        val state = fresh().copy(runMass = Tiers.last.threshold - 1)
+        // Relativ statt "threshold - 1": bei dieser Größenordnung liegt eine 1 unter der
+        // Auflösung von Double und die Subtraktion wäre wirkungslos.
+        val state = fresh().copy(runMass = Tiers.last.threshold * 0.99)
         assertFalse(GameEngine.canCollapse(state))
         assertEquals(state, GameEngine.collapse(state, 2_000_000))
     }

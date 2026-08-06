@@ -20,8 +20,11 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   (standardmäßig 50 % für bis zu 8 Stunden, per Upgrade auf 100 % und 24 Stunden)
 - **Prestige** über den Kollaps: Singularitäten geben je +10 % auf alles, dauerhaft
 - **Kaufmengen** ×1 / ×10 / ×100 / Max
-- Alle Himmelskörper werden **prozedural gezeichnet** — Krater, Wolkenbänder, Ringe, Korona,
-  Akkretionsscheibe. Es gibt kein einziges Bild-Asset in der App.
+- Durchgehend **Pixel Art**: jeder Himmelskörper ist ein Sprite mit 24 Rotationsframes, gerendert
+  aus einer Kugelprojektion über eine Oberflächentextur, auf eine Handvoll Palettenstufen
+  quantisiert und mit einer Bayer-Matrix gedithert. Krater, Wolkenbänder mit Sturm, Eiskappen,
+  Ringe, Sternkorona, Pulsar-Jets und Akkretionsscheibe entstehen alle im Code — es gibt kein
+  einziges gemaltes Bild-Asset, auch das Launcher-Icon fällt aus demselben Renderer.
 - **Eingebauter Updater**: die App sieht selbst nach, ob eine neuere Version veröffentlicht
   wurde, lädt sie herunter und übergibt sie an den System-Installer
 
@@ -29,12 +32,14 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 
 | Modul   | Inhalt |
 | ------- | ------ |
-| `core`  | Reines Kotlin, keine Android-Abhängigkeit: Spielregeln, Inhalte, Zahlenformatierung, Speicherformat |
+| `core`  | Reines Kotlin, keine Android-Abhängigkeit: Spielregeln, Inhalte, Zahlenformatierung, Speicherformat, Sprite-Renderer |
 | `app`   | Android-App mit Jetpack Compose: Rendering, Eingabe, Persistenz, Lebenszyklus |
 
 Die Trennung ist Absicht: weil `core` nichts von Android weiß, lässt sich die komplette Simulation
 in Unit-Tests im Schnelldurchlauf spielen. `BalanceSimulationTest` lässt einen Bot das Spiel
-durchspielen und prüft damit die Progression, statt sie zu schätzen.
+durchspielen und prüft damit die Progression, statt sie zu schätzen. Aus demselben Grund liegt
+auch der Sprite-Renderer dort: `PixelPlanet` gibt rohe Pixelpuffer zurück, die die App zu Bitmaps
+macht — dadurch lassen sich die Planeten ohne Gerät rendern und in `PixelPlanetTest` prüfen.
 
 ## Bauen
 
@@ -104,7 +109,9 @@ Gemessen mit der Simulation aus `core/src/test`, gespielt von einem Bot, der nie
 
 | Spielweise | Zeit bis zum Schwarzen Loch |
 | ---------- | --------------------------- |
-| aktiv (20 Minuten tippen, danach idle) | ~3 Stunden 10 Minuten |
-| rein idle (eine Minute tippen, danach nur warten) | ~3 Stunden 30 Minuten |
+| aktiv (20 Minuten tippen, danach idle) | ~3 Stunden 57 Minuten |
+| rein idle (eine Minute tippen, danach nur warten) | ~4 Stunden 13 Minuten |
 
-Die erste Stufe kommt nach etwa einer Minute, die ersten sieben innerhalb der ersten Stunde.
+Die erste Stufe kommt nach etwa einer Minute, die ersten sechs innerhalb der ersten Stunde. Der
+Test verankert die Vier-Stunden-Marke, damit eine spätere Änderung an Preisen oder Schwellen die
+Progression nicht unbemerkt verschiebt.

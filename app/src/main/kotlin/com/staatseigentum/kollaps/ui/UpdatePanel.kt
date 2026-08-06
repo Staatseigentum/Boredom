@@ -10,22 +10,16 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.staatseigentum.kollaps.core.Numbers
@@ -34,7 +28,7 @@ import com.staatseigentum.kollaps.update.UpdateState
 import com.staatseigentum.kollaps.update.UpdateViewModel
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
-import com.staatseigentum.kollaps.ui.theme.SpaceCard
+import com.staatseigentum.kollaps.ui.theme.Outline
 import com.staatseigentum.kollaps.ui.theme.SpaceElevated
 
 /** The update section inside the Kosmos tab. Always visible, so a check is never hidden away. */
@@ -42,22 +36,14 @@ import com.staatseigentum.kollaps.ui.theme.SpaceElevated
 fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
     val state by model.state.collectAsStateWithLifecycle()
 
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = SpaceCard),
-        shape = RoundedCornerShape(16.dp),
-    ) {
-        Column(Modifier.padding(16.dp)) {
+    PixelPanel(modifier = modifier.fillMaxWidth(), border = Outline) {
+        Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = "App-Update",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Ember,
-                )
+                PixelLabel(text = "App-Update", color = Ember, size = 16)
                 Text(
                     text = "Version ${model.installedVersion?.raw ?: "unbekannt"}",
                     style = MaterialTheme.typography.bodySmall,
@@ -105,13 +91,12 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
                 is UpdateState.Downloading -> {
                     Description("Lade ${current.update.title} …")
                     Spacer(Modifier.height(10.dp))
-                    LinearProgressIndicator(
-                        progress = { current.progress },
+                    PixelBar(
+                        progress = current.progress,
+                        color = Ember,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(6.dp),
-                        color = Ember,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            .height(10.dp),
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
@@ -162,13 +147,13 @@ fun UpdateDialog(model: UpdateViewModel) {
     AlertDialog(
         onDismissRequest = model::dismissPrompt,
         containerColor = SpaceElevated,
-        title = { Text("Neue Version verfügbar") },
+        shape = RectangleShape,
+        title = { PixelLabel("Neue Version verfügbar", size = 16) },
         text = {
             Column {
                 Text(
                     text = update.title + sizeSuffix(update),
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
                 )
                 if (update.notes.isNotBlank()) {
                     Spacer(Modifier.height(10.dp))
@@ -177,40 +162,31 @@ fun UpdateDialog(model: UpdateViewModel) {
                 val current = state
                 if (current is UpdateState.Downloading) {
                     Spacer(Modifier.height(14.dp))
-                    LinearProgressIndicator(
-                        progress = { current.progress },
+                    PixelBar(
+                        progress = current.progress,
+                        color = Ember,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(6.dp),
-                        color = Ember,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            .height(10.dp),
                     )
                 }
             }
         },
         confirmButton = {
             when (state) {
-                is UpdateState.Available -> TextButton(onClick = model::download) {
-                    Text("Herunterladen")
-                }
+                is UpdateState.Available -> PixelButton(label = "Herunterladen", onClick = model::download, accent = Ember)
 
-                is UpdateState.Downloading -> TextButton(onClick = {}, enabled = false) {
-                    Text("Lädt …")
-                }
+                is UpdateState.Downloading -> PixelButton(label = "Lädt …", onClick = {}, enabled = false)
 
-                is UpdateState.Ready -> TextButton(onClick = model::install) {
-                    Text("Installieren")
-                }
+                is UpdateState.Ready -> PixelButton(label = "Installieren", onClick = model::install, accent = Ember)
 
-                is UpdateState.NeedsPermission -> TextButton(onClick = model::install) {
-                    Text("Erlauben")
-                }
+                is UpdateState.NeedsPermission -> PixelButton(label = "Erlauben", onClick = model::install, accent = Ember)
 
                 else -> Unit
             }
         },
         dismissButton = {
-            TextButton(onClick = model::dismissPrompt) { Text("Später") }
+            PixelButton(label = "Später", onClick = model::dismissPrompt)
         },
     )
 }
@@ -241,9 +217,7 @@ private fun Notes(text: String, maxHeight: Int = 120) {
 @Composable
 private fun Action(label: String, onClick: () -> Unit) {
     Spacer(Modifier.height(12.dp))
-    Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Text(label)
-    }
+    PixelButton(label = label, onClick = onClick, modifier = Modifier.fillMaxWidth())
 }
 
 private fun sizeSuffix(update: AvailableUpdate): String =
