@@ -148,8 +148,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private companion object {
-        /** 20 simulation steps per second is smooth enough and cheap. */
-        const val TICK_MILLIS = 50L
+        /**
+         * Ten steps per second. Every step recomposes the counter and the shop rows, so going
+         * faster costs battery without making the numbers look any more alive.
+         */
+        const val TICK_MILLIS = 100L
         const val AUTOSAVE_MILLIS = 10_000L
     }
 }
