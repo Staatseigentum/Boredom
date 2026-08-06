@@ -260,31 +260,35 @@ private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit)
         onFinished()
     }
 
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val p = progress.value
-        drawCircle(
-            color = color,
-            radius = 16.dp.toPx() + p * 46.dp.toPx(),
-            center = effect.position,
-            alpha = (1f - p) * 0.5f,
-            style = Stroke(width = 2.dp.toPx() * (1f - p) + 0.5f),
+    // Its own full-size box, so the offsets below are measured from the top left of the tap
+    // area and not from the centre where the planet sits.
+    Box(modifier = Modifier.fillMaxSize()) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val p = progress.value
+            drawCircle(
+                color = color,
+                radius = 16.dp.toPx() + p * 46.dp.toPx(),
+                center = effect.position,
+                alpha = (1f - p) * 0.5f,
+                style = Stroke(width = 2.dp.toPx() * (1f - p) + 0.5f),
+            )
+        }
+
+        Text(
+            text = "+${effect.label}",
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .offset {
+                    IntOffset(
+                        x = (effect.position.x - 40.dp.toPx()).roundToInt(),
+                        y = (effect.position.y - 24.dp.toPx() - progress.value * 90.dp.toPx())
+                            .roundToInt(),
+                    )
+                }
+                .alpha(1f - progress.value * progress.value),
         )
     }
-
-    Text(
-        text = "+${effect.label}",
-        color = Color.White,
-        fontWeight = FontWeight.Bold,
-        fontSize = 18.sp,
-        textAlign = TextAlign.Center,
-        modifier = Modifier
-            .offset {
-                IntOffset(
-                    x = (effect.position.x - 40.dp.toPx()).roundToInt(),
-                    y = (effect.position.y - 24.dp.toPx() - progress.value * 90.dp.toPx())
-                        .roundToInt(),
-                )
-            }
-            .alpha(1f - progress.value * progress.value),
-    )
 }

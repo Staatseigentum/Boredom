@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.lerp
 import com.staatseigentum.kollaps.core.BodyKind
 import com.staatseigentum.kollaps.core.CelestialTier
-import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -530,4 +529,4 @@ private fun spinMillis(tier: CelestialTier): Int = when (tier.kind) {
     BodyKind.SINGULARITY -> 9_000
 }
 
-private const val TWO_PI = (2.0 * PI).toFloat()
+private const val TWO_PI = 6.2831855f
