@@ -8,38 +8,36 @@ import kotlin.test.assertTrue
 
 class PixelPlanetTest {
 
-    private fun IntArray.at(x: Int, y: Int): Int = this[y * PixelPlanet.SIZE + x]
+    private fun IntArray.at(side: Int, x: Int, y: Int): Int = this[y * side + x]
 
-    private fun IntArray.alphaAt(x: Int, y: Int): Int = at(x, y) ushr 24
+    private fun IntArray.alphaAt(side: Int, x: Int, y: Int): Int = at(side, x, y) ushr 24
 
     @Test
     fun `every tier renders a full sprite sheet`() {
         for (tier in Tiers.all) {
+            val side = PixelPlanet.size(tier)
             val frames = PixelPlanet.frames(tier)
             assertEquals(PixelPlanet.FRAMES, frames.size, "${tier.name} hat zu wenige Frames")
             for (frame in frames) {
-                assertEquals(
-                    PixelPlanet.SIZE * PixelPlanet.SIZE,
-                    frame.size,
-                    "${tier.name} hat die falsche Puffergröße",
-                )
+                assertEquals(side * side, frame.size, "${tier.name} hat die falsche Puffergröße")
             }
         }
     }
 
     @Test
     fun `every body is solid in the middle and clear at the corners`() {
-        val centre = PixelPlanet.SIZE / 2
         for (tier in Tiers.all) {
+            val side = PixelPlanet.size(tier)
+            val centre = side / 2
             val frame = PixelPlanet.frame(tier, 0)
             assertTrue(
-                frame.alphaAt(centre, centre) > 0,
+                frame.alphaAt(side, centre, centre) > 0,
                 "${tier.name} ist in der Mitte durchsichtig",
             )
-            assertEquals(0, frame.alphaAt(0, 0), "${tier.name} malt in die Ecke")
+            assertEquals(0, frame.alphaAt(side, 0, 0), "${tier.name} malt in die Ecke")
             assertEquals(
                 0,
-                frame.alphaAt(PixelPlanet.SIZE - 1, PixelPlanet.SIZE - 1),
+                frame.alphaAt(side, side - 1, side - 1),
                 "${tier.name} malt in die Ecke",
             )
         }
@@ -80,9 +78,10 @@ class PixelPlanetTest {
 
     @Test
     fun `the black hole keeps its event horizon dark`() {
+        val side = PixelPlanet.size(Tiers.last)
         val frame = PixelPlanet.frame(Tiers.last, 0)
-        val centre = PixelPlanet.SIZE / 2
-        val colour = frame.at(centre, centre)
+        val centre = side / 2
+        val colour = frame.at(side, centre, centre)
         val red = colour shr 16 and 0xFF
         val green = colour shr 8 and 0xFF
         val blue = colour and 0xFF
@@ -92,11 +91,13 @@ class PixelPlanetTest {
     @Test
     fun `ringed planets paint outside their own disc`() {
         val ringed = Tiers.all.first { it.hasRing }
+        val side = PixelPlanet.size(ringed)
         val frame = PixelPlanet.frame(ringed, 0)
-        val centre = PixelPlanet.SIZE / 2
+        val centre = side / 2
         // Far out on the horizontal axis there is nothing but ring.
+        val edge = (side * 0.04f).toInt()
         assertTrue(
-            frame.alphaAt(4, centre) > 0 || frame.alphaAt(PixelPlanet.SIZE - 5, centre) > 0,
+            frame.alphaAt(side, edge, centre) > 0 || frame.alphaAt(side, side - 1 - edge, centre) > 0,
             "${ringed.name} hat keinen sichtbaren Ring",
         )
     }
@@ -137,6 +138,32 @@ class PixelPlanetTest {
         // everything from Jupiter upwards into the clamp, so six steps rendered identically.
         val sizes = Tiers.all.map { PixelPlanet.spriteFraction(it) }.toSet()
         assertTrue(sizes.size >= 16, "Nur ${sizes.size} verschiedene Größen auf ${Tiers.all.size} Stufen")
+    }
+
+    @Test
+    fun `resolution follows the tier so every body scales up by the same whole number`() {
+        // Sprites are blown up by a whole-number factor. If one resolution served every tier,
+        // the small bodies would land on factor one and lose their pixel blocks entirely. The
+        // buffer grows with the body instead, which has to keep the factor equal across the
+        // ladder — that shared factor is what makes the pixels one size in the whole game.
+        val box = 894f // a 411dp phone, short side of the tap area
+        val factors = Tiers.all.map { tier ->
+            val available = box * PixelPlanet.spriteFraction(tier)
+            (available / PixelPlanet.size(tier)).toInt().coerceAtLeast(1)
+        }.toSet()
+        assertEquals(1, factors.size, "Uneinheitliche Pixelgröße: Faktoren $factors")
+        assertTrue(factors.first() >= 2, "Faktor ${factors.first()}x — die Pixelblöcke wären unsichtbar")
+    }
+
+    @Test
+    fun `the buffer grows with the body`() {
+        val meteorite = PixelPlanet.size(Tiers.first)
+        val supergiant = PixelPlanet.size(Tiers.all.first { it.name == "Roter Überriese" })
+        assertTrue(supergiant > meteorite, "$supergiant ist nicht größer als $meteorite")
+        assertEquals(PixelPlanet.BASE_SIZE, supergiant, "Die größte Stufe schöpft die Auflösung nicht aus")
+        for (tier in Tiers.all) {
+            assertEquals(0, PixelPlanet.size(tier) % 8, "${tier.name} liegt nicht auf dem Raster")
+        }
     }
 
     @Test

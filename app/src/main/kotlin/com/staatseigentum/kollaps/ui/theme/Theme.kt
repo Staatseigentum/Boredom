@@ -6,9 +6,11 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.staatseigentum.kollaps.R
 
 val Space = Color(0xFF05060F)
 val SpaceElevated = Color(0xFF0E1226)
@@ -38,41 +40,55 @@ private val KollapsColors = darkColorScheme(
 )
 
 /**
- * Everything is monospaced. It keeps the counter from jittering while it ticks up, and it is the
- * closest a system font gets to the pixel look of the sprites without shipping a font file.
+ * Two pixel faces rather than one, because the game asks two different things of its text.
+ *
+ * [PixelDisplay] is Silkscreen: a capitals-only face on a five pixel grid, which is exactly right
+ * for the counter, the headings and the buttons — short, loud, and already uppercase in the code.
+ * Set a paragraph of German in it and it shouts.
+ *
+ * [PixelText] is VT323, which has real lowercase and stays readable at the sizes the flavour
+ * texts and shop rows need. Point sizes run higher than they did for the system monospace: both
+ * faces draw small for their nominal size, so the numbers below are chosen to end up at the same
+ * physical size on screen as before.
  */
+val PixelDisplay = FontFamily(
+    Font(R.font.silkscreen_regular, FontWeight.Normal),
+    Font(R.font.silkscreen_bold, FontWeight.Bold),
+)
+
+val PixelText = FontFamily(Font(R.font.vt323_regular))
+
 private val KollapsTypography = Typography(
     displayMedium = TextStyle(
-        fontFamily = FontFamily.Monospace,
+        fontFamily = PixelDisplay,
         fontWeight = FontWeight.Bold,
-        fontSize = 32.sp,
-        letterSpacing = (-0.5).sp,
+        fontSize = 30.sp,
+        letterSpacing = 0.sp,
     ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily.Monospace,
+        fontFamily = PixelDisplay,
         fontWeight = FontWeight.Bold,
-        fontSize = 18.sp,
-        letterSpacing = 1.sp,
+        fontSize = 16.sp,
+        letterSpacing = 0.5.sp,
     ),
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 15.sp,
+        fontFamily = PixelText,
+        fontSize = 20.sp,
     ),
     bodyMedium = TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontSize = 13.sp,
+        fontFamily = PixelText,
+        fontSize = 17.sp,
     ),
     bodySmall = TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontSize = 11.sp,
-        lineHeight = 15.sp,
+        fontFamily = PixelText,
+        fontSize = 15.sp,
+        lineHeight = 18.sp,
     ),
     labelLarge = TextStyle(
-        fontFamily = FontFamily.Monospace,
+        fontFamily = PixelDisplay,
         fontWeight = FontWeight.Bold,
-        fontSize = 13.sp,
-        letterSpacing = 1.sp,
+        fontSize = 12.sp,
+        letterSpacing = 0.5.sp,
     ),
 )
 

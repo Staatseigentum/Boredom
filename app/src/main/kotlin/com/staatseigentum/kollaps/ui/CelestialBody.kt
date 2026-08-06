@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.IntSize
 import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.pixel.PixelPlanet
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -35,12 +37,12 @@ fun CelestialBody(
     tier: CelestialTier,
     modifier: Modifier = Modifier,
 ) {
-    // Rendering 24 frames costs a few milliseconds, so it happens off the main thread and the
-    // body simply appears once it is ready.
-    val frames by produceState<List<ImageBitmap>?>(initialValue = null, tier.index) {
-        value = withContext(Dispatchers.Default) {
-            PixelPlanet.frames(tier).map { it.toImageBitmap() }
-        }
+    // Rendering the sheet costs tens of milliseconds, so it happens off the main thread and the
+    // body appears once it is ready. The cache matters here: the tap area and the tier
+    // celebration are two separate composables showing the same body at the same moment, and
+    // without it they would each pay for their own copy.
+    val frames by produceState<List<ImageBitmap>?>(initialValue = SpriteCache.ready(tier), tier.index) {
+        if (value == null) value = SpriteCache.sheet(tier)
     }
 
     val transition = rememberInfiniteTransition(label = "body-${tier.index}")
@@ -53,31 +55,70 @@ fun CelestialBody(
         label = "spin",
     )
 
+    val side = PixelPlanet.size(tier)
+
     Canvas(modifier = modifier) {
         val sheet = frames ?: return@Canvas
         val index = (phase * PixelPlanet.FRAMES).toInt().coerceIn(0, sheet.lastIndex)
 
         val available = min(size.width, size.height) * PixelPlanet.spriteFraction(tier)
         // Whole-number scaling is what keeps the pixels square.
-        val scale = (available / PixelPlanet.SIZE).toInt().coerceAtLeast(1)
-        val side = PixelPlanet.SIZE * scale
+        val scale = (available / side).toInt().coerceAtLeast(1)
+        val drawn = side * scale
 
         drawImage(
             image = sheet[index],
             srcOffset = IntOffset.Zero,
-            srcSize = IntSize(PixelPlanet.SIZE, PixelPlanet.SIZE),
+            srcSize = IntSize(side, side),
             dstOffset = IntOffset(
-                ((size.width - side) / 2f).roundToInt(),
-                ((size.height - side) / 2f).roundToInt(),
+                ((size.width - drawn) / 2f).roundToInt(),
+                ((size.height - drawn) / 2f).roundToInt(),
             ),
-            dstSize = IntSize(side, side),
+            dstSize = IntSize(drawn, drawn),
             filterQuality = FilterQuality.None,
         )
     }
 }
 
-private fun IntArray.toImageBitmap(): ImageBitmap {
-    val bitmap = Bitmap.createBitmap(PixelPlanet.SIZE, PixelPlanet.SIZE, Bitmap.Config.ARGB_8888)
-    bitmap.setPixels(this, 0, PixelPlanet.SIZE, 0, 0, PixelPlanet.SIZE, PixelPlanet.SIZE)
+/**
+ * Keeps the last couple of sprite sheets around.
+ *
+ * Two is enough on purpose: the game only ever shows the current body, and the sheet for the
+ * largest tier is several megabytes. Holding all eighteen would cost far more memory than the
+ * rendering it saves is worth.
+ */
+private object SpriteCache {
+
+    private const val KEEP = 2
+
+    private val lock = Mutex()
+    private val sheets = LinkedHashMap<Int, List<ImageBitmap>>()
+
+    /** The sheet if it has already been built, for showing a body without a blank frame first. */
+    fun ready(tier: CelestialTier): List<ImageBitmap>? = synchronized(sheets) { sheets[tier.index] }
+
+    suspend fun sheet(tier: CelestialTier): List<ImageBitmap> {
+        ready(tier)?.let { return it }
+        return lock.withLock {
+            // Another caller may have finished it while this one waited for the lock.
+            ready(tier) ?: withContext(Dispatchers.Default) {
+                val side = PixelPlanet.size(tier)
+                PixelPlanet.frames(tier).map { it.toImageBitmap(side) }
+            }.also { built ->
+                synchronized(sheets) {
+                    sheets[tier.index] = built
+                    while (sheets.size > KEEP) {
+                        val oldest = sheets.keys.first()
+                        sheets.remove(oldest)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun IntArray.toImageBitmap(side: Int): ImageBitmap {
+    val bitmap = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+    bitmap.setPixels(this, 0, side, 0, 0, side, side)
     return bitmap.asImageBitmap()
 }

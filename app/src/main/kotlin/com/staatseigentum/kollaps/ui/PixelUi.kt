@@ -20,10 +20,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
+import com.staatseigentum.kollaps.ui.theme.PixelDisplay
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.floor
+import kotlin.math.round
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Nebula
 import com.staatseigentum.kollaps.ui.theme.Outline
@@ -109,14 +112,22 @@ fun PixelLabel(
         text = text.uppercase(),
         modifier = modifier,
         color = color,
-        fontFamily = FontFamily.Monospace,
+        fontFamily = PixelDisplay,
         fontWeight = FontWeight.Bold,
         fontSize = size.sp,
-        letterSpacing = 1.sp,
+        letterSpacing = 0.5.sp,
     )
 }
 
-/** A progress bar made of discrete blocks rather than a smooth sweep. */
+/**
+ * A progress bar built the way a sprite artist would draw one: a hard frame, a recessed track,
+ * and discrete cells with a lit top edge and a shaded bottom edge so each block reads as a solid
+ * object rather than a coloured rectangle.
+ *
+ * The leading cell is drawn dimmed rather than either full or empty. Without it a bar of two
+ * dozen blocks jumps in visible steps, and the tier bar in particular spends minutes on a single
+ * block near the end of a run.
+ */
 @Composable
 fun PixelBar(
     progress: Float,
@@ -127,15 +138,61 @@ fun PixelBar(
 ) {
     Canvas(modifier = modifier) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
-        val gap = size.width / cells * 0.22f
-        val cellWidth = (size.width - gap * (cells - 1)) / cells
-        val filled = (progress.coerceIn(0f, 1f) * cells).toInt()
+
+        // One whole device pixel is the unit everything snaps to, so no edge lands on a half.
+        // Capped against the height as well: on a short bar a frame sized purely by density
+        // would swallow the fill it is supposed to surround.
+        val unit = floor(density).coerceIn(1f, floor(size.height / 6f).coerceAtLeast(1f))
+        val frame = unit * 2f
+        if (size.width <= frame * 2f || size.height <= frame * 2f) return@Canvas
+
+        drawRect(color = Outline, size = size)
+        val innerLeft = frame
+        val innerTop = frame
+        val innerWidth = size.width - frame * 2f
+        val innerHeight = size.height - frame * 2f
+        drawRect(
+            color = SpaceElevated,
+            topLeft = Offset(innerLeft, innerTop),
+            size = Size(innerWidth, innerHeight),
+        )
+
+        val exact = progress.coerceIn(0f, 1f) * cells
+        val full = floor(exact).toInt()
+        val leading = exact - full
+
+        val step = innerWidth / cells
+        val highlight = lerp(color, Color.White, 0.4f)
+        val shade = lerp(color, Color.Black, 0.35f)
+
         for (index in 0 until cells) {
-            drawRect(
-                color = if (index < filled) color else track,
-                topLeft = Offset(index * (cellWidth + gap), 0f),
-                size = Size(cellWidth, size.height),
-            )
+            val left = innerLeft + round(index * step)
+            val right = innerLeft + round((index + 1) * step) - unit
+            val width = right - left
+            if (width <= 0f) continue
+
+            val fill = when {
+                index < full -> color
+                // Anything on the leading block at all lights it, faintly — a bar that shows
+                // nothing until a whole cell is earned looks stuck.
+                index == full && leading > 0.05f -> lerp(track, color, 0.25f + leading * 0.5f)
+                else -> track
+            }
+
+            drawRect(color = fill, topLeft = Offset(left, innerTop), size = Size(width, innerHeight))
+
+            if (index < full && innerHeight > unit * 2f) {
+                drawRect(
+                    color = highlight,
+                    topLeft = Offset(left, innerTop),
+                    size = Size(width, unit),
+                )
+                drawRect(
+                    color = shade,
+                    topLeft = Offset(left, innerTop + innerHeight - unit),
+                    size = Size(width, unit),
+                )
+            }
         }
     }
 }

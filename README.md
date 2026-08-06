@@ -22,9 +22,18 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **Kaufmengen** ×1 / ×10 / ×100 / Max
 - Durchgehend **Pixel Art**: jeder Himmelskörper ist ein Sprite mit 24 Rotationsframes, gerendert
   aus einer Kugelprojektion über eine Oberflächentextur, auf eine Handvoll Palettenstufen
-  quantisiert und mit einer Bayer-Matrix gedithert. Krater, Wolkenbänder mit Sturm, Eiskappen,
-  Ringe, Sternkorona, Pulsar-Jets und Akkretionsscheibe entstehen alle im Code — es gibt kein
+  quantisiert und mit einer 8×8-Bayer-Matrix gedithert. Krater, Wolkenbänder mit Sturm, Eiskappen,
+  Ringe, Sterngranulation, Pulsar-Jets und Akkretionsscheibe entstehen alle im Code — es gibt kein
   einziges gemaltes Bild-Asset, auch das Launcher-Icon fällt aus demselben Renderer.
+- Die **Auflösung wächst mit der Stufe**, von 128 px beim Meteoriten bis 288 px beim Schwarzen
+  Loch. Eine feste Auflösung für alle geht nicht: Sprites werden ganzzahlig vergrößert, also
+  landen kleine Körper bei Faktor 1 und verlieren ihre Pixelblöcke ganz, während große auf
+  Faktor 2 zurückfallen müssten. So bleibt der Faktor über die ganze Leiter gleich — die Pixel
+  sind im ganzen Spiel gleich groß, und das Detail wächst mit dem, was man tatsächlich sieht.
+- **Zwei Pixel-Schriften**, weil das Spiel zwei Dinge von seinem Text verlangt: Silkscreen für
+  Zähler, Überschriften und Knöpfe — kurz, laut, ohnehin in Großbuchstaben — und VT323 für
+  Fließtext, das echte Kleinbuchstaben hat und in den Shop-Zeilen lesbar bleibt. Beide unter
+  der SIL Open Font License, die Lizenztexte liegen unter `app/src/main/assets/licenses/`.
 - **Klickgeräusch** auf dem Himmelskörper und auf allem, was im Menü anklickbar ist, gespielt
   über einen `SoundPool` — der dekodiert die Probe einmal beim Start, damit ein Tipp nie auf
   einen Decoder wartet, und lässt mehrere Instanzen überlappen, weil in einem Idle-Spiel

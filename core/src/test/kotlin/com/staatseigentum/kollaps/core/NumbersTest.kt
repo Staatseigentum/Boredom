@@ -38,7 +38,9 @@ class NumbersTest {
     fun `never renders negatives or NaN as garbage`() {
         assertEquals("0", Numbers.format(-5.0))
         assertEquals("0", Numbers.format(Double.NaN))
-        assertEquals("∞", Numbers.format(Double.POSITIVE_INFINITY))
+        // Spelled out rather than the infinity sign: the pixel faces the interface is set in
+        // have no glyph for it, and a missing glyph renders as an empty box.
+        assertEquals("unendlich", Numbers.format(Double.POSITIVE_INFINITY))
     }
 
     @Test

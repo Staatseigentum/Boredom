@@ -24,35 +24,54 @@ import kotlin.random.Random
  */
 object PixelPlanet {
 
-    /** Edge length of a sprite in sprite pixels. */
-    const val SIZE = 96
+    /** Edge length of the largest sprite, in sprite pixels. */
+    const val BASE_SIZE = 288
 
     /** Rotation frames per body. */
     const val FRAMES = 24
 
     /**
-     * Renders the full sprite sheet for a tier as raw ARGB buffers, each [SIZE] by [SIZE].
-     * Cheap enough to do on a background thread when the player reaches a new tier.
+     * Edge length of this tier's sprite, in sprite pixels.
+     *
+     * Resolution follows the tier rather than being one number for everybody. Sprites are blown
+     * up by a whole-number factor, so a single high resolution would leave the small bodies at
+     * factor one — no visible pixel blocks at all — while the big ones would have to shrink to
+     * keep a factor of two. Scaling the buffer with the body instead keeps every tier at the same
+     * on-screen block size, and the detail grows with how large the body actually appears.
+     */
+    fun size(tier: CelestialTier): Int =
+        ((BASE_SIZE * spriteFraction(tier) / GRID).roundToInt() * GRID).coerceAtLeast(MIN_SIZE)
+
+    /**
+     * Renders the full sprite sheet for a tier as raw ARGB buffers, each [size] by [size].
+     * Costs tens of milliseconds, so it belongs on a background thread.
      */
     fun frames(tier: CelestialTier): List<IntArray> {
+        val side = size(tier)
         val palette = Palette.of(tier)
-        val texture = Texture.of(tier)
+        val texture = Texture.of(tier, side)
         return List(FRAMES) { frame ->
-            val pixels = IntArray(SIZE * SIZE)
-            renderFrame(tier, palette, texture, frame.toFloat() / FRAMES, pixels)
+            val pixels = IntArray(side * side)
+            renderFrame(tier, side, palette, texture, frame.toFloat() / FRAMES, pixels)
             pixels
         }
     }
 
     /** A single frame, for previews and tests. */
-    fun frame(tier: CelestialTier, index: Int): IntArray {
-        val pixels = IntArray(SIZE * SIZE)
+    fun frame(tier: CelestialTier, index: Int): IntArray = frame(tier, index, size(tier))
+
+    /**
+     * A single frame at an explicit resolution. The launcher icon is generated from the black
+     * hole at whatever edge length each density folder wants, and asking for that size directly
+     * beats scaling a sprite that happens to be a different size.
+     */
+    fun frame(tier: CelestialTier, index: Int, size: Int): IntArray {
+        val pixels = IntArray(size * size)
         val phase = index.toFloat() / FRAMES
-        renderFrame(tier, Palette.of(tier), Texture.of(tier), phase, pixels)
+        renderFrame(tier, size, Palette.of(tier), Texture.of(tier, size), phase, pixels)
         return pixels
     }
 
-    /** How much of the available space the whole sprite should cover for this tier. */
     /**
      * How much of the tap area the sprite fills. The tier says so itself — there is deliberately
      * no factor in between, because a factor large enough to make the small bodies look right
@@ -75,33 +94,35 @@ object PixelPlanet {
 
     private fun renderFrame(
         tier: CelestialTier,
+        size: Int,
         palette: Palette,
         texture: Texture,
         phase: Float,
         out: IntArray,
     ) {
         when (tier.kind) {
-            BodyKind.SINGULARITY -> renderBlackHole(palette, phase, out)
-            BodyKind.EXOTIC -> renderNeutronStar(palette, phase, out)
-            else -> renderSphere(tier, palette, texture, phase, out)
+            BodyKind.SINGULARITY -> renderBlackHole(size, palette, phase, out)
+            BodyKind.EXOTIC -> renderNeutronStar(size, palette, phase, out)
+            else -> renderSphere(tier, size, palette, texture, phase, out)
         }
     }
 
     private fun renderSphere(
         tier: CelestialTier,
+        size: Int,
         palette: Palette,
         texture: Texture,
         phase: Float,
         out: IntArray,
     ) {
-        val centre = SIZE / 2f
-        val bodyRadius = SIZE / 2f * BODY_FRACTION
+        val centre = size / 2f
+        val bodyRadius = size / 2f * BODY_FRACTION
         val glowRadius = bodyRadius * if (tier.kind == BodyKind.STAR) 1.5f else 1.18f
         val emissive = tier.kind == BodyKind.STAR
         val spin = phase * TWO_PI
 
-        for (y in 0 until SIZE) {
-            for (x in 0 until SIZE) {
+        for (y in 0 until size) {
+            for (x in 0 until size) {
                 val nx = (x + 0.5f - centre) / bodyRadius
                 val ny = (y + 0.5f - centre) / bodyRadius
                 val distance = sqrt(nx * nx + ny * ny)
@@ -120,7 +141,7 @@ object PixelPlanet {
                     if (ring != 0) colour = ring
                 }
 
-                out[y * SIZE + x] = colour
+                out[y * size + x] = colour
             }
         }
     }
@@ -193,18 +214,18 @@ object PixelPlanet {
         return palette.ring[band]
     }
 
-    private fun renderNeutronStar(palette: Palette, phase: Float, out: IntArray) {
-        val centre = SIZE / 2f
-        val core = SIZE / 2f * 0.13f
-        val reach = SIZE / 2f * 0.96f
+    private fun renderNeutronStar(size: Int, palette: Palette, phase: Float, out: IntArray) {
+        val centre = size / 2f
+        val core = size / 2f * 0.13f
+        val reach = size / 2f * 0.96f
         // Two opposite jets look the same after half a turn, so the cycle only covers 180° —
         // otherwise half the sprite sheet would be duplicates.
         val sweep = phase * PI_F
         val jetX = sin(sweep)
         val jetY = -cos(sweep)
 
-        for (y in 0 until SIZE) {
-            for (x in 0 until SIZE) {
+        for (y in 0 until size) {
+            for (x in 0 until size) {
                 val dx = x + 0.5f - centre
                 val dy = y + 0.5f - centre
                 val distance = sqrt(dx * dx + dy * dy)
@@ -228,26 +249,29 @@ object PixelPlanet {
                 }
                 if (distance < core) colour = palette.shade(0, 1.4f - distance / core, x, y)
 
-                out[y * SIZE + x] = colour
+                out[y * size + x] = colour
             }
         }
     }
 
-    private fun renderBlackHole(palette: Palette, phase: Float, out: IntArray) {
-        val centre = SIZE / 2f
-        val horizon = SIZE / 2f * 0.30f
+    private fun renderBlackHole(size: Int, palette: Palette, phase: Float, out: IntArray) {
+        val centre = size / 2f
+        val horizon = size / 2f * 0.30f
         val spin = phase * TWO_PI
+        // The lensing arc is a drawn line, so its width has to follow the buffer or it would
+        // thin out to a hairline as the resolution goes up.
+        val lensThickness = size / 96f * LENS_THICKNESS
 
-        for (y in 0 until SIZE) {
-            for (x in 0 until SIZE) {
+        for (y in 0 until size) {
+            for (x in 0 until size) {
                 val dx = x + 0.5f - centre
                 val dy = y + 0.5f - centre
                 val distance = sqrt(dx * dx + dy * dy)
                 var colour = 0
 
                 // The disk seen almost edge on: a thin flattened annulus, not a slab.
-                val ringX = dx / (SIZE / 2f * 0.95f)
-                val ringY = dy / (SIZE / 2f * 0.30f)
+                val ringX = dx / (size / 2f * 0.95f)
+                val ringY = dy / (size / 2f * 0.30f)
                 val ring = sqrt(ringX * ringX + ringY * ringY)
                 val diskColour = if (ring in DISK_INNER..1f) {
                     // Brightest at the inner edge, with a hot spot travelling around the ring.
@@ -271,9 +295,11 @@ object PixelPlanet {
 
                 if (distance < horizon) {
                     colour = HORIZON
-                } else if (distance < horizon * 1.16f) {
-                    // Photon ring: the light that orbits just before it falls in.
-                    colour = palette.ring[0]
+                } else if (distance < horizon * 1.07f) {
+                    // Photon ring: the light that orbits just before it falls in. Kept thin and
+                    // no brighter than the disk — drawn in the lightest colour it read as an
+                    // outline around the horizon, which turned the whole sprite into an eye.
+                    colour = palette.ring[1]
                 }
 
                 if (dy >= 0f && diskColour != 0) colour = diskColour
@@ -282,10 +308,15 @@ object PixelPlanet {
                 // black hole seen edge on just reads as a dark blob between two wings.
                 if (dy < 0f && abs(ringX) <= 1f) {
                     val arc = -horizon * (0.15f + 1.35f * sqrt(1f - ringX * ringX))
-                    if (abs(dy - arc) < LENS_THICKNESS) colour = palette.ring[0]
+                    // Same colours as the disk it is a bent image of, brightest in the middle
+                    // where the material is closest to the hole.
+                    if (abs(dy - arc) < lensThickness) {
+                        val heat = 1f - abs(ringX)
+                        colour = if (heat + bayer(x, y) * 0.5f > 0.75f) palette.ring[0] else palette.ring[1]
+                    }
                 }
 
-                out[y * SIZE + x] = colour
+                out[y * size + x] = colour
             }
         }
     }
@@ -339,9 +370,13 @@ object PixelPlanet {
                 )
             }
 
-            /** Dark to light, shadows tinted cool and highlights pulled towards the glow. */
+            /**
+             * Dark to light, shadows tinted cool and highlights pulled towards the glow. One
+             * more step than the sprites used to have: at this resolution the bands between
+             * shading levels are wide enough to be read as bands rather than as shape.
+             */
             private fun rampOf(base: Int, glow: Int): IntArray {
-                val steps = floatArrayOf(-0.62f, -0.34f, 0f, 0.24f, 0.48f)
+                val steps = floatArrayOf(-0.62f, -0.42f, -0.20f, 0f, 0.24f, 0.48f)
                 return IntArray(LEVELS) { index ->
                     val amount = steps[index]
                     if (amount < 0f) mix(base, SHADOW, -amount) else mix(base, glow, amount)
@@ -355,16 +390,27 @@ object PixelPlanet {
     /**
      * An equirectangular map of the surface. Sampled with nearest neighbour on purpose — that
      * is what keeps craters and cloud bands looking hand placed.
+     *
+     * The map is sized against the sprite it will be wrapped around, at roughly one texel per
+     * sprite pixel. Too coarse and the surface stays blocky while the sphere gets smooth; too
+     * fine and features shrink below a pixel and turn into noise. Every feature is measured in
+     * [detail] rather than in texels, so the composition holds at any resolution and only the
+     * fineness changes.
      */
-    private class Texture(private val materials: ByteArray, private val tones: FloatArray) {
+    private class Texture(
+        private val width: Int,
+        private val height: Int,
+        private val materials: ByteArray,
+        private val tones: FloatArray,
+    ) {
 
         /** Texel under a surface point. Split from the reads so sampling allocates nothing. */
         fun texelAt(latitude: Float, longitude: Float): Int {
             val u = (longitude / TWO_PI).mod(1f)
             val v = ((latitude / PI_F) + 0.5f).coerceIn(0f, 0.999f)
-            val tx = (u * TEXTURE_WIDTH).toInt().coerceIn(0, TEXTURE_WIDTH - 1)
-            val ty = (v * TEXTURE_HEIGHT).toInt().coerceIn(0, TEXTURE_HEIGHT - 1)
-            return ty * TEXTURE_WIDTH + tx
+            val tx = (u * width).toInt().coerceIn(0, width - 1)
+            val ty = (v * height).toInt().coerceIn(0, height - 1)
+            return ty * width + tx
         }
 
         fun materialAt(texel: Int): Int = materials[texel].toInt()
@@ -372,125 +418,216 @@ object PixelPlanet {
         fun toneAt(texel: Int): Float = tones[texel]
 
         companion object {
-            fun of(tier: CelestialTier): Texture {
-                val materials = ByteArray(TEXTURE_WIDTH * TEXTURE_HEIGHT)
-                val tones = FloatArray(TEXTURE_WIDTH * TEXTURE_HEIGHT)
+
+            fun of(tier: CelestialTier, spriteSize: Int): Texture {
+                val width = ((spriteSize * TEXELS_PER_PIXEL).roundToInt() / 2) * 2
+                val height = width / 2
+                val detail = height / REFERENCE_HEIGHT
+                val materials = ByteArray(width * height)
+                val tones = FloatArray(width * height)
                 val random = Random(tier.index * 6_151L + 17L)
 
                 for (index in tones.indices) tones[index] = 0.5f
 
+                val map = Canvas(width, height, materials, tones)
                 when (tier.kind) {
-                    BodyKind.ROCK -> craters(materials, tones, random)
-                    BodyKind.TERRESTRIAL -> continents(materials, tones, random)
-                    BodyKind.GAS -> bands(materials, tones, random)
-                    else -> mottle(materials, tones, random)
+                    BodyKind.ROCK -> craters(map, detail, random)
+                    BodyKind.TERRESTRIAL -> continents(map, detail, random)
+                    BodyKind.GAS -> bands(map, detail, random)
+                    else -> mottle(map, detail, random)
                 }
-                return Texture(materials, tones)
+                return Texture(width, height, materials, tones)
             }
 
-            private fun craters(materials: ByteArray, tones: FloatArray, random: Random) {
+            /** The map being painted, so the builders below do not juggle four parameters each. */
+            private class Canvas(
+                val width: Int,
+                val height: Int,
+                val materials: ByteArray,
+                val tones: FloatArray,
+            ) {
+                fun paint(x: Int, y: Int, material: Int, tone: Float) {
+                    val index = y * width + x.mod(width)
+                    materials[index] = material.toByte()
+                    tones[index] = tone
+                }
+            }
+
+            private fun craters(map: Canvas, detail: Float, random: Random) {
+                // The big ones carry the composition and are the craters that were always there.
                 repeat(22) {
-                    val cx = random.nextInt(TEXTURE_WIDTH)
-                    val cy = 3 + random.nextInt(TEXTURE_HEIGHT - 6)
-                    val radius = 2 + random.nextInt(4)
-                    forEachTexel(cx, cy, radius + 1) { x, y, distance ->
-                        val index = y * TEXTURE_WIDTH + x
-                        when {
-                            distance <= radius - 1 -> {
-                                materials[index] = 1
-                                tones[index] = 0.28f
-                            }
+                    crater(map, random, (2f + random.nextInt(4)) * detail)
+                }
+                // The small ones are what the extra resolution buys: pitting between the large
+                // craters that simply had nowhere to live on a coarse map.
+                repeat((26 * detail).roundToInt()) {
+                    crater(map, random, 1.2f * detail + random.nextFloat() * detail)
+                }
+            }
 
-                            distance <= radius + 1 -> {
-                                materials[index] = 2
-                                tones[index] = 0.72f
-                            }
-                        }
+            private fun crater(map: Canvas, random: Random, radius: Float) {
+                val margin = (radius.toInt() + 1).coerceAtMost(map.height / 2 - 1)
+                val cx = random.nextInt(map.width)
+                val cy = margin + random.nextInt((map.height - 2 * margin).coerceAtLeast(1))
+                val wall = (radius * 0.28f).coerceAtLeast(1f)
+                val rim = radius + wall
+                forEachTexel(map, cx, cy, rim.toInt() + 1) { x, y, distance ->
+                    when {
+                        distance <= radius - wall -> map.paint(x, y, 1, 0.28f)
+                        distance <= rim -> map.paint(x, y, 2, 0.72f)
                     }
                 }
             }
 
-            private fun continents(materials: ByteArray, tones: FloatArray, random: Random) {
-                repeat(9) {
-                    val cx = random.nextInt(TEXTURE_WIDTH)
-                    val cy = 6 + random.nextInt(TEXTURE_HEIGHT - 12)
-                    val radius = 4 + random.nextInt(6)
-                    forEachTexel(cx, cy, radius) { x, y, distance ->
-                        // A wobbly edge reads as coastline instead of a circle.
-                        if (distance < radius - random.nextInt(3)) {
-                            val index = y * TEXTURE_WIDTH + x
-                            materials[index] = 1
-                            tones[index] = 0.45f + random.nextFloat() * 0.3f
-                        }
+            /** Rim thickness: thin craters at low resolution, a real raised edge at high. */
+            private fun detailStep(radius: Float): Float = (radius * 0.28f).coerceAtLeast(1f)
+
+            private fun continents(map: Canvas, detail: Float, random: Random) {
+                // Landmasses are built from a few overlapping lobes each, so a continent has a
+                // coastline instead of being one circle — the extra resolution is spent on the
+                // shape of the land rather than on scattering more dots across the ocean.
+                repeat(11) {
+                    val cx = random.nextInt(map.width)
+                    val cy = map.height / 5 + random.nextInt(map.height * 3 / 5)
+                    val scale = (5f + random.nextInt(5)) * detail
+                    repeat(3 + random.nextInt(3)) {
+                        val offset = scale * 0.7f
+                        landmass(
+                            map,
+                            random,
+                            scale * (0.55f + random.nextFloat() * 0.6f),
+                            (cx + ((random.nextFloat() - 0.5f) * 2f * offset).toInt()).mod(map.width),
+                            (cy + ((random.nextFloat() - 0.5f) * 2f * offset).toInt())
+                                .coerceIn(2, map.height - 3),
+                        )
                     }
                 }
+                // A handful of islands, enough to break up the open ocean without speckling it.
+                repeat((4 * detail).roundToInt()) {
+                    landmass(
+                        map,
+                        random,
+                        1.2f * detail + random.nextFloat() * detail,
+                        random.nextInt(map.width),
+                        2 + random.nextInt(map.height - 4),
+                    )
+                }
+
                 // Ice caps.
-                for (y in 0 until TEXTURE_HEIGHT) {
-                    val polar = abs(y - (TEXTURE_HEIGHT - 1) / 2f) / (TEXTURE_HEIGHT / 2f)
+                for (y in 0 until map.height) {
+                    val polar = abs(y - (map.height - 1) / 2f) / (map.height / 2f)
                     if (polar < 0.82f) continue
-                    for (x in 0 until TEXTURE_WIDTH) {
-                        val index = y * TEXTURE_WIDTH + x
-                        materials[index] = 2
-                        tones[index] = 0.8f
+                    for (x in 0 until map.width) map.paint(x, y, 2, 0.8f)
+                }
+            }
+
+            private fun landmass(map: Canvas, random: Random, radius: Float, cx: Int, cy: Int) {
+                // A wobbly edge reads as coastline instead of a circle; the wobble is a fraction
+                // of the radius so a big continent is not merely a scaled up island.
+                val wobble = radius * 0.3f
+                forEachTexel(map, cx, cy, radius.toInt() + 1) { x, y, distance ->
+                    if (distance < radius - random.nextFloat() * wobble) {
+                        map.paint(x, y, 1, 0.45f + random.nextFloat() * 0.3f)
                     }
                 }
             }
 
-            private fun bands(materials: ByteArray, tones: FloatArray, random: Random) {
-                val bandTone = FloatArray(TEXTURE_HEIGHT)
-                val bandMaterial = ByteArray(TEXTURE_HEIGHT)
+            private fun bands(map: Canvas, detail: Float, random: Random) {
+                val bandTone = FloatArray(map.height)
+                val bandMaterial = ByteArray(map.height)
                 var y = 0
-                while (y < TEXTURE_HEIGHT) {
-                    val height = 2 + random.nextInt(4)
+                while (y < map.height) {
+                    val height = ((2 + random.nextInt(4)) * detail).roundToInt().coerceAtLeast(1)
                     val material = if (random.nextFloat() < 0.45f) 1.toByte() else 0.toByte()
                     val tone = 0.3f + random.nextFloat() * 0.5f
                     for (offset in 0 until height) {
                         val row = y + offset
-                        if (row >= TEXTURE_HEIGHT) break
+                        if (row >= map.height) break
                         bandMaterial[row] = material
                         bandTone[row] = tone
                     }
                     y += height
                 }
-                for (row in 0 until TEXTURE_HEIGHT) {
-                    for (x in 0 until TEXTURE_WIDTH) {
-                        // Waviness so the bands are not perfectly straight lines.
-                        val wobble = (sin(x * 0.22f + row) * 1.4f).toInt()
-                        val source = (row + wobble).coerceIn(0, TEXTURE_HEIGHT - 1)
-                        val index = row * TEXTURE_WIDTH + x
-                        materials[index] = bandMaterial[source]
-                        tones[index] = bandTone[source]
+                for (row in 0 until map.height) {
+                    for (x in 0 until map.width) {
+                        // Waviness so the bands are not perfectly straight lines. Both the
+                        // wavelength and the amplitude are in texels, so they follow the map.
+                        val wobble = (sin(x * 0.22f / detail + row / detail) * 1.4f * detail).toInt()
+                        val source = (row + wobble).coerceIn(0, map.height - 1)
+                        map.paint(x, row, bandMaterial[source].toInt(), bandTone[source])
                     }
                 }
+
                 // The one big storm every gas giant deserves — an oval, stretched with the bands.
-                val stormX = random.nextInt(TEXTURE_WIDTH)
-                val stormY = TEXTURE_HEIGHT / 2 + random.nextInt(8) - 4
-                val stormWidth = 7
-                val stormHeight = 3
-                for (dy in -stormHeight..stormHeight) {
-                    val y = stormY + dy
-                    if (y !in 0 until TEXTURE_HEIGHT) continue
-                    for (dx in -stormWidth..stormWidth) {
-                        val fx = dx.toFloat() / stormWidth
-                        val fy = dy.toFloat() / stormHeight
+                storm(map, random, 7f * detail, 3f * detail, 2, 0.72f)
+                // Smaller eddies trailing in the same latitudes.
+                repeat((5 * detail).roundToInt()) {
+                    storm(map, random, 1.5f * detail, 0.8f * detail, 2, 0.66f)
+                }
+            }
+
+            private fun storm(
+                map: Canvas,
+                random: Random,
+                halfWidth: Float,
+                halfHeight: Float,
+                material: Int,
+                tone: Float,
+            ) {
+                val cx = random.nextInt(map.width)
+                val spread = (8 * halfHeight).toInt().coerceAtLeast(2)
+                val cy = map.height / 2 + random.nextInt(spread) - spread / 2
+                val h = halfHeight.toInt().coerceAtLeast(1)
+                val w = halfWidth.toInt().coerceAtLeast(1)
+                for (dy in -h..h) {
+                    val y = cy + dy
+                    if (y !in 0 until map.height) continue
+                    for (dx in -w..w) {
+                        val fx = dx.toFloat() / w
+                        val fy = dy.toFloat() / h
                         if (fx * fx + fy * fy > 1f) continue
-                        val index = y * TEXTURE_WIDTH + (stormX + dx).mod(TEXTURE_WIDTH)
-                        materials[index] = 2
-                        tones[index] = 0.72f
+                        map.paint(cx + dx, y, material, tone)
                     }
                 }
             }
 
-            private fun mottle(materials: ByteArray, tones: FloatArray, random: Random) {
-                for (index in materials.indices) {
-                    val roll = random.nextFloat()
-                    materials[index] = if (roll > 0.78f) 2 else if (roll > 0.4f) 1 else 0
-                    tones[index] = 0.35f + random.nextFloat() * 0.5f
+            private fun mottle(map: Canvas, detail: Float, random: Random) {
+                // Granulation, not noise. A random draw per texel — or per square cell — turns
+                // into television static as soon as the resolution goes up, because nothing in
+                // it has a shape. Convection cells do: bright grains with darker lanes between
+                // them. So the surface is laid down as overlapping round grains instead.
+                // The base is the darker material: it survives only as the lanes between grains,
+                // the way the gaps between convection cells are the dark part of a star.
+                for (index in map.tones.indices) {
+                    map.materials[index] = 1
+                    map.tones[index] = 0.28f + random.nextFloat() * 0.08f
+                }
+
+                val area = map.width * map.height
+                val grainRadius = 1.6f * detail
+                // Enough grains to cover the surface several times over, so what is left of the
+                // base reads as thin lanes rather than as blotches.
+                val grains = (area / (grainRadius * grainRadius) * 0.5f).roundToInt()
+                repeat(grains.coerceAtLeast(48)) {
+                    val radius = grainRadius * (0.6f + random.nextFloat() * 0.8f)
+                    val cx = random.nextInt(map.width)
+                    val cy = random.nextInt(map.height)
+                    val bright = random.nextFloat()
+                    val material = if (bright > 0.9f) 2 else 0
+                    val tone = 0.6f + bright * 0.35f
+                    forEachTexel(map, cx, cy, radius.toInt() + 1) { x, y, distance ->
+                        // Softer at the edge, so grains merge into each other rather than
+                        // stamping hard circles.
+                        if (distance < radius * (0.75f + random.nextFloat() * 0.25f)) {
+                            map.paint(x, y, material, tone)
+                        }
+                    }
                 }
             }
 
             /** Walks a disc in texture space, wrapping around the seam in longitude. */
             private inline fun forEachTexel(
+                map: Canvas,
                 centreX: Int,
                 centreY: Int,
                 radius: Int,
@@ -498,12 +635,11 @@ object PixelPlanet {
             ) {
                 for (dy in -radius..radius) {
                     val y = centreY + dy
-                    if (y !in 0 until TEXTURE_HEIGHT) continue
+                    if (y !in 0 until map.height) continue
                     for (dx in -radius..radius) {
                         val distance = sqrt((dx * dx + dy * dy).toFloat())
                         if (distance > radius) continue
-                        val x = (centreX + dx).mod(TEXTURE_WIDTH)
-                        block(x, y, distance)
+                        block((centreX + dx).mod(map.width), y, distance)
                     }
                 }
             }
@@ -527,18 +663,29 @@ object PixelPlanet {
     private fun withAlpha(colour: Int, alpha: Int): Int =
         (alpha shl 24) or (colour and 0x00FFFFFF)
 
-    private fun bayer(x: Int, y: Int): Float = BAYER[(y and 3) * 4 + (x and 3)] * (1f / 16f)
+    /**
+     * Ordered dithering, on an 8 by 8 matrix rather than 4 by 4. The finer grid has 64 thresholds
+     * instead of 16, which is what keeps a shading transition looking like a gradient of dots at
+     * this resolution instead of a repeating checkerboard.
+     */
+    private fun bayer(x: Int, y: Int): Float = BAYER[(y and 7) * 8 + (x and 7)] * (1f / 64f)
 
-    private const val LEVELS = 5
+    private const val LEVELS = 6
     private const val DITHER_STRENGTH = 0.9f
+    /** Sprite sizes snap to this grid so a scaled sprite never lands on a half pixel. */
+    private const val GRID = 8
+    private const val MIN_SIZE = 64
+    /** Texels per sprite pixel across the visible face — about one, so features stay hand placed. */
+    private const val TEXELS_PER_PIXEL = 1.25f
+    /** The map height the feature sizes were originally tuned against. */
+    private const val REFERENCE_HEIGHT = 48f
     private const val BODY_FRACTION = 0.62f
     private const val RING_OUTER = 1.62f
     private const val RING_INNER = 0.72f
     private const val RING_FLATTEN = 0.30f
     private const val DISK_INNER = 0.55f
+    /** Width of the lensing arc, measured against a 96 pixel sprite and scaled from there. */
     private const val LENS_THICKNESS = 2.2f
-    private const val TEXTURE_WIDTH = 96
-    private const val TEXTURE_HEIGHT = 48
     private const val TWO_PI = 6.2831855f
     private const val PI_F = 3.1415927f
 
@@ -554,9 +701,13 @@ object PixelPlanet {
 
     /** Ordered dithering matrix — the reason the shading steps blend instead of banding. */
     private val BAYER = intArrayOf(
-        0, 8, 2, 10,
-        12, 4, 14, 6,
-        3, 11, 1, 9,
-        15, 7, 13, 5,
+        0, 32, 8, 40, 2, 34, 10, 42,
+        48, 16, 56, 24, 50, 18, 58, 26,
+        12, 44, 4, 36, 14, 46, 6, 38,
+        60, 28, 52, 20, 62, 30, 54, 22,
+        3, 35, 11, 43, 1, 33, 9, 41,
+        51, 19, 59, 27, 49, 17, 57, 25,
+        15, 47, 7, 39, 13, 45, 5, 37,
+        63, 31, 55, 23, 61, 29, 53, 21,
     )
 }

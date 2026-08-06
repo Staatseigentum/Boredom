@@ -26,7 +26,7 @@ object Numbers {
     /** Renders a mass value, e.g. `1,23 Mrd`. */
     fun format(value: Double): String {
         if (value.isNaN()) return "0"
-        if (value.isInfinite()) return "∞"
+        if (value.isInfinite()) return "unendlich"
         val v = if (value < 0.0) 0.0 else value
         if (v < 1_000.0) return formatBelowThousand(v)
 

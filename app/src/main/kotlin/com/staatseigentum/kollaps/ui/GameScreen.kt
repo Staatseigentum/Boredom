@@ -148,7 +148,7 @@ private fun Header(state: GameState, stats: Stats) {
             )
             if (state.singularities > 0) {
                 Text(
-                    text = "◍ ${Numbers.format(state.singularities)} Singularitäten",
+                    text = "• ${Numbers.format(state.singularities)} Singularitäten",
                     style = MaterialTheme.typography.labelLarge,
                     color = Ember,
                 )
@@ -174,7 +174,7 @@ private fun Header(state: GameState, stats: Stats) {
         val next = stats.nextTier
         Text(
             text = if (next != null) {
-                "${stats.tier.name} → ${next.name}"
+                "${stats.tier.name} > ${next.name}"
             } else {
                 "${stats.tier.name} — das Ende der Leiter"
             },
