@@ -111,6 +111,35 @@ class PixelPlanetTest {
     }
 
     @Test
+    fun `the body never shrinks on the way up`() {
+        // The whole promise of the ladder is that you get bigger. The neutron star is the one
+        // deliberate exception: the supergiant collapses, and that step is supposed to be small.
+        val collapse = Tiers.all.first { it.kind == BodyKind.EXOTIC }
+        var previous = 0f
+        for (tier in Tiers.all) {
+            if (tier.index == collapse.index) continue
+            val fraction = PixelPlanet.spriteFraction(tier)
+            assertTrue(
+                fraction >= previous,
+                "${tier.name} ist kleiner als die Stufe davor ($fraction < $previous)",
+            )
+            previous = fraction
+        }
+        assertTrue(
+            PixelPlanet.spriteFraction(collapse) < PixelPlanet.spriteFraction(Tiers.all[collapse.index - 1]),
+            "Der Neutronenstern ist nicht kleiner als der Überriese davor",
+        )
+    }
+
+    @Test
+    fun `the ladder spends its size range instead of clamping the top half together`() {
+        // Guards the mistake this replaced: a multiplier on top of the tier's own size pushed
+        // everything from Jupiter upwards into the clamp, so six steps rendered identically.
+        val sizes = Tiers.all.map { PixelPlanet.spriteFraction(it) }.toSet()
+        assertTrue(sizes.size >= 16, "Nur ${sizes.size} verschiedene Größen auf ${Tiers.all.size} Stufen")
+    }
+
+    @Test
     fun `every body kind has a spin duration`() {
         for (kind in BodyKind.entries) {
             assertTrue(PixelPlanet.spinMillis(kind) > 0, "$kind dreht sich nicht")

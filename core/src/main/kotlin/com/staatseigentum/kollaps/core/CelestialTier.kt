@@ -43,7 +43,11 @@ data class CelestialTier(
     /** Colour of the surface features — continents, storms. Defaults to [secondaryColor]. */
     val accentColor: Long? = null,
     val hasRing: Boolean = false,
-    /** Fraction of the available drawing area the body should fill. */
+    /**
+     * Fraction of the available drawing area the body should fill. Climbs across the ladder so
+     * every step is visibly bigger than the last; the neutron star is the one place it drops,
+     * because the supergiant collapsing into something small is the point of that step.
+     */
     val relativeSize: Float = 0.6f,
 ) {
     val isFinal: Boolean get() = index == Tiers.all.lastIndex
@@ -62,7 +66,7 @@ object Tiers {
             primaryColor = 0xFF6E6259,
             secondaryColor = 0xFF3A342F,
             glowColor = 0xFF8A7A6A,
-            relativeSize = 0.30f,
+            relativeSize = 0.44f,
         ),
         CelestialTier(
             index = 1,
@@ -74,7 +78,7 @@ object Tiers {
             primaryColor = 0xFF8A8078,
             secondaryColor = 0xFF4A443F,
             glowColor = 0xFF9C9187,
-            relativeSize = 0.38f,
+            relativeSize = 0.48f,
         ),
         CelestialTier(
             index = 2,
@@ -86,7 +90,7 @@ object Tiers {
             primaryColor = 0xFFA8A29A,
             secondaryColor = 0xFF5C574F,
             glowColor = 0xFFBDB6AC,
-            relativeSize = 0.44f,
+            relativeSize = 0.55f,
         ),
         CelestialTier(
             index = 3,
@@ -98,7 +102,7 @@ object Tiers {
             primaryColor = 0xFF9C8C7A,
             secondaryColor = 0xFF5A4E42,
             glowColor = 0xFFB09E8A,
-            relativeSize = 0.48f,
+            relativeSize = 0.59f,
         ),
         CelestialTier(
             index = 4,
@@ -110,7 +114,7 @@ object Tiers {
             primaryColor = 0xFFC1440E,
             secondaryColor = 0xFF7A2B08,
             glowColor = 0xFFFF6B3D,
-            relativeSize = 0.52f,
+            relativeSize = 0.63f,
         ),
         CelestialTier(
             index = 5,
@@ -122,7 +126,7 @@ object Tiers {
             primaryColor = 0xFFE3B778,
             secondaryColor = 0xFFA8783C,
             glowColor = 0xFFFFD9A0,
-            relativeSize = 0.56f,
+            relativeSize = 0.67f,
         ),
         CelestialTier(
             index = 6,
@@ -135,7 +139,7 @@ object Tiers {
             secondaryColor = 0xFF1B4F86,
             glowColor = 0xFF5FA8FF,
             accentColor = 0xFF3E8F42,
-            relativeSize = 0.58f,
+            relativeSize = 0.70f,
         ),
         CelestialTier(
             index = 7,
@@ -147,7 +151,7 @@ object Tiers {
             primaryColor = 0xFF3B5FCF,
             secondaryColor = 0xFF21367A,
             glowColor = 0xFF6E8CFF,
-            relativeSize = 0.62f,
+            relativeSize = 0.74f,
         ),
         CelestialTier(
             index = 8,
@@ -160,7 +164,7 @@ object Tiers {
             secondaryColor = 0xFF3F8C8C,
             glowColor = 0xFFA8ECEC,
             hasRing = true,
-            relativeSize = 0.64f,
+            relativeSize = 0.78f,
         ),
         CelestialTier(
             index = 9,
@@ -173,7 +177,7 @@ object Tiers {
             secondaryColor = 0xFF9A7B4A,
             glowColor = 0xFFF3DCAE,
             hasRing = true,
-            relativeSize = 0.66f,
+            relativeSize = 0.81f,
         ),
         CelestialTier(
             index = 10,
@@ -185,7 +189,7 @@ object Tiers {
             primaryColor = 0xFFD8A15C,
             secondaryColor = 0xFF8A5C2E,
             glowColor = 0xFFF0C68A,
-            relativeSize = 0.72f,
+            relativeSize = 0.85f,
         ),
         CelestialTier(
             index = 11,
@@ -197,7 +201,7 @@ object Tiers {
             primaryColor = 0xFF9A5A42,
             secondaryColor = 0xFF3A1F18,
             glowColor = 0xFFB5613F,
-            relativeSize = 0.70f,
+            relativeSize = 0.88f,
         ),
         CelestialTier(
             index = 12,
@@ -209,7 +213,7 @@ object Tiers {
             primaryColor = 0xFFE05A3A,
             secondaryColor = 0xFF8A2A18,
             glowColor = 0xFFFF7A50,
-            relativeSize = 0.66f,
+            relativeSize = 0.91f,
         ),
         CelestialTier(
             index = 13,
@@ -221,7 +225,7 @@ object Tiers {
             primaryColor = 0xFFFFD34D,
             secondaryColor = 0xFFFF9A20,
             glowColor = 0xFFFFE28A,
-            relativeSize = 0.70f,
+            relativeSize = 0.94f,
         ),
         CelestialTier(
             index = 14,
@@ -233,7 +237,7 @@ object Tiers {
             primaryColor = 0xFF9FD0FF,
             secondaryColor = 0xFF3E7FD0,
             glowColor = 0xFFCFE6FF,
-            relativeSize = 0.76f,
+            relativeSize = 0.97f,
         ),
         CelestialTier(
             index = 15,
@@ -245,7 +249,7 @@ object Tiers {
             primaryColor = 0xFFFF6B4A,
             secondaryColor = 0xFFA02418,
             glowColor = 0xFFFF9A78,
-            relativeSize = 0.86f,
+            relativeSize = 1.00f,
         ),
         CelestialTier(
             index = 16,
@@ -257,7 +261,7 @@ object Tiers {
             primaryColor = 0xFFE8F4FF,
             secondaryColor = 0xFF86B8E8,
             glowColor = 0xFFBFE4FF,
-            relativeSize = 0.34f,
+            relativeSize = 0.56f,
         ),
         CelestialTier(
             index = 17,
@@ -269,7 +273,7 @@ object Tiers {
             primaryColor = 0xFF000000,
             secondaryColor = 0xFFFF9A2E,
             glowColor = 0xFFFFB74D,
-            relativeSize = 0.80f,
+            relativeSize = 1.00f,
         ),
     )
 

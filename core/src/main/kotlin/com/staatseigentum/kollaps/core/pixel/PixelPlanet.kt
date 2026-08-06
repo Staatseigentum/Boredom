@@ -53,8 +53,13 @@ object PixelPlanet {
     }
 
     /** How much of the available space the whole sprite should cover for this tier. */
-    fun spriteFraction(tier: CelestialTier): Float =
-        (tier.relativeSize * 1.45f).coerceIn(0.25f, 1f)
+    /**
+     * How much of the tap area the sprite fills. The tier says so itself — there is deliberately
+     * no factor in between, because a factor large enough to make the small bodies look right
+     * pushed the top of the ladder into the clamp, and everything from Jupiter upwards came out
+     * exactly the same size.
+     */
+    fun spriteFraction(tier: CelestialTier): Float = tier.relativeSize.coerceIn(0.25f, 1f)
 
     /** One full turn in milliseconds. */
     fun spinMillis(kind: BodyKind): Int = when (kind) {
