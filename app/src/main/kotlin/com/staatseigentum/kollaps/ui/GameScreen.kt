@@ -218,12 +218,14 @@ private fun TapArea(
     val squash = remember { Animatable(1f) }
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
+    val sfx = LocalSfx.current
 
     Box(
         modifier = modifier.pointerInput(Unit) {
             detectTapGestures { position ->
                 val gained = onTap()
                 effects += TapEffect(nextId++, position, Numbers.format(gained))
+                sfx?.click()
                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 scope.launch {
                     squash.snapTo(0.93f)

@@ -66,6 +66,7 @@ fun PixelButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
+    val sfx = LocalSfx.current
 
     Box(
         modifier = modifier
@@ -81,7 +82,10 @@ fun PixelButton(
                 interactionSource = interaction,
                 indication = null,
                 enabled = enabled,
-                onClick = onClick,
+                onClick = {
+                    sfx?.click()
+                    onClick()
+                },
             )
             .padding(horizontal = 14.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,

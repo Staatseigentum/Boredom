@@ -116,10 +116,14 @@ private fun PixelTab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val sfx = LocalSfx.current
     Box(
         modifier = modifier
             .background(if (selected) Nebula else SpaceElevated)
-            .clickable(onClick = onClick)
+            .clickable {
+                sfx?.click()
+                onClick()
+            }
             .padding(vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -175,10 +179,14 @@ private fun CollectorList(
 @Composable
 private fun CollectorRow(offer: CollectorOffer, onBuy: () -> Unit) {
     val enabled = offer.affordable
+    val sfx = LocalSfx.current
     PixelPanel(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = enabled, onClick = onBuy),
+            .clickable(enabled = enabled) {
+                sfx?.click()
+                onBuy()
+            },
         border = if (enabled) Positive else Outline,
         padding = 10,
     ) {
@@ -239,6 +247,7 @@ private fun CollectorRow(offer: CollectorOffer, onBuy: () -> Unit) {
 
 @Composable
 private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
+    val sfx = LocalSfx.current
     if (offers.isEmpty()) {
         EmptyHint(
             "Gerade nichts zu verbessern.\nKauf weitere Kollektoren, dann tauchen hier neue Upgrades auf.",
@@ -254,7 +263,10 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
             PixelPanel(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(enabled = offer.affordable) { onBuy(offer.upgrade.id) },
+                    .clickable(enabled = offer.affordable) {
+                        sfx?.click()
+                        onBuy(offer.upgrade.id)
+                    },
                 border = if (offer.affordable) Positive else Outline,
                 padding = 10,
             ) {

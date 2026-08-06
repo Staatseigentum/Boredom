@@ -25,6 +25,10 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   quantisiert und mit einer Bayer-Matrix gedithert. Krater, Wolkenbänder mit Sturm, Eiskappen,
   Ringe, Sternkorona, Pulsar-Jets und Akkretionsscheibe entstehen alle im Code — es gibt kein
   einziges gemaltes Bild-Asset, auch das Launcher-Icon fällt aus demselben Renderer.
+- **Klickgeräusch** auf dem Himmelskörper und auf allem, was im Menü anklickbar ist, gespielt
+  über einen `SoundPool` — der dekodiert die Probe einmal beim Start, damit ein Tipp nie auf
+  einen Decoder wartet, und lässt mehrere Instanzen überlappen, weil in einem Idle-Spiel
+  schneller getippt wird als die Probe lang ist
 - **Eingebauter Updater**: die App sieht selbst nach, ob eine neuere Version veröffentlicht
   wurde, lädt sie herunter und übergibt sie an den System-Installer
 

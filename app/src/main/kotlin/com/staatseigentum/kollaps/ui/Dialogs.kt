@@ -86,6 +86,9 @@ fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
     }
 
     val interaction = remember { MutableInteractionSource() }
+    // The overlay lands mid-tapping, so this tap clicks like every other one — a silent gap here
+    // would read as a dropped input.
+    val sfx = LocalSfx.current
 
     Box(
         modifier = Modifier
@@ -94,7 +97,10 @@ fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
             .clickable(
                 interactionSource = interaction,
                 indication = null,
-                onClick = onDismiss,
+                onClick = {
+                    sfx?.click()
+                    onDismiss()
+                },
             ),
         contentAlignment = Alignment.Center,
     ) {
