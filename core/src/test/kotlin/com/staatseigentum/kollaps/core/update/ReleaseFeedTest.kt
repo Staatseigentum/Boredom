@@ -115,4 +115,56 @@ class ReleaseFeedTest {
         assertNull(ReleaseFeed.parseList("[]"))
         assertNull(ReleaseFeed.parseList("kaputt"))
     }
+
+    @Test
+    fun `reads the payload GitHub really sends`() {
+        // Everything above is JSON we wrote ourselves, which only proves the parser agrees with
+        // our own idea of the format. This is the actual answer the API gave for the first
+        // release, shortened but otherwise untouched — including the fields we do not read, so
+        // the test also shows that an unknown key does not throw the whole check away.
+        val release = ReleaseFeed.parse(PUBLISHED_RELEASE)
+        assertNotNull(release)
+        assertEquals("v1.0.0", release.tag)
+
+        // Freshly installed from that very release: there is nothing to offer.
+        assertNull(ReleaseFeed.updateFrom(release, AppVersion.parse("1.0.0")))
+
+        // Coming from anything older, the APK asset is the one that gets picked.
+        val update = ReleaseFeed.updateFrom(release, AppVersion.parse("0.9.0"))
+        assertNotNull(update)
+        assertEquals("Kollaps v1.0.0", update.title)
+        assertEquals(989_565L, update.sizeBytes)
+        assertEquals(
+            "https://github.com/Staatseigentum/Boredom/releases/download/v1.0.0/kollaps-1.0.0.apk",
+            update.downloadUrl,
+        )
+    }
 }
+
+private val PUBLISHED_RELEASE = """
+{
+  "tag_name": "v1.0.0",
+  "target_commitish": "claude/idle-clicker-android-game-57calv",
+  "name": "Kollaps v1.0.0",
+  "body": "**Full Changelog**: https://github.com/Staatseigentum/Boredom/commits/v1.0.0",
+  "draft": false,
+  "prerelease": false,
+  "id": 366304992,
+  "created_at": "2026-08-06T14:53:37Z",
+  "published_at": "2026-08-06T14:57:08Z",
+  "html_url": "https://github.com/Staatseigentum/Boredom/releases/tag/v1.0.0",
+  "assets": [
+    {
+      "id": 504063933,
+      "name": "kollaps-1.0.0.apk",
+      "label": "",
+      "state": "uploaded",
+      "content_type": "application/vnd.android.package-archive",
+      "size": 989565,
+      "download_count": 0,
+      "browser_download_url": "https://github.com/Staatseigentum/Boredom/releases/download/v1.0.0/kollaps-1.0.0.apk"
+    }
+  ],
+  "author": { "login": "github-actions[bot]", "type": "Bot" }
+}
+""".trimIndent()
