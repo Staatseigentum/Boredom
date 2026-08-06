@@ -24,9 +24,11 @@ jobs:
 
       - name: Version bestimmen
         id: version
+        env:
+          REQUESTED_VERSION: ${{ github.event.inputs.version }}
         run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            TAG="${{ github.event.inputs.version }}"
+          if [ -n "$REQUESTED_VERSION" ]; then
+            TAG="$REQUESTED_VERSION"
           else
             TAG="${GITHUB_REF#refs/tags/}"
           fi
@@ -35,8 +37,10 @@ jobs:
           echo "Version: $TAG"
 
       - name: Signaturschlüssel prüfen
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+          if [ -z "$KEYSTORE_BASE64" ]; then
             echo "::error::Kein Signaturschlüssel hinterlegt. Ohne Signatur lässt sich das APK" \
                  "nicht installieren und der Updater kann eine bestehende Installation nicht" \
                  "ersetzen. Lege die Secrets KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS und" \
@@ -63,7 +67,9 @@ jobs:
         run: ./gradlew :core:test --no-daemon
 
       - name: Schlüssel entpacken
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/kollaps.jks"
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/kollaps.jks"
 
       - name: Signiertes APK bauen
         env:
