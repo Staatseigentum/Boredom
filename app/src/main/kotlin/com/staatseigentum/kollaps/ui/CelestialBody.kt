@@ -380,7 +380,7 @@ private fun DrawScope.drawNeutronStar(
     // Two relativistic jets sweeping around like a lighthouse.
     rotate(degrees = spin * 360f, pivot = center) {
         for (direction in listOf(-1f, 1f)) {
-            val tip = Offset(center.x, center.y + direction * radius * 7f)
+            val tip = Offset(center.x, center.y + direction * radius * 4.5f)
             drawPath(
                 path = Path().apply {
                     moveTo(center.x - radius * 0.5f, center.y)
@@ -393,7 +393,7 @@ private fun DrawScope.drawNeutronStar(
                     0f to glow.copy(alpha = 0.55f),
                     1f to Color.Transparent,
                     center = center,
-                    radius = radius * 7f,
+                    radius = radius * 4.5f,
                 ),
             )
         }
