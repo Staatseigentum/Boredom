@@ -54,6 +54,7 @@ import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
+import com.staatseigentum.kollaps.update.UpdateViewModel
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Space
@@ -61,11 +62,14 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @Composable
-fun GameScreen(model: GameViewModel) {
+fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
     val state by model.state.collectAsStateWithLifecycle()
     val stats by model.stats.collectAsStateWithLifecycle()
     val buyAmount by model.buyAmount.collectAsStateWithLifecycle()
     val offlineReport by model.offlineReport.collectAsStateWithLifecycle()
+    val updatePrompt by updateModel.prompt.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) { updateModel.checkOnLaunch() }
 
     Box(
         modifier = Modifier
@@ -103,6 +107,7 @@ fun GameScreen(model: GameViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1.15f),
+                updateSection = { UpdateCard(updateModel) },
             )
         }
 
@@ -112,6 +117,10 @@ fun GameScreen(model: GameViewModel) {
 
         if (GameEngine.hasUncelebratedTier(state)) {
             TierCelebration(tier = stats.tier, onDismiss = model::acknowledgeTier)
+        }
+
+        if (updatePrompt) {
+            UpdateDialog(updateModel)
         }
     }
 }

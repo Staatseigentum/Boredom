@@ -58,6 +58,20 @@ object Numbers {
         return if (restHours == 0L) "$days Tage" else "$days Tage $restHours Std"
     }
 
+    /** Renders a file size, e.g. `9,0 MB`. */
+    fun formatBytes(bytes: Long): String {
+        if (bytes < 1_024) return "$bytes B"
+        val units = listOf("KB", "MB", "GB", "TB")
+        var value = bytes.toDouble() / 1_024
+        var index = 0
+        while (value >= 1_024 && index < units.lastIndex) {
+            value /= 1_024
+            index++
+        }
+        val pattern = if (value >= 100) "%.0f %s" else "%.1f %s"
+        return String.format(LOCALE, pattern, value, units[index])
+    }
+
     /** Renders a multiplier, e.g. `×2,5`. */
     fun formatMultiplier(value: Double): String {
         val rendered = if (value < 1_000.0) {

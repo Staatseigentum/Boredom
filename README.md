@@ -22,6 +22,8 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **Kaufmengen** ×1 / ×10 / ×100 / Max
 - Alle Himmelskörper werden **prozedural gezeichnet** — Krater, Wolkenbänder, Ringe, Korona,
   Akkretionsscheibe. Es gibt kein einziges Bild-Asset in der App.
+- **Eingebauter Updater**: die App sieht selbst nach, ob eine neuere Version veröffentlicht
+  wurde, lädt sie herunter und übergibt sie an den System-Installer
 
 ## Aufbau
 
@@ -46,6 +48,55 @@ Das APK liegt danach unter `app/build/outputs/apk/debug/`. Der GitHub-Actions-Wo
 von dort lässt es sich direkt herunterladen und aufs Handy schieben.
 
 Voraussetzungen: JDK 17 und ein Android SDK mit Plattform 35. Minimum ist Android 7.0 (API 24).
+
+## Updates
+
+Weil die App nicht über einen Store läuft, kümmert sie sich selbst um Aktualisierungen. Sie fragt
+höchstens alle sechs Stunden die Release-Liste des eigenen Repositories ab, vergleicht die
+Versionsnummern und meldet sich nur, wenn wirklich etwas Neueres da ist. Der Download landet im
+Cache-Verzeichnis; installiert wird nichts von allein — den letzten Schritt bestätigt immer der
+System-Installer. Von Hand prüfen lässt sich jederzeit im Reiter **Kosmos**.
+
+### Neue Version veröffentlichen
+
+```bash
+git tag v1.1.0 && git push origin v1.1.0
+```
+
+Das startet `.github/workflows/release.yml`: Tests laufen, das APK wird mit der Version aus dem
+Tag gebaut, signiert, geprüft und als GitHub-Release samt APK veröffentlicht. Die Versionsnummer
+kommt komplett aus dem Tag — auch der `versionCode`, den Android braucht, um den Build überhaupt
+als Update zu akzeptieren (`1.2.3` wird zu `10203`).
+
+### Was dafür einmalig eingerichtet werden muss
+
+**1. Ein Signaturschlüssel als Repository-Secret.** Android ersetzt eine installierte App nur
+durch eine mit derselben Signatur. Der Schlüssel muss also über alle Releases hinweg derselbe
+bleiben — geht er verloren, lässt sich keine Aktualisierung mehr ausliefern.
+
+```bash
+keytool -genkeypair -v -keystore kollaps.jks -keyalg RSA -keysize 4096 \
+        -validity 10000 -alias kollaps
+base64 -w0 kollaps.jks    # Ausgabe als Secret KEYSTORE_BASE64 hinterlegen
+```
+
+Vier Secrets unter *Settings → Secrets and variables → Actions*: `KEYSTORE_BASE64`,
+`KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`. Fehlen sie, bricht der Release-Workflow mit
+einem Hinweis ab, statt ein nicht installierbares APK zu veröffentlichen.
+
+**2. Das Repository muss öffentlich sein.** Der Updater fragt die Release-API ohne Anmeldung ab.
+Solange `Boredom` privat ist, bekommt er ein 404 und zeigt „Keine Veröffentlichungen gefunden.
+Ist das Repository öffentlich?". Ein Zugriffstoken ins APK zu legen wäre keine Lösung — das APK
+kann jeder auslesen. Alternative, falls das Repo privat bleiben soll: die Releases woanders
+hosten und die Konstante `LATEST_RELEASE_URL` in `UpdateService.kt` dorthin zeigen lassen. Außer
+dieser einen Konstante weiß nichts in der App etwas von GitHub.
+
+### Grenzen
+
+Der Updater ersetzt nur **Release-Builds**. Das Debug-APK aus dem normalen CI-Lauf hat eine
+andere Anwendungs-ID (`…kollaps.debug`) und eine andere Signatur — darüber lässt sich kein
+Release installieren. Zum Spielen also einmal das APK von der Releases-Seite installieren, ab
+dann hält sich die App selbst aktuell.
 
 ## Balance
 

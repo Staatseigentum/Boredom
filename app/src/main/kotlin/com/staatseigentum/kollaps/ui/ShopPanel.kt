@@ -68,6 +68,8 @@ fun ShopPanel(
     onBuyUpgrade: (String) -> Unit,
     onCollapse: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The update section, handed in so the shop stays free of any networking concern. */
+    updateSection: @Composable () -> Unit = {},
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
 
@@ -114,6 +116,7 @@ fun ShopPanel(
                     state = state,
                     stats = stats,
                     onCollapse = onCollapse,
+                    updateSection = updateSection,
                 )
             }
         }
@@ -295,7 +298,12 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
 // ---------------------------------------------------------------------- cosmos
 
 @Composable
-private fun CosmosPanel(state: GameState, stats: Stats, onCollapse: () -> Unit) {
+private fun CosmosPanel(
+    state: GameState,
+    stats: Stats,
+    onCollapse: () -> Unit,
+    updateSection: @Composable () -> Unit,
+) {
     var confirming by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -373,6 +381,9 @@ private fun CosmosPanel(state: GameState, stats: Stats, onCollapse: () -> Unit) 
         item {
             StatRow("Offline-Grenze", Numbers.formatDuration(stats.offlineCapSeconds))
         }
+
+        item { Spacer(Modifier.height(6.dp)) }
+        item { updateSection() }
     }
 }
 

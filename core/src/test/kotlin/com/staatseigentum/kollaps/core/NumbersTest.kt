@@ -51,6 +51,14 @@ class NumbersTest {
     }
 
     @Test
+    fun `formats file sizes`() {
+        assertEquals("512 B", Numbers.formatBytes(512))
+        assertEquals("1,0 KB", Numbers.formatBytes(1_024))
+        assertEquals("9,0 MB", Numbers.formatBytes(9_444_385))
+        assertEquals("1,5 GB", Numbers.formatBytes(1_610_612_736))
+    }
+
+    @Test
     fun `formats multipliers and percentages`() {
         assertEquals("×2", Numbers.formatMultiplier(2.0))
         assertEquals("×2,50", Numbers.formatMultiplier(2.5))

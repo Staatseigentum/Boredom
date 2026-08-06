@@ -11,6 +11,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.staatseigentum.kollaps.ui.GameScreen
 import com.staatseigentum.kollaps.ui.theme.KollapsTheme
+import com.staatseigentum.kollaps.update.UpdateViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -21,6 +22,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             KollapsTheme {
                 val model: GameViewModel = viewModel()
+                val updateModel: UpdateViewModel = viewModel()
 
                 // The simulation only runs while the app is actually on screen; everything the
                 // player misses is credited as offline production on the way back in.
@@ -30,6 +32,9 @@ class MainActivity : ComponentActivity() {
                         when (event) {
                             Lifecycle.Event.ON_START -> model.onForeground()
                             Lifecycle.Event.ON_STOP -> model.onBackground()
+                            // The install permission is granted in the system settings, so the
+                            // answer only arrives when we come back to the foreground.
+                            Lifecycle.Event.ON_RESUME -> updateModel.refreshInstallPermission()
                             else -> Unit
                         }
                     }
@@ -37,7 +42,7 @@ class MainActivity : ComponentActivity() {
                     onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
                 }
 
-                GameScreen(model)
+                GameScreen(model, updateModel)
             }
         }
     }

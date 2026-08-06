@@ -1,0 +1,106 @@
+name: Release
+
+# Tag a commit with v1.1.0 and push the tag — this builds a signed APK and publishes it as a
+# GitHub Release. The in-app updater reads exactly that release feed.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version, z. B. v1.1.0'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Signiertes APK veröffentlichen
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version bestimmen
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            TAG="${{ github.event.inputs.version }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "name=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Version: $TAG"
+
+      - name: Signaturschlüssel prüfen
+        run: |
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "::error::Kein Signaturschlüssel hinterlegt. Ohne Signatur lässt sich das APK" \
+                 "nicht installieren und der Updater kann eine bestehende Installation nicht" \
+                 "ersetzen. Lege die Secrets KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS und" \
+                 "KEY_PASSWORD an — siehe README, Abschnitt Updates."
+            exit 1
+          fi
+
+      - name: JDK 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Android SDK bereitstellen
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Spiellogik testen
+        run: ./gradlew :core:test --no-daemon
+
+      - name: Schlüssel entpacken
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/kollaps.jks"
+
+      - name: Signiertes APK bauen
+        env:
+          KOLLAPS_VERSION_NAME: ${{ steps.version.outputs.name }}
+          KOLLAPS_KEYSTORE: ${{ runner.temp }}/kollaps.jks
+          KOLLAPS_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KOLLAPS_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KOLLAPS_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: APK benennen
+        id: apk
+        run: |
+          SOURCE=$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)
+          if [ -z "$SOURCE" ]; then
+            echo "::error::Kein APK gebaut"
+            exit 1
+          fi
+          TARGET="kollaps-${{ steps.version.outputs.name }}.apk"
+          cp "$SOURCE" "$TARGET"
+          echo "path=$TARGET" >> "$GITHUB_OUTPUT"
+          ls -lh "$TARGET"
+
+      - name: Signatur bestätigen
+        run: |
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort | tail -n 1)
+          "$APKSIGNER" verify --print-certs "${{ steps.apk.outputs.path }}"
+
+      - name: Schlüssel wieder entfernen
+        if: always()
+        run: rm -f "$RUNNER_TEMP/kollaps.jks"
+
+      - name: Release veröffentlichen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            "${{ steps.apk.outputs.path }}" \
+            --title "Kollaps ${{ steps.version.outputs.tag }}" \
+            --generate-notes
