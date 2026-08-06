@@ -61,6 +61,8 @@ fun Starfield(
     Canvas(modifier = modifier) {
         val width = size.width
         val height = size.height
+        // Gradients with a radius of zero throw, and a layout pass can report an empty size.
+        if (width <= 0f || height <= 0f) return@Canvas
 
         drawCircle(
             brush = Brush.radialGradient(

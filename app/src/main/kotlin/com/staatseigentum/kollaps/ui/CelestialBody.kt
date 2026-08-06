@@ -62,6 +62,8 @@ fun CelestialBody(
     Canvas(modifier = modifier) {
         val center = Offset(size.width / 2f, size.height / 2f)
         val radius = min(size.width, size.height) / 2f * tier.relativeSize
+        // A layout pass can hand us a zero sized canvas, and a gradient with radius zero throws.
+        if (radius <= 0f) return@Canvas
         drawTier(tier, surface, center, radius, spin, pulse)
     }
 }
