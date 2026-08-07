@@ -78,7 +78,16 @@ object Upgrades {
         Triple(25, 250.0, "Mk III"),
         Triple(50, 3_000.0, "Mk IV"),
         Triple(100, 40_000.0, "Mk V"),
+        Triple(200, 600_000.0, "Mk VI"),
     )
+
+    /**
+     * An unlock that names the body it waits for instead of its position on the ladder.
+     *
+     * Tier indices move whenever a step is inserted, and an unlock that quietly slid one rung
+     * down is invisible until someone plays that far. The name is the stable thing.
+     */
+    private fun atTier(name: String) = UnlockCondition.TierReached(Tiers.indexOf(name))
 
     private val tapUpgrades: List<Upgrade> = listOf(
         upgradeTap("tap_1", "Verstärkte Finger", "Handschuhe mit Servomotoren. Billig, laut, effektiv.", 100.0, 200.0),
@@ -89,6 +98,8 @@ object Upgrades {
         upgradeTap("tap_6", "Quantenfinger", "Berührt alle möglichen Stellen gleichzeitig.", 10_000_000_000.0, 18_000_000_000.0),
         upgradeTap("tap_7", "Nukleare Berührung", "Fusion auf Fingerdruck. Bitte nicht kratzen.", 500_000_000_000.0, 900_000_000_000.0),
         upgradeTap("tap_8", "Ereignishorizont-Griff", "Was du berührst, kommt nicht zurück.", 20_000_000_000_000.0, 35_000_000_000_000.0),
+        upgradeTap("tap_9", "Raumzeitfalte", "Du faltest die Strecke weg, statt sie zurückzulegen.", 700_000_000_000_000.0, 1_200_000_000_000_000.0),
+        upgradeTap("tap_10", "Hand der Singularität", "Ein Fingerzeig, und die Materie ordnet sich.", 12_000_000_000_000_000.0, 20_000_000_000_000_000.0),
     )
 
     private val synergyUpgrades: List<Upgrade> = listOf(
@@ -116,7 +127,16 @@ object Upgrades {
             flavor = "Jeder Tipp hallt durch jede Maschine, die du besitzt.",
             cost = 50_000_000_000.0,
             effect = UpgradeEffect.TapFromProduction(0.10),
-            unlock = UnlockCondition.TierReached(12),
+            unlock = atTier("Roter Zwerg"),
+            category = UpgradeCategory.TAP,
+        ),
+        Upgrade(
+            id = "synergy_4",
+            name = "Gezeitenkraft",
+            flavor = "Der Körper zerrt selbst an dem, was ihn abbaut. Du hältst nur noch dagegen.",
+            cost = 1_500_000_000_000_000.0,
+            effect = UpgradeEffect.TapFromProduction(0.22),
+            unlock = atTier("Hyperriese"),
             category = UpgradeCategory.TAP,
         ),
     )
@@ -128,7 +148,7 @@ object Upgrades {
             flavor = "Alle Bahnen in einer Reihe. Der Rest ist Logistik.",
             cost = 1_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(2.0),
-            unlock = UnlockCondition.TierReached(5),
+            unlock = atTier("Venus"),
             category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
@@ -137,7 +157,7 @@ object Upgrades {
             flavor = "Presst das Unsichtbare zu etwas, das man wiegen kann.",
             cost = 1_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(2.0),
-            unlock = UnlockCondition.TierReached(9),
+            unlock = atTier("Saturn"),
             category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
@@ -146,7 +166,7 @@ object Upgrades {
             flavor = "Das Nichts ist erstaunlich ergiebig, wenn man es schüttelt.",
             cost = 1_000_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(2.0),
-            unlock = UnlockCondition.TierReached(13),
+            unlock = atTier("Sonne"),
             category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
@@ -155,7 +175,25 @@ object Upgrades {
             flavor = "Du räumst auf, was das Universum seit 13 Milliarden Jahren verstreut.",
             cost = 100_000_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(3.0),
-            unlock = UnlockCondition.TierReached(15),
+            unlock = atTier("Roter Überriese"),
+            category = UpgradeCategory.COSMIC,
+        ),
+        Upgrade(
+            id = "cosmic_5",
+            name = "Raumzeitgefälle",
+            flavor = "Du legst das Universum leicht schräg und lässt den Rest herunterrollen.",
+            cost = 4_000_000_000_000_000.0,
+            effect = UpgradeEffect.GlobalMultiplier(3.0),
+            unlock = atTier("Weißer Zwerg"),
+            category = UpgradeCategory.COSMIC,
+        ),
+        Upgrade(
+            id = "cosmic_6",
+            name = "Letzte Symmetrie",
+            flavor = "Die eine Regel, aus der alle anderen folgen. Du hast sie umgestellt.",
+            cost = 22_000_000_000_000_000.0,
+            effect = UpgradeEffect.GlobalMultiplier(4.0),
+            unlock = atTier("Magnetar"),
             category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
@@ -164,7 +202,7 @@ object Upgrades {
             flavor = "Sie arbeiten auch weiter, wenn du das Handy weglegst.",
             cost = 500_000.0,
             effect = UpgradeEffect.OfflineEfficiency(1.0),
-            unlock = UnlockCondition.TierReached(6),
+            unlock = atTier("Erde"),
             category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
@@ -173,7 +211,16 @@ object Upgrades {
             flavor = "Lagert die Ausbeute ein, bis du wiederkommst.",
             cost = 500_000_000.0,
             effect = UpgradeEffect.OfflineCapHours(24.0),
-            unlock = UnlockCondition.TierReached(10),
+            unlock = atTier("Jupiter"),
+            category = UpgradeCategory.COSMIC,
+        ),
+        Upgrade(
+            id = "offline_3",
+            name = "Trägheitsspeicher",
+            flavor = "Was die Anlage nachts fördert, wartet jetzt zwei Tage auf dich.",
+            cost = 8_000_000_000_000.0,
+            effect = UpgradeEffect.OfflineCapHours(48.0),
+            unlock = atTier("Blauer Riese"),
             category = UpgradeCategory.COSMIC,
         ),
     )

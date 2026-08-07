@@ -113,12 +113,13 @@ class PixelPlanetTest {
 
     @Test
     fun `the body never shrinks on the way up`() {
-        // The whole promise of the ladder is that you get bigger. The neutron star is the one
-        // deliberate exception: the supergiant collapses, and that step is supposed to be small.
-        val collapse = Tiers.all.first { it.kind == BodyKind.EXOTIC }
+        // The whole promise of the ladder is that you get bigger, and it holds all the way to
+        // the hypergiant. Then the star collapses, and the three remnants after it are supposed
+        // to be small — that shrinking is the point of that stretch, not a bug in it.
+        val remnants = Tiers.all.filter { it.kind == BodyKind.EXOTIC }
         var previous = 0f
         for (tier in Tiers.all) {
-            if (tier.index == collapse.index) continue
+            if (tier.kind == BodyKind.EXOTIC) continue
             val fraction = PixelPlanet.spriteFraction(tier)
             assertTrue(
                 fraction >= previous,
@@ -126,10 +127,14 @@ class PixelPlanetTest {
             )
             previous = fraction
         }
-        assertTrue(
-            PixelPlanet.spriteFraction(collapse) < PixelPlanet.spriteFraction(Tiers.all[collapse.index - 1]),
-            "Der Neutronenstern ist nicht kleiner als der Überriese davor",
-        )
+
+        val peak = PixelPlanet.spriteFraction(Tiers.all[remnants.first().index - 1])
+        for (remnant in remnants) {
+            assertTrue(
+                PixelPlanet.spriteFraction(remnant) < peak,
+                "${remnant.name} ist nicht kleiner als der Stern, aus dem er wurde",
+            )
+        }
     }
 
     @Test
@@ -137,7 +142,23 @@ class PixelPlanetTest {
         // Guards the mistake this replaced: a multiplier on top of the tier's own size pushed
         // everything from Jupiter upwards into the clamp, so six steps rendered identically.
         val sizes = Tiers.all.map { PixelPlanet.spriteFraction(it) }.toSet()
-        assertTrue(sizes.size >= 16, "Nur ${sizes.size} verschiedene Größen auf ${Tiers.all.size} Stufen")
+        assertTrue(
+            sizes.size >= Tiers.all.size - 2,
+            "Nur ${sizes.size} verschiedene Größen auf ${Tiers.all.size} Stufen",
+        )
+    }
+
+    @Test
+    fun `no two neighbouring tiers land on the same sprite resolution`() {
+        // Sizes snap to an eight pixel grid, so fractions that differ on paper can still round
+        // to the same buffer. Twenty-five rungs share the range that eighteen used to, which is
+        // exactly the condition under which that starts happening.
+        Tiers.all.zipWithNext { a, b ->
+            assertTrue(
+                PixelPlanet.size(a) != PixelPlanet.size(b),
+                "${a.name} und ${b.name} rendern beide auf ${PixelPlanet.size(a)} Pixeln",
+            )
+        }
     }
 
     @Test
@@ -158,9 +179,9 @@ class PixelPlanetTest {
     @Test
     fun `the buffer grows with the body`() {
         val meteorite = PixelPlanet.size(Tiers.first)
-        val supergiant = PixelPlanet.size(Tiers.all.first { it.name == "Roter Überriese" })
-        assertTrue(supergiant > meteorite, "$supergiant ist nicht größer als $meteorite")
-        assertEquals(PixelPlanet.BASE_SIZE, supergiant, "Die größte Stufe schöpft die Auflösung nicht aus")
+        val biggest = PixelPlanet.size(Tiers.all.maxBy { PixelPlanet.spriteFraction(it) })
+        assertTrue(biggest > meteorite, "$biggest ist nicht größer als $meteorite")
+        assertEquals(PixelPlanet.BASE_SIZE, biggest, "Die größte Stufe schöpft die Auflösung nicht aus")
         for (tier in Tiers.all) {
             assertEquals(0, PixelPlanet.size(tier) % 8, "${tier.name} liegt nicht auf dem Raster")
         }

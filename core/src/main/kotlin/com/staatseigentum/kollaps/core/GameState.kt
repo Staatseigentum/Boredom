@@ -90,7 +90,7 @@ data class GameState(
          * added since has a default, so an old save still reads — it simply arrives with none of
          * them, which is exactly right for a player who has not earned any yet.
          */
-        const val SAVE_VERSION = 2
+        const val SAVE_VERSION = 3
 
         fun new(nowMillis: Long): GameState = GameState(
             lastSeenAt = nowMillis,

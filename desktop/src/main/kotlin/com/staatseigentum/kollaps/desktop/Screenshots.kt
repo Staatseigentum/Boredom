@@ -49,20 +49,17 @@ fun main(args: Array<String>) {
         println("  $name.png  $note")
     }
 
-    fun atTier(tier: Int): DesktopGame = DesktopGame().apply { seekToTier(tier) }
+    // By name rather than by number, so inserting a body into the ladder does not silently
+    // repoint every screenshot at its neighbour.
+    fun at(name: String): DesktopGame = DesktopGame().apply { seekToTier(Tiers.indexOf(name)) }
 
     println("Bildschirme:")
-    shoot("01-start", atTier(0), note = "(${Tiers.all[0].name})")
-    shoot("02-erde", atTier(6), note = "(${Tiers.all[6].name})")
-    shoot("03-saturn", atTier(9), note = "(${Tiers.all[9].name})")
-    shoot("04-ueberriese", atTier(15), note = "(${Tiers.all[15].name})")
-    shoot("05-neutronenstern", atTier(16), note = "(${Tiers.all[16].name})")
-    shoot("06-schwarzes-loch", atTier(17), note = "(${Tiers.all[17].name})")
+    for ((file, body) in LADDER_SHOTS) shoot(file, at(body), note = "($body)")
 
     // The new panels are all about a long game: an empty save shows an empty prestige shop, no
     // achievements and no collectors in orbit, which is exactly the state that proves nothing.
     val veteran = DesktopGame().apply {
-        seekToTier(12)
+        seekToTier(Tiers.indexOf("Saturn"))
         edit {
             it.copy(
                 mass = it.mass * 60,
@@ -78,15 +75,14 @@ fun main(args: Array<String>) {
         }
         edit { GameEngine.award(it) }
     }
-    shoot("07-kollektoren", veteran, tab = 0, note = "(gespieltes Spiel)")
-    shoot("08-erfolge", veteran, tab = 2)
-    shoot("09-kosmos", veteran, tab = 3)
+    shoot("20-kollektoren", veteran, tab = 0, note = "(gespieltes Spiel)")
+    shoot("21-erfolge", veteran, tab = 2)
+    shoot("22-kosmos", veteran, tab = 3)
 
-    // The reported bug lives in the *change* of tier, not in any single one: the sheet was kept
-    // from the previous body while the edge length was recomputed for the new one. So this shot
-    // walks the ladder inside one composition, exactly as playing does.
+    // The tier change is its own bug surface, so it gets walked inside one composition rather
+    // than photographed rung by rung — see [COLLAPSE_WALK].
     println("Stufenwechsel in einer laufenden Komposition:")
-    val game = DesktopGame().apply { seekToTier(15) }
+    val game = DesktopGame().apply { seekToTier(Tiers.indexOf(COLLAPSE_WALK.first())) }
     ImageComposeScene(
         width = (width * density.density).toInt(),
         height = (height * density.density).toInt(),
@@ -96,15 +92,15 @@ fun main(args: Array<String>) {
     }.let { scene ->
       try {
         var time = 0L
-        for ((step, tier) in listOf(15, 16, 17).withIndex()) {
-            game.seekToTier(tier)
+        for ((step, body) in COLLAPSE_WALK.withIndex()) {
+            game.seekToTier(Tiers.indexOf(body))
             repeat(3) {
                 time += 16_000_000
                 scene.render(time)
             }
             time += 16_000_000
             val image = scene.render(time)
-            val name = "wechsel-${step + 1}-${Tiers.all[tier].name.lowercase().replace(' ', '-')}"
+            val name = "wechsel-${step + 1}-${body.lowercase().replace(' ', '-')}"
             File(out, "$name.png").writeBytes(image.encodeToData(EncodedImageFormat.PNG)!!.bytes)
             println("  $name.png")
         }
@@ -115,3 +111,26 @@ fun main(args: Array<String>) {
 
     println("geschrieben nach ${out.absolutePath}")
 }
+
+/** One shot per interesting rung: file name, and the body it should be standing on. */
+private val LADDER_SHOTS = listOf(
+    "01-start" to "Meteorit",
+    "02-mond" to "Mond",
+    "03-erde" to "Erde",
+    "04-saturn" to "Saturn",
+    "05-heisser-jupiter" to "Heißer Jupiter",
+    "06-ueberriese" to "Roter Überriese",
+    "07-hyperriese" to "Hyperriese",
+    "08-weisser-zwerg" to "Weißer Zwerg",
+    "09-neutronenstern" to "Neutronenstern",
+    "10-magnetar" to "Magnetar",
+    "11-schwarzes-loch" to "Schwarzes Loch",
+)
+
+/**
+ * The stretch where the star collapses, walked inside one composition.
+ *
+ * This is where the reported sprite bug lived: the sheet was kept from the previous body while
+ * the edge length was recomputed for the new one, and these four rungs change size the hardest.
+ */
+private val COLLAPSE_WALK = listOf("Hyperriese", "Weißer Zwerg", "Neutronenstern", "Magnetar", "Schwarzes Loch")

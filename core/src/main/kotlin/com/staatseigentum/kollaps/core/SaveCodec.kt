@@ -29,9 +29,45 @@ object SaveCodec {
         }
     }
 
+    /**
+     * How a tier index written by save version 2 maps onto the current ladder.
+     *
+     * Version 3 inserted seven bodies into the middle of the ladder, so every index above the
+     * dwarf planet now means a different thing than it did. Two numbers in the save are raw
+     * indices — the best tier ever reached and the highest one already celebrated — and left
+     * alone they would quietly demote a player's record and re-run celebrations they have
+     * already seen. Everything else about the tier is derived from mass and needs no help.
+     */
+    private val TIERS_V2_TO_V3 = intArrayOf(
+        0, // Meteorit
+        1, // Asteroid
+        2, // Zwergplanet
+        4, // Merkur          (Mond eingefügt)
+        6, // Mars            (Titan eingefügt)
+        7, // Venus
+        8, // Erde
+        10, // Neptun         (Supererde eingefügt)
+        11, // Uranus
+        12, // Saturn
+        13, // Jupiter
+        15, // Brauner Zwerg  (Heißer Jupiter eingefügt)
+        16, // Roter Zwerg
+        17, // Sonne
+        18, // Blauer Riese
+        19, // Roter Überriese
+        22, // Neutronenstern (Hyperriese und Weißer Zwerg eingefügt)
+        24, // Schwarzes Loch (Magnetar eingefügt)
+    )
+
     /** Brings a save written by an older build up to the current shape. */
     private fun migrate(state: GameState): GameState {
         var migrated = state
+        if (migrated.version < 3) {
+            migrated = migrated.copy(
+                bestTier = remapTier(migrated.bestTier),
+                celebratedTier = remapTier(migrated.celebratedTier),
+            )
+        }
         if (migrated.version < GameState.SAVE_VERSION) {
             migrated = migrated.copy(version = GameState.SAVE_VERSION)
         }
@@ -63,6 +99,9 @@ object SaveCodec {
         }
         return migrated
     }
+
+    private fun remapTier(old: Int): Int =
+        TIERS_V2_TO_V3.getOrNull(old) ?: old.coerceIn(Tiers.all.indices)
 
     /**
      * The save as something a player can copy out of the app and paste back in.

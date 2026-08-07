@@ -21,10 +21,15 @@ object Achievements {
 
     val all: List<Achievement> = buildList {
         // ---- the ladder
+        add(tier("a_tier_mond", "Erster Blick nach oben", "Grau, still, voller Krater.", "Mond"))
         add(tier("a_tier_erde", "Blauer Punkt", "Der einzige Ort mit Kaffee.", "Erde"))
+        add(tier("a_tier_supererde", "Schwerer Boden", "Doppelt so schwer wie zuhause.", "Supererde"))
         add(tier("a_tier_saturn", "Beringt", "Der einzige Planet mit gutem Schmuck.", "Saturn"))
         add(tier("a_tier_sonne", "Hauptreihe", "Ganz normal, und trotzdem alles.", "Sonne"))
+        add(tier("a_tier_hyper", "So groß es geht", "Größer wird ein Stern nicht.", "Hyperriese"))
+        add(tier("a_tier_weiss", "Heiße Asche", "Was übrig bleibt, wenn ein Stern fertig ist.", "Weißer Zwerg"))
         add(tier("a_tier_neutron", "Ein Teelöffel", "Wiegt so viel wie ein Gebirge.", "Neutronenstern"))
+        add(tier("a_tier_magnetar", "Unter Spannung", "Ein Feld, das dich aus tausend Kilometern zerlegt.", "Magnetar"))
         add(tier("a_tier_loch", "Ende der Leiter", "Ab hier kommt nichts mehr zurück.", "Schwarzes Loch"))
 
         // ---- tapping
@@ -99,7 +104,8 @@ object Achievements {
                 "Mit bloßen Händen",
                 "Erreiche den Merkur, ohne einen einzigen Kollektor zu besitzen.",
             ) { state ->
-                Tiers.forMass(state.runMass).index >= 3 && state.collectors.values.all { it == 0 }
+                Tiers.forMass(state.runMass).index >= Tiers.indexOf("Merkur") &&
+                    state.collectors.values.all { it == 0 }
             },
         )
         add(

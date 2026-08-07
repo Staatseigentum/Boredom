@@ -65,6 +65,30 @@ class SaveCodecTest {
     }
 
     @Test
+    fun `a save from before the ladder grew still points at the same bodies`() {
+        // Version 3 pushed seven bodies into the middle of the ladder. A version 2 save stores
+        // raw indices, so without the remap a player who had reached the neutron star would find
+        // their record demoted to the red supergiant and be shown celebrations again.
+        val v2 = """
+            {"version":2,"mass":1.0,"runMass":1.0,"totalMass":1.0,
+             "bestTier":16,"celebratedTier":13,"taps":5}
+        """.trimIndent()
+
+        val decoded = SaveCodec.decode(v2)!!
+        assertEquals(GameState.SAVE_VERSION, decoded.version)
+        assertEquals(Tiers.indexOf("Neutronenstern"), decoded.bestTier)
+        assertEquals(Tiers.indexOf("Sonne"), decoded.celebratedTier)
+    }
+
+    @Test
+    fun `a save written by this build is left alone`() {
+        val current = sample.copy(bestTier = 22, celebratedTier = 20)
+        val decoded = SaveCodec.decode(SaveCodec.encode(current))!!
+        assertEquals(22, decoded.bestTier)
+        assertEquals(20, decoded.celebratedTier)
+    }
+
+    @Test
     fun `saves stay small`() {
         // The save goes into DataStore on every autosave, so it must not balloon.
         assertTrue(SaveCodec.encode(sample).length < 2_000)

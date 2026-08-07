@@ -1,8 +1,8 @@
 # Kollaps
 
 Ein kleines Idle-Clicker-Spiel für Android. Du tippst nicht auf Kekse, sondern auf Himmelskörper:
-angefangen beim Meteoriten kletterst du Stufe für Stufe die Leiter hoch — Asteroid, Merkur, Erde,
-Saturn, Sonne, Neutronenstern — bis am Ende das Schwarze Loch steht.
+angefangen beim Meteoriten kletterst du Stufe für Stufe die Leiter hoch — Asteroid, Mond, Erde,
+Saturn, Sonne, Hyperriese, Neutronenstern — bis am Ende das Schwarze Loch steht.
 
 Jede gesammelte Kilogramm Masse zählt. Sobald genug zusammenkommt, wird aus deinem Körper der
 nächstgrößere, und der produziert dauerhaft mehr. Am Ende der Leiter kannst du **kollabieren**:
@@ -10,23 +10,32 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 
 ## Was drin ist
 
-- **18 Stufen** vom Meteoriten bis zum Schwarzen Loch, jede mit eigenem Aussehen und eigenem
-  Produktionsmultiplikator
+- **25 Stufen** vom Meteoriten bis zum Schwarzen Loch, jede mit eigenem Aussehen und eigenem
+  Produktionsmultiplikator. Die letzten vier sind der Zusammenbruch: Hyperriese, Weißer Zwerg,
+  Neutronenstern, Magnetar
 - **12 Kollektoren** als Idle-Produzenten, vom Staubfänger bis zum Urknall-Echo, mit
   Cookie-Clicker-typischer Preissteigerung von 15 % pro Stück
-- **65 Upgrades**: Tipp-Verstärker, Verdopplungen pro Kollektor, globale Multiplikatoren,
-  Offline-Verbesserungen
+- **83 Upgrades**: Tipp-Verstärker, fünf Verdopplungsstufen pro Kollektor, globale
+  Multiplikatoren, Offline-Verbesserungen
 - **Offline-Produktion** — deine Kollektoren arbeiten weiter, während die App zu ist
-  (standardmäßig 50 % für bis zu 8 Stunden, per Upgrade auf 100 % und 24 Stunden)
-- **Prestige** über den Kollaps: Singularitäten geben je +10 % auf alles, dauerhaft
+  (standardmäßig 50 % für bis zu 8 Stunden, per Upgrade auf 100 % und 48 Stunden)
+- **Prestige** über den Kollaps: Singularitäten geben je +10 % auf alles, dauerhaft — und im
+  Kosmos-Tab **10 Prestige-Upgrades**, die sie dauerhaft ausgeben
+- **Kometen**, die alle paar Minuten durchs Bild ziehen und nur zahlen, wenn man sie trifft:
+  geschenkte Produktion, ein Schub, oder eine Minute mit hundertfachem Tippwert
+- **36 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
+  gerade wie viel liefert
+- Deine Kollektoren **kreisen sichtbar** um den Körper, eine Bahn pro Sorte
+- **Spielstand exportieren und einlesen** — die App ist sideloaded, also liegt der Stand nur auf
+  dem Gerät und geht mit einer Deinstallation verloren
 - **Kaufmengen** ×1 / ×10 / ×100 / Max
 - Durchgehend **Pixel Art**: jeder Himmelskörper ist ein Sprite mit 24 Rotationsframes, gerendert
   aus einer Kugelprojektion über eine Oberflächentextur, auf eine Handvoll Palettenstufen
   quantisiert und mit einer 8×8-Bayer-Matrix gedithert. Krater, Wolkenbänder mit Sturm, Eiskappen,
   Ringe, Sterngranulation, Pulsar-Jets und Akkretionsscheibe entstehen alle im Code — es gibt kein
   einziges gemaltes Bild-Asset, auch das Launcher-Icon fällt aus demselben Renderer.
-- Die **Auflösung wächst mit der Stufe**, von 128 px beim Meteoriten bis 288 px beim Schwarzen
-  Loch. Eine feste Auflösung für alle geht nicht: Sprites werden ganzzahlig vergrößert, also
+- Die **Auflösung wächst mit der Stufe**, von 96 px beim Meteoriten bis 288 px beim Hyperriesen
+  und beim Schwarzen Loch. Eine feste Auflösung für alle geht nicht: Sprites werden ganzzahlig vergrößert, also
   landen kleine Körper bei Faktor 1 und verlieren ihre Pixelblöcke ganz, während große auf
   Faktor 2 zurückfallen müssten. So bleibt der Faktor über die ganze Leiter gleich — die Pixel
   sind im ganzen Spiel gleich groß, und das Detail wächst mit dem, was man tatsächlich sieht.
@@ -59,7 +68,7 @@ macht — dadurch lassen sich die Planeten ohne Gerät rendern und in `PixelPlan
 
 ```bash
 ./gradlew --configure-on-demand :desktop:run              # von vorn
-./gradlew --configure-on-demand :desktop:run --args="--tier 17"   # direkt beim Neutronenstern
+./gradlew --configure-on-demand :desktop:run --args="--tier 23"   # direkt beim Neutronenstern
 ```
 
 Das ist kein Nachbau: `desktop` kompiliert die Oberflächen-Quellen direkt aus `app`. Möglich ist

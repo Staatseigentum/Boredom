@@ -108,9 +108,12 @@ class BalanceSimulationTest {
 
         assertTrue(run.tierTimes.getValue(1) < 120, "Der erste Aufstieg dauert zu lange")
         assertTrue(run.tierTimes.getValue(2) < 300, "Der zweite Aufstieg dauert zu lange")
+        // By name, not by number: the ladder gained seven rungs in the middle, and an index here
+        // would have quietly started asking for a nearer body than it used to.
+        val earth = Tiers.indexOf("Erde")
         assertTrue(
-            run.tierTimes.keys.max() >= 6,
-            "In der ersten Stunde nur bis Stufe ${run.tierTimes.keys.max()}",
+            run.tierTimes.keys.max() >= earth,
+            "In der ersten Stunde nur bis ${Tiers.byIndex(run.tierTimes.keys.max()).name}",
         )
     }
 
