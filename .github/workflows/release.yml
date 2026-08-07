@@ -64,7 +64,9 @@ jobs:
           "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Spiellogik testen
-        run: ./gradlew :core:test --no-daemon
+        run: |
+          set -o pipefail
+          ./gradlew :core:test --no-daemon --console=plain 2>&1 | tail -n 40
 
       - name: Schlüssel entpacken
         env:
@@ -78,7 +80,9 @@ jobs:
           KOLLAPS_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KOLLAPS_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KOLLAPS_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleRelease --no-daemon --console=plain 2>&1 | tail -n 40
 
       - name: APK benennen
         id: apk
