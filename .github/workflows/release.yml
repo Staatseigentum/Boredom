@@ -65,8 +65,14 @@ jobs:
 
       - name: Spiellogik testen
         run: |
-          set -o pipefail
-          ./gradlew :core:test --no-daemon --console=plain 2>&1 | tail -n 40
+          set +e
+          ./gradlew :core:test --no-daemon --console=plain > build.log 2>&1
+          code=$?
+          # Kotlin's own error lines first — they are what a failure here almost always is.
+          grep -E "^e: |^\\* What went wrong|^Caused by|FAILURE:" build.log | head -n 40
+          echo "--- letzte Zeilen ---"
+          tail -n 20 build.log
+          exit $code
 
       - name: Schlüssel entpacken
         env:
@@ -81,8 +87,14 @@ jobs:
           KOLLAPS_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KOLLAPS_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          set -o pipefail
-          ./gradlew :app:assembleRelease --no-daemon --console=plain 2>&1 | tail -n 40
+          set +e
+          ./gradlew :app:assembleRelease --no-daemon --console=plain > build.log 2>&1
+          code=$?
+          # Kotlin's own error lines first — they are what a failure here almost always is.
+          grep -E "^e: |^\\* What went wrong|^Caused by|FAILURE:" build.log | head -n 40
+          echo "--- letzte Zeilen ---"
+          tail -n 20 build.log
+          exit $code
 
       - name: APK benennen
         id: apk

@@ -35,18 +35,36 @@ jobs:
 
       - name: Spiellogik testen
         run: |
-          set -o pipefail
-          ./gradlew :core:test --no-daemon --console=plain 2>&1 | tail -n 40
+          set +e
+          ./gradlew :core:test --no-daemon --console=plain > build.log 2>&1
+          code=$?
+          # Kotlin's own error lines first — they are what a failure here almost always is.
+          grep -E "^e: |^\\* What went wrong|^Caused by|FAILURE:" build.log | head -n 40
+          echo "--- letzte Zeilen ---"
+          tail -n 20 build.log
+          exit $code
 
       - name: Debug-APK bauen
         run: |
-          set -o pipefail
-          ./gradlew :app:assembleDebug --no-daemon --console=plain 2>&1 | tail -n 40
+          set +e
+          ./gradlew :app:assembleDebug --no-daemon --console=plain > build.log 2>&1
+          code=$?
+          # Kotlin's own error lines first — they are what a failure here almost always is.
+          grep -E "^e: |^\\* What went wrong|^Caused by|FAILURE:" build.log | head -n 40
+          echo "--- letzte Zeilen ---"
+          tail -n 20 build.log
+          exit $code
 
       - name: Release-APK bauen (unsigniert, prüft R8)
         run: |
-          set -o pipefail
-          ./gradlew :app:assembleRelease --no-daemon --console=plain 2>&1 | tail -n 40
+          set +e
+          ./gradlew :app:assembleRelease --no-daemon --console=plain > build.log 2>&1
+          code=$?
+          # Kotlin's own error lines first — they are what a failure here almost always is.
+          grep -E "^e: |^\\* What went wrong|^Caused by|FAILURE:" build.log | head -n 40
+          echo "--- letzte Zeilen ---"
+          tail -n 20 build.log
+          exit $code
 
       - name: APK hochladen
         uses: actions/upload-artifact@v4
@@ -85,10 +103,15 @@ jobs:
 
       - name: Bildschirme rendern
         run: |
-          set -o pipefail
+          set +e
           ./gradlew --configure-on-demand --no-daemon --console=plain \
             :desktop:run -PmainClass=com.staatseigentum.kollaps.desktop.ScreenshotsKt \
-            --args="build/screenshots" 2>&1 | tail -n 40
+            --args="build/screenshots" > build.log 2>&1
+          code=$?
+          grep -E "^e: |^\\* What went wrong|^Caused by|Exception|FAILURE:" build.log | head -n 40
+          echo "--- letzte Zeilen ---"
+          tail -n 20 build.log
+          exit $code
 
       - name: Bildschirme hochladen
         uses: actions/upload-artifact@v4
