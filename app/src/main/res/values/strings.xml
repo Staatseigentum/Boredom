@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Kollaps</string>
+
+    <string name="channel_yield">Ertrag</string>
+    <string name="channel_yield_description">Meldet sich, wenn die Kollektoren voll gelaufen sind.</string>
+    <string name="notification_title">Deine Kollektoren haben gearbeitet</string>
 </resources>

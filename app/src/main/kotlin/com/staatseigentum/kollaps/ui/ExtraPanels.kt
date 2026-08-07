@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
@@ -33,6 +36,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.Achievements
 import com.staatseigentum.kollaps.core.GameEngine
+import com.staatseigentum.kollaps.core.History
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Numbers
@@ -45,6 +49,9 @@ import com.staatseigentum.kollaps.ui.theme.Outline
 import com.staatseigentum.kollaps.ui.theme.Positive
 import com.staatseigentum.kollaps.ui.theme.SpaceElevated
 import com.staatseigentum.kollaps.ui.theme.Starlight
+import kotlin.math.floor
+import kotlin.math.ln
+import kotlin.math.roundToInt
 
 /** Achievements, and the statistics that explain how they were earned. */
 @Composable
@@ -71,6 +78,37 @@ fun AchievementList(state: GameState, modifier: Modifier = Modifier) {
                             line.value,
                             style = MaterialTheme.typography.bodySmall,
                             color = Starlight,
+                        )
+                    }
+                }
+            }
+        }
+
+        if (History.isWorthShowing(state.history)) {
+            item {
+                PixelPanel(modifier = Modifier.fillMaxWidth()) {
+                    PixelLabel("Produktion, letzte halbe Stunde", size = 13)
+                    Spacer(Modifier.height(8.dp))
+                    Sparkline(
+                        samples = state.history,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            text = Numbers.formatRate(state.history.min()),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Muted,
+                        )
+                        Text(
+                            text = Numbers.formatRate(state.history.max()),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Ember,
                         )
                     }
                 }
@@ -227,6 +265,7 @@ fun SettingsSection(
     onSound: (Boolean) -> Unit,
     onHaptics: (Boolean) -> Unit,
     onAutoBuy: (Boolean) -> Unit,
+    onReminders: (Boolean) -> Unit,
     onExport: () -> String,
     onImport: (String) -> Boolean,
 ) {
@@ -241,6 +280,10 @@ fun SettingsSection(
         Toggle("Klickgeräusch", state.soundOn) { onSound(!state.soundOn) }
         Spacer(Modifier.height(6.dp))
         Toggle("Vibration", state.hapticsOn) { onHaptics(!state.hapticsOn) }
+        Spacer(Modifier.height(6.dp))
+        Toggle("Erinnerung, wenn der Speicher voll ist", state.remindersOn) {
+            onReminders(!state.remindersOn)
+        }
 
         // Only once it has been bought — a switch for something you do not own explains nothing.
         if (stats.autoBuyUnlocked) {
@@ -362,4 +405,43 @@ private fun ImportDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
         },
         dismissButton = { PixelButton(label = "Abbrechen", onClick = onDismiss) },
     )
+}
+
+/**
+ * The production record as pixel columns.
+ *
+ * Logarithmic, because production in an idle game is exponential and a linear line would be flat
+ * for twenty-nine minutes and then vertical. On a log scale a steady climb is a straight ramp,
+ * which is what the player actually wants to see. Drawn as whole blocks on a grid rather than as
+ * a stroked path, so it belongs to the same picture as the planets.
+ */
+@Composable
+private fun Sparkline(samples: List<Double>, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier) {
+        if (samples.isEmpty() || size.width <= 0f || size.height <= 0f) return@Canvas
+
+        val block = floor(3.dp.toPx()).coerceAtLeast(2f)
+        val columns = floor(size.width / block).toInt().coerceAtLeast(1)
+        val rows = floor(size.height / block).toInt().coerceAtLeast(1)
+
+        val logs = samples.map { ln(it.coerceAtLeast(1.0)) }
+        val low = logs.min()
+        val high = logs.max()
+        val span = (high - low).takeIf { it > 1e-9 }
+
+        for (column in 0 until columns) {
+            // The record is shorter than the strip is wide, so each sample owns a slice of it.
+            val index = (column.toFloat() / columns * samples.size).toInt().coerceIn(samples.indices)
+            val height = if (span == null) 0.6f else ((logs[index] - low) / span).toFloat()
+            val filled = (height * (rows - 1)).roundToInt() + 1
+
+            for (row in 0 until filled) {
+                drawRect(
+                    color = if (row == filled - 1) Ember else Ember.copy(alpha = 0.35f),
+                    topLeft = Offset(column * block, size.height - (row + 1) * block),
+                    size = Size(block, block),
+                )
+            }
+        }
+    }
 }

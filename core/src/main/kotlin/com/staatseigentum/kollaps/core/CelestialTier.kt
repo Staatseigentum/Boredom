@@ -17,6 +17,15 @@ enum class BodyKind {
     /** Tiny, brutally bright, with polar jets. */
     EXOTIC,
 
+    /**
+     * A burnt-out core: small, white hot, no jets.
+     *
+     * Its own kind rather than a quiet [EXOTIC], because the jets are the whole difference. A
+     * neutron star has them and a white dwarf does not, and drawing one with the other's
+     * silhouette was the last piece of the ladder that was simply wrong.
+     */
+    REMNANT,
+
     /** Event horizon plus accretion disk. */
     SINGULARITY,
 }
@@ -322,7 +331,7 @@ object Tiers {
             flavor = "Was übrig bleibt, wenn ein Stern fertig ist: heiße Asche, erdgroß.",
             threshold = 120_000_000_000_000_000.0,
             productionMultiplier = 640.0,
-            kind = BodyKind.EXOTIC,
+            kind = BodyKind.REMNANT,
             primaryColor = 0xFFDCE8FF,
             secondaryColor = 0xFF8FA8D8,
             glowColor = 0xFFF4F8FF,

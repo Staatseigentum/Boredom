@@ -427,6 +427,7 @@ private fun CosmosPanel(
                 onSound = actions::setSound,
                 onHaptics = actions::setHaptics,
                 onAutoBuy = actions::setAutoBuy,
+                onReminders = actions::setReminders,
                 onExport = actions::exportSave,
                 onImport = actions::importSave,
             )

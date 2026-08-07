@@ -87,6 +87,9 @@ object PixelPlanet {
         BodyKind.GAS -> 6_000
         BodyKind.STAR -> 9_000
         BodyKind.EXOTIC -> 1_600
+        // Slower than a pulsar and faster than a star: it is dense and small, but nothing about
+        // it is spinning hundreds of times a second.
+        BodyKind.REMNANT -> 4_000
         BodyKind.SINGULARITY -> 2_800
     }
 
@@ -117,8 +120,14 @@ object PixelPlanet {
     ) {
         val centre = size / 2f
         val bodyRadius = size / 2f * BODY_FRACTION
-        val glowRadius = bodyRadius * if (tier.kind == BodyKind.STAR) 1.5f else 1.18f
-        val emissive = tier.kind == BodyKind.STAR
+        val glowRadius = bodyRadius * when (tier.kind) {
+            BodyKind.STAR -> 1.5f
+            // Tight and fierce rather than broad: the light comes off a body the size of a
+            // planet, so it does not spill the way a giant's corona does.
+            BodyKind.REMNANT -> 1.34f
+            else -> 1.18f
+        }
+        val emissive = tier.kind == BodyKind.STAR || tier.kind == BodyKind.REMNANT
         val spin = phase * TWO_PI
 
         for (y in 0 until size) {
@@ -351,6 +360,13 @@ object PixelPlanet {
                     BodyKind.GAS -> intArrayOf(primary, secondary, mix(accent, glow, 0.45f))
                     BodyKind.STAR -> intArrayOf(primary, mix(secondary, primary, 0.4f), WHITE)
                     BodyKind.EXOTIC -> intArrayOf(WHITE, primary, glow)
+                    // Barely any spread: a white dwarf is one temperature all over, and giving
+                    // it three distinct materials would paint continents onto degenerate matter.
+                    BodyKind.REMNANT -> intArrayOf(
+                        WHITE,
+                        mix(WHITE, primary, 0.5f),
+                        mix(primary, secondary, 0.35f),
+                    )
                     BodyKind.SINGULARITY -> intArrayOf(HORIZON, secondary, glow)
                     BodyKind.ROCK -> intArrayOf(primary, secondary, mix(primary, WHITE, 0.35f))
                 }

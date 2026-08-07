@@ -180,6 +180,7 @@ object GameEngine {
         ticked = autoTap(ticked, seconds)
         ticked = autoBuy(ticked)
         ticked = advanceEvents(ticked, seconds)
+        ticked = sample(ticked, seconds)
         if (ticked.activeChallenge != null) {
             ticked = ticked.copy(challengeSeconds = ticked.challengeSeconds + seconds)
         }
@@ -204,6 +205,22 @@ object GameEngine {
         return credit(state, massPerTap(state) * taps).copy(
             taps = state.taps + whole.toLong(),
             autoTapCarry = carried - whole,
+        )
+    }
+
+    /**
+     * Takes a production sample every so often, for the curve in the statistics.
+     *
+     * Sampled on play time rather than wall clock, so the line shows sessions rather than a flat
+     * stretch for every night the phone was in a drawer.
+     */
+    private fun sample(state: GameState, seconds: Double): GameState {
+        val elapsed = state.historySeconds + seconds
+        if (elapsed < History.SAMPLE_SECONDS) return state.copy(historySeconds = elapsed)
+        return state.copy(
+            history = History.append(state.history, massPerSecond(state)),
+            // Modulo rather than zero, so a single long tick does not lose the remainder.
+            historySeconds = elapsed % History.SAMPLE_SECONDS,
         )
     }
 
@@ -400,6 +417,7 @@ object GameEngine {
                 soundOn = state.soundOn,
                 hapticsOn = state.hapticsOn,
                 autoBuyOn = state.autoBuyOn,
+                remindersOn = state.remindersOn,
                 eventsAnswered = state.eventsAnswered,
                 challengesDone = state.challengesDone,
                 aeons = state.aeons,
@@ -438,6 +456,7 @@ object GameEngine {
                 soundOn = state.soundOn,
                 hapticsOn = state.hapticsOn,
                 autoBuyOn = state.autoBuyOn,
+                remindersOn = state.remindersOn,
                 eventsAnswered = state.eventsAnswered,
                 // The point of pressing it.
                 aeons = state.aeons + earned,
@@ -523,6 +542,7 @@ object GameEngine {
         soundOn = state.soundOn,
         hapticsOn = state.hapticsOn,
         autoBuyOn = state.autoBuyOn,
+        remindersOn = state.remindersOn,
         eventsAnswered = state.eventsAnswered,
         challengesDone = state.challengesDone,
         aeons = state.aeons,
@@ -595,6 +615,8 @@ object GameEngine {
     fun setHaptics(state: GameState, on: Boolean): GameState = state.copy(hapticsOn = on)
 
     fun setAutoBuy(state: GameState, on: Boolean): GameState = state.copy(autoBuyOn = on)
+
+    fun setReminders(state: GameState, on: Boolean): GameState = state.copy(remindersOn = on)
 
     /** Whether the automatic buyer has been unlocked at all. */
     fun hasAutoBuy(state: GameState): Boolean = modifiersOf(state).autoBuy

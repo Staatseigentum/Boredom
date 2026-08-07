@@ -27,13 +27,23 @@ fun main(args: Array<String>) {
     // the cache first means the first composition already has the sprite in hand.
     for (tier in Tiers.all) runBlocking { SpriteCache.sheet(tier, DesktopSprites) }
 
-    fun shoot(name: String, game: DesktopGame, tab: Int = 0, note: String = "") {
+    fun shoot(
+        name: String,
+        game: DesktopGame,
+        tab: Int = 0,
+        note: String = "",
+        wide: Boolean = false,
+    ) {
+        // The wide shot is the only way anybody sees the two-column layout: nothing else in the
+        // build renders at a size where it switches over.
+        val w = if (wide) TABLET_WIDTH else width
+        val h = if (wide) TABLET_HEIGHT else height
         ImageComposeScene(
-            width = (width * density.density).toInt(),
-            height = (height * density.density).toInt(),
+            width = (w * density.density).toInt(),
+            height = (h * density.density).toInt(),
             density = density,
         ) {
-            DesktopPlatform { StillGame(game, width, height, tab) }
+            DesktopPlatform { StillGame(game, w, h, tab) }
         }.let { scene ->
             try {
                 // A couple of frames so layout settles and the spin animation has a value.
@@ -88,6 +98,8 @@ fun main(args: Array<String>) {
         edit { GameEngine.tick(it, 11 * 60.0) }
     }
     shoot("23-herausforderung", challenging, tab = 3, note = "(Herausforderung läuft)")
+    shoot("24-querformat", veteran, tab = 0, note = "(Tablet, zweispaltig)", wide = true)
+    shoot("25-querformat-kosmos", veteran, tab = 3, note = "(Tablet, Kosmos)", wide = true)
 
     // The tier change is its own bug surface, so it gets walked inside one composition rather
     // than photographed rung by rung — see [COLLAPSE_WALK].
@@ -121,6 +133,10 @@ fun main(args: Array<String>) {
 
     println("geschrieben nach ${out.absolutePath}")
 }
+
+/** A landscape tablet, where the screen puts the body and the shop side by side. */
+private const val TABLET_WIDTH = 1_024
+private const val TABLET_HEIGHT = 700
 
 /** One shot per interesting rung: file name, and the body it should be standing on. */
 private val LADDER_SHOTS = listOf(

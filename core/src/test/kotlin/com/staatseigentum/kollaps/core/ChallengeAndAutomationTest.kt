@@ -670,3 +670,73 @@ class EventTest {
         const val NOW = 1_700_000_000_000L
     }
 }
+
+/** The production record behind the curve in the statistics. */
+class HistoryTest {
+
+    private fun producing(): GameState = GameState.new(NOW).copy(
+        collectors = mapOf("dust" to 40, "net" to 20),
+    )
+
+    @Test
+    fun `the record only grows on play time and never past its length`() {
+        var state = producing()
+        repeat(History.MAX_SAMPLES * 2) {
+            state = GameEngine.tick(state, History.SAMPLE_SECONDS)
+        }
+        assertEquals(History.MAX_SAMPLES, state.history.size)
+    }
+
+    @Test
+    fun `a long tick does not lose the remainder of the interval`() {
+        // One tick of one and a half intervals leaves half an interval on the clock, not zero.
+        val state = GameEngine.tick(producing(), History.SAMPLE_SECONDS * 1.5)
+        assertEquals(1, state.history.size)
+        assertEquals(History.SAMPLE_SECONDS * 0.5, state.historySeconds, 1e-9)
+    }
+
+    @Test
+    fun `the newest sample is at the end and matches production`() {
+        var state = GameEngine.tick(producing(), History.SAMPLE_SECONDS)
+        val first = state.history.last()
+
+        state = GameEngine.buyCollector(state.copy(mass = 1e9), "drone", BuyAmount.TEN)
+        state = GameEngine.tick(state, History.SAMPLE_SECONDS)
+
+        assertTrue(state.history.last() > first, "Der neue Wert steht nicht am Ende")
+        assertEquals(first, state.history.first())
+    }
+
+    @Test
+    fun `appending keeps the order and drops the oldest`() {
+        val full = (1..History.MAX_SAMPLES).map { it.toDouble() }
+        val next = History.append(full, 999.0)
+        assertEquals(History.MAX_SAMPLES, next.size)
+        assertEquals(2.0, next.first())
+        assertEquals(999.0, next.last())
+    }
+
+    @Test
+    fun `a record too short to read is not shown`() {
+        assertFalse(History.isWorthShowing(emptyList()))
+        assertFalse(History.isWorthShowing(listOf(1.0, 2.0)))
+        assertTrue(History.isWorthShowing(listOf(1.0, 2.0, 3.0)))
+    }
+
+    @Test
+    fun `the record survives a save and stays small`() {
+        var state = producing()
+        repeat(History.MAX_SAMPLES + 5) { state = GameEngine.tick(state, History.SAMPLE_SECONDS) }
+
+        val restored = SaveCodec.decode(SaveCodec.encode(state))!!
+        assertEquals(state.history, restored.history)
+        assertTrue(
+            SaveCodec.encode(state).length < 4_000,
+            "Der Spielstand ist mit ${SaveCodec.encode(state).length} Zeichen zu groß geworden",
+        )
+    }
+
+    private companion object {
+        const val NOW = 1_700_000_000_000L
+    }
+}

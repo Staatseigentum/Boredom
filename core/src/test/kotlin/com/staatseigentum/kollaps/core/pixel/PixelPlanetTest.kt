@@ -116,10 +116,10 @@ class PixelPlanetTest {
         // The whole promise of the ladder is that you get bigger, and it holds all the way to
         // the hypergiant. Then the star collapses, and the three remnants after it are supposed
         // to be small — that shrinking is the point of that stretch, not a bug in it.
-        val remnants = Tiers.all.filter { it.kind == BodyKind.EXOTIC }
+        val remnants = Tiers.all.filter { it.kind in COLLAPSED }
         var previous = 0f
         for (tier in Tiers.all) {
-            if (tier.kind == BodyKind.EXOTIC) continue
+            if (tier.kind in COLLAPSED) continue
             val fraction = PixelPlanet.spriteFraction(tier)
             assertTrue(
                 fraction >= previous,
@@ -188,9 +188,51 @@ class PixelPlanetTest {
     }
 
     @Test
+    fun `the white dwarf has no jets, and the neutron star does`() {
+        // The jets are the whole reason these are two kinds. A pulsar throws light far out along
+        // one axis; a white dwarf is a hot sphere and nothing more. Sampling a band just outside
+        // the body separates them: the pulsar paints there on some frame, the dwarf never does.
+        fun paintsFarOut(name: String): Boolean {
+            val tier = Tiers.byName(name)
+            val side = PixelPlanet.size(tier)
+            val centre = side / 2
+            val far = (side * 0.06f).toInt()
+            return (0 until PixelPlanet.FRAMES).any { index ->
+                val frame = PixelPlanet.frame(tier, index)
+                frame.alphaAt(side, far, centre) > 0 ||
+                    frame.alphaAt(side, side - 1 - far, centre) > 0 ||
+                    frame.alphaAt(side, centre, far) > 0 ||
+                    frame.alphaAt(side, centre, side - 1 - far) > 0
+            }
+        }
+
+        assertTrue(paintsFarOut("Neutronenstern"), "Der Neutronenstern hat keine Jets mehr")
+        assertTrue(!paintsFarOut("Weißer Zwerg"), "Der Weiße Zwerg hat immer noch Jets")
+    }
+
+    @Test
+    fun `the white dwarf is drawn as a sphere rather than as a pulsar`() {
+        val dwarf = Tiers.byName("Weißer Zwerg")
+        assertEquals(BodyKind.REMNANT, dwarf.kind)
+
+        // A sphere is a solid disc: a horizontal cut through the middle is opaque from edge to
+        // edge of the body. A pulsar's core is a fraction of that width.
+        val side = PixelPlanet.size(dwarf)
+        val frame = PixelPlanet.frame(dwarf, 0)
+        val centre = side / 2
+        val opaque = (0 until side).count { frame.alphaAt(side, it, centre) > 0 }
+        assertTrue(opaque > side / 2, "Der Weiße Zwerg ist nur $opaque von $side Pixeln breit")
+    }
+
+    @Test
     fun `every body kind has a spin duration`() {
         for (kind in BodyKind.entries) {
             assertTrue(PixelPlanet.spinMillis(kind) > 0, "$kind dreht sich nicht")
         }
+    }
+
+    private companion object {
+        /** The kinds a star leaves behind. Everything here is small on purpose. */
+        val COLLAPSED = setOf(BodyKind.EXOTIC, BodyKind.REMNANT)
     }
 }

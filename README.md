@@ -15,23 +15,38 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   Neutronenstern, Magnetar
 - **12 Kollektoren** als Idle-Produzenten, vom Staubfänger bis zum Urknall-Echo, mit
   Cookie-Clicker-typischer Preissteigerung von 15 % pro Stück
-- **83 Upgrades**: Tipp-Verstärker, fünf Verdopplungsstufen pro Kollektor, globale
-  Multiplikatoren, Offline-Verbesserungen
+- **97 Upgrades**: Tipp-Verstärker, fünf Verdopplungsstufen pro Kollektor, globale
+  Multiplikatoren, Offline-Verbesserungen — und **14 Synergien**, bei denen ein Kollektor einen
+  anderen verstärkt. Sie sind die einzigen Upgrades, deren Stärke davon abhängt, wie die Flotte
+  aussieht
 - **Offline-Produktion** — deine Kollektoren arbeiten weiter, während die App zu ist
   (standardmäßig 50 % für bis zu 8 Stunden, per Upgrade auf 100 % und 48 Stunden)
 - **Prestige** über den Kollaps: Singularitäten geben je +10 % auf alles, dauerhaft — und im
-  Kosmos-Tab **12 Prestige-Upgrades**, die sie dauerhaft ausgeben
+  Kosmos-Tab **13 Prestige-Upgrades**, die sie dauerhaft ausgeben
 - **Kometen**, die alle paar Minuten durchs Bild ziehen und nur zahlen, wenn man sie trifft:
   geschenkte Produktion, ein Schub, oder eine Minute mit hundertfachem Tippwert
-- **40 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
+- **43 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
   gerade wie viel liefert
 - **Meilensteine**: alle 25 Stück einer Sorte liefert dieser Kollektor 15 % mehr, dauerhaft und
   ohne Zusatzkosten — der Zähler in der Shop-Zeile zählt jetzt auf etwas zu
 - **Vier Herausforderungen**: freiwillige Läufe unter einer Regel, die dir etwas wegnimmt —
   ohne Kollektoren, ohne Tippen, mit halber Kraft, oder gegen die Uhr. Wer sie besteht, behält
   die Belohnung für immer
+- **Der Urknall**: ab zehn Kollapsen kannst du alles wegwerfen, was die Kollapse aufgebaut
+  haben, und bekommst dafür **Äonen** — eine Währung unter der Singularität, mit acht eigenen
+  Upgrades
+- **Ereignisse mit Wahl**: alle paar Minuten eine Frage mit zwei Antworten. Masse sofort, oder
+  ein Bonus auf Zeit — was besser ist, hängt davon ab, ob du gleich weiterspielst
+- **Klang** für Stufenaufstieg, gefangenen Kometen, Kauf und bestandene Herausforderung, alles
+  im Code aus Rechteckwellen synthetisiert statt als Audiodatei mitgeliefert
+- **Produktionsverlauf** als Kurve über die letzte halbe Stunde, logarithmisch, weil eine lineare
+  Achse in einem Idle-Spiel neunundzwanzig Minuten flach und dann senkrecht wäre
+- **Zweispaltig im Querformat** und auf Tablets: Körper links, Shop rechts
+- **Erinnerung**, wenn der Offline-Speicher voll gelaufen ist — genau dann, wenn die Kollektoren
+  aufhören zu verdienen
 - **Automatischer Tipper** aus dem Prestige-Shop: drei bzw. zehn Tipps pro Sekunde, die zählen
-  wie deine eigenen
+  wie deine eigenen — und ein **automatischer Kauf**, der erst zuschlägt, wenn du das Vierfache
+  des Preises übrig hast, damit er dir nicht das Geld für Upgrades wegnimmt
 - Deine Kollektoren **kreisen sichtbar** um den Körper, eine Bahn pro Sorte
 - **Spielstand exportieren und einlesen** — die App ist sideloaded, also liegt der Stand nur auf
   dem Gerät und geht mit einer Deinstallation verloren

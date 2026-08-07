@@ -105,6 +105,9 @@ data class GameState(
     /** Whether the automatic buyer is switched on. Off by default even once it is unlocked. */
     val autoBuyOn: Boolean = false,
 
+    /** Whether the game may remind the player that the collectors have filled up. */
+    val remindersOn: Boolean = true,
+
     /** Id of the event waiting for an answer, if any. */
     val pendingEvent: String? = null,
 
@@ -119,6 +122,12 @@ data class GameState(
 
     /** Events answered, for the statistics. */
     val eventsAnswered: Long = 0,
+
+    /** Production per second, sampled during play. Oldest first. See [History]. */
+    val history: List<Double> = emptyList(),
+
+    /** Seconds of play since the last sample was taken. */
+    val historySeconds: Double = 0.0,
 ) {
     fun ownedOf(collectorId: String): Int = collectors[collectorId] ?: 0
 

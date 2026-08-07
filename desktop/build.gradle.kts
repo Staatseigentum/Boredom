@@ -30,6 +30,8 @@ kotlin {
         exclude("**/MainActivity.kt")
         exclude("**/GameViewModel.kt")
         exclude("**/data/**")
+        // Notifications and the scheduler behind them exist only on a phone.
+        exclude("**/notify/**")
     }
 }
 

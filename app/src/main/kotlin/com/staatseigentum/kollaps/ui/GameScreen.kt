@@ -10,9 +10,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -92,6 +94,7 @@ interface GameActions {
     fun setSound(on: Boolean)
     fun setHaptics(on: Boolean)
     fun setAutoBuy(on: Boolean)
+    fun setReminders(on: Boolean)
 
     /** Replaces the running game with an exported one. False when the block was not readable. */
     fun importSave(block: String): Boolean
@@ -135,33 +138,44 @@ fun GameScreen(
                 modifier = Modifier.fillMaxSize(),
             )
 
-            Column(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
                     .safeDrawingPadding(),
             ) {
-                Header(state = state, stats = stats)
+                val body = @Composable { modifier: Modifier ->
+                    TapArea(state = state, stats = stats, actions = actions, modifier = modifier)
+                }
+                val shop = @Composable { modifier: Modifier ->
+                    ShopPanel(
+                        state = state,
+                        stats = stats,
+                        buyAmount = buyAmount,
+                        actions = actions,
+                        modifier = modifier,
+                        startTab = startTab,
+                        updateSection = updateSection,
+                    )
+                }
 
-                TapArea(
-                    state = state,
-                    stats = stats,
-                    actions = actions,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                )
-
-                ShopPanel(
-                    state = state,
-                    stats = stats,
-                    buyAmount = buyAmount,
-                    actions = actions,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1.15f),
-                    startTab = startTab,
-                    updateSection = updateSection,
-                )
+                // Side by side once there is room for it. Stacked, the body gets a strip of a
+                // landscape screen and the shop scrolls a line at a time; the tap area is the
+                // thing that wants height, and in a row it can have all of it.
+                if (maxWidth >= WIDE_THRESHOLD && maxWidth > maxHeight) {
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Header(state = state, stats = stats)
+                            body(Modifier.fillMaxWidth().weight(1f))
+                        }
+                        shop(Modifier.fillMaxHeight().weight(1f))
+                    }
+                } else {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Header(state = state, stats = stats)
+                        body(Modifier.fillMaxWidth().weight(1f))
+                        shop(Modifier.fillMaxWidth().weight(1.15f))
+                    }
+                }
             }
 
             offlineReport?.let { report ->
@@ -414,3 +428,12 @@ private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit)
 
 private const val SHOCKWAVE_BLOCKS = 14
 private const val TWO_PI = 6.2831855f
+
+/**
+ * Width at which the screen puts the body and the shop next to each other.
+ *
+ * Six hundred density-independent pixels is where Android itself draws the line between a phone
+ * and something larger, and it is also roughly where a stacked layout starts giving the shop a
+ * window two rows tall.
+ */
+private val WIDE_THRESHOLD = 600.dp

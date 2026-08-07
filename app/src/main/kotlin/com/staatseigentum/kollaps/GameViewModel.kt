@@ -9,6 +9,7 @@ import com.staatseigentum.kollaps.core.CollectorOffer
 import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.core.SaveCodec
 import com.staatseigentum.kollaps.core.GameEngine
+import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.Stats
@@ -194,6 +195,29 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _state.value = GameEngine.setAutoBuy(_state.value, on)
         persist()
     }
+
+    fun setReminders(on: Boolean) {
+        _state.value = GameEngine.setReminders(_state.value, on)
+        persist()
+    }
+
+    /**
+     * What the reminder should say, or `null` when there is nothing worth saying.
+     *
+     * Computed here, where the rules and the number formatting already live, so the worker that
+     * eventually posts it only has to hand a finished string to the system.
+     */
+    fun reminderText(): String? {
+        val state = _state.value
+        if (!state.remindersOn) return null
+        val stats = GameEngine.stats(state)
+        val gained = stats.massPerSecond * stats.offlineCapSeconds * stats.offlineEfficiency
+        if (gained <= 0.0) return null
+        return "${Numbers.formatMass(gained)} liegen bereit — mehr passt nicht in den Speicher."
+    }
+
+    /** The player's offline cap, which is when the collectors stop earning. */
+    fun offlineCapSeconds(): Long = GameEngine.stats(_state.value).offlineCapSeconds
 
     /** Replaces the running game with an imported one. Saved at once, so it cannot be lost. */
     fun importSave(block: String): Boolean {

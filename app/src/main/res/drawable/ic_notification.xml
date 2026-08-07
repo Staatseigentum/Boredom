@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The status bar tints notification icons to a flat silhouette, so this is a shape rather than
+    a picture: an event horizon with the accretion disk cutting across it, which is the one part
+    of the black hole that survives being reduced to one colour.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFFFF">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,4c-4.42,0 -8,3.58 -8,8s3.58,8 8,8 8,-3.58 8,-8 -3.58,-8 -8,-8zM12,17.5c-3.04,0 -5.5,-2.46 -5.5,-5.5s2.46,-5.5 5.5,-5.5 5.5,2.46 5.5,5.5 -2.46,5.5 -5.5,5.5z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M2,11h20v2h-20z" />
+</vector>
