@@ -188,7 +188,7 @@ private fun CollectorRow(offer: CollectorOffer, onBuy: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(enabled = enabled) {
-                sfx?.click()
+                sfx?.purchase()
                 onBuy()
             },
         border = if (enabled) Positive else Outline,
@@ -287,7 +287,7 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(enabled = offer.affordable) {
-                        sfx?.click()
+                        sfx?.purchase()
                         onBuy(offer.upgrade.id)
                     },
                 border = if (offer.affordable) Positive else Outline,

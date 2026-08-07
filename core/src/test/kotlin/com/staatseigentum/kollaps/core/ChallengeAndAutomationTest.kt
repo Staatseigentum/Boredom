@@ -282,6 +282,53 @@ class ChallengeAndAutomationTest {
         }
     }
 
+    // ------------------------------------------------------------------ offline report
+
+    @Test
+    fun `the offline report says what was credited and what the cap ate`() {
+        val state = veteran().copy(
+            collectors = mapOf("dust" to 100, "net" to 50),
+            lastSeenAt = NOW,
+        )
+        val capHours = GameEngine.stats(state).offlineCapSeconds / 3_600.0
+        val awaySeconds = (capHours * 3_600.0 * 3).toLong()
+
+        val report = GameEngine.applyOffline(state, NOW + awaySeconds * 1_000)
+
+        assertEquals(awaySeconds, report.awaySeconds)
+        assertTrue(report.seconds < report.awaySeconds, "Die Grenze hat nicht gegriffen")
+        assertTrue(report.cappedOut)
+        // Twice the credited span was lost, at the same rate as what was credited.
+        assertEquals(report.gained * 2.0, report.lostToCap, report.gained * 1e-6)
+        assertEquals(GameEngine.stats(state).offlineEfficiency, report.efficiency)
+    }
+
+    @Test
+    fun `the offline report breaks the haul down by collector`() {
+        val state = veteran().copy(
+            collectors = mapOf("dust" to 100, "net" to 50, "drone" to 10),
+            lastSeenAt = NOW,
+        )
+        val report = GameEngine.applyOffline(state, NOW + 600_000)
+
+        assertEquals(3, report.shares.size)
+        assertEquals(
+            report.gained,
+            report.shares.sumOf { report.gained * it.share },
+            report.gained * 1e-4,
+        )
+        assertTrue(report.shares.zipWithNext().all { (a, b) -> a.output >= b.output })
+    }
+
+    @Test
+    fun `an absence inside the cap loses nothing`() {
+        val state = veteran().copy(collectors = mapOf("dust" to 10), lastSeenAt = NOW)
+        val report = GameEngine.applyOffline(state, NOW + 60_000)
+
+        assertFalse(report.cappedOut)
+        assertEquals(0.0, report.lostToCap)
+    }
+
     private companion object {
         const val NOW = 1_700_000_000_000L
     }

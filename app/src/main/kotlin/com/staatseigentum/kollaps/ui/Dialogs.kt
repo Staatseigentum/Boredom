@@ -7,7 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,7 +49,7 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
         text = {
             Column {
                 Text(
-                    text = "Du warst ${Numbers.formatDuration(report.seconds)} weg.",
+                    text = "Du warst ${Numbers.formatDuration(report.awaySeconds)} weg.",
                     color = Muted,
                 )
                 Spacer(Modifier.height(8.dp))
@@ -56,12 +58,55 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
                     style = MaterialTheme.typography.displayMedium,
                     color = Ember,
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Deine Kollektoren haben ohne dich weitergemacht.",
+                    text = "${Numbers.formatDuration(report.seconds)} angerechnet, " +
+                        "zu ${Numbers.formatPercent(report.efficiency)}.",
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
+
+                // The cap is invisible while it does not bite, and then it silently eats a night.
+                // Saying what it cost is the only way the upgrade that raises it means anything.
+                if (report.cappedOut) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "Die Offline-Grenze war voll — ${Numbers.formatMass(report.lostToCap)} " +
+                            "blieben liegen. Ein größerer Speicher hätte sie mitgenommen.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ember,
+                    )
+                }
+
+                if (report.shares.isNotEmpty()) {
+                    Spacer(Modifier.height(12.dp))
+                    PixelLabel("Wer geschuftet hat", size = 12, color = Muted)
+                    Spacer(Modifier.height(4.dp))
+                    for (share in report.shares.take(SHARES_SHOWN)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                text = "${share.collector.name} ×${share.owned}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Starlight,
+                            )
+                            Text(
+                                text = Numbers.formatMass(report.gained * share.share),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Ember,
+                            )
+                        }
+                    }
+                    if (report.shares.size > SHARES_SHOWN) {
+                        Text(
+                            text = "… und ${report.shares.size - SHARES_SHOWN} weitere",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Muted,
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -74,7 +119,9 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
 @Composable
 fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
     val entrance = remember { Animatable(0f) }
+    val arrival = LocalSfx.current
     LaunchedEffect(tier.index) {
+        arrival?.levelUp()
         entrance.snapTo(0f)
         entrance.animateTo(
             targetValue = 1f,
@@ -162,3 +209,6 @@ fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
         }
     }
 }
+
+/** How many collectors the offline report lists before it says "and others". */
+private const val SHARES_SHOWN = 4

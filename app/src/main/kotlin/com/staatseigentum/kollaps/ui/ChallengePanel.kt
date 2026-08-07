@@ -135,6 +135,7 @@ private fun RunningChallenge(
     onFinish: () -> Unit,
 ) {
     var confirming by remember { mutableStateOf(false) }
+    val sfx = LocalSfx.current
 
     PixelPanel(
         modifier = Modifier.fillMaxWidth(),
@@ -162,7 +163,10 @@ private fun RunningChallenge(
                 Spacer(Modifier.height(8.dp))
                 PixelButton(
                     label = "Belohnung einlösen",
-                    onClick = onFinish,
+                    onClick = {
+                        sfx?.success()
+                        onFinish()
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     accent = Positive,
                 )

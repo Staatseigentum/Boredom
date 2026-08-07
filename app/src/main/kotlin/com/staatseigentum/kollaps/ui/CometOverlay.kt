@@ -71,6 +71,7 @@ fun CometOverlay(
         }
     }
 
+    val sfx = LocalSfx.current
     val current = flight ?: return
     val progress = travel.value
 
@@ -102,6 +103,7 @@ fun CometOverlay(
                     // Anywhere in the box counts: it is moving, it is small, and missing a comet
                     // the player did see is worse than catching one they nearly missed.
                     detectTapGestures {
+                        sfx?.comet()
                         onCatch(current.comet)
                         flight = null
                     }

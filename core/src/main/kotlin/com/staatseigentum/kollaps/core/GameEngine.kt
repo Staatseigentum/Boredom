@@ -57,10 +57,24 @@ data class UpgradeOffer(
 /** Result of crediting time that passed while the app was closed. */
 data class OfflineReport(
     val state: GameState,
+    /** Seconds actually credited, after the cap. */
     val seconds: Long,
     val gained: Double,
+    /** Seconds the player was away, before the cap. */
+    val awaySeconds: Long = 0,
+    /** Share of production credited, in `0f..1f`. */
+    val efficiency: Double = 1.0,
+    /** What each collector contributed, biggest first. Empty when nothing was earned. */
+    val shares: List<CollectorShare> = emptyList(),
 ) {
     val worthShowing: Boolean get() = seconds >= 60 && gained > 0.0
+
+    /** True when the absence ran past the offline cap and the rest went uncredited. */
+    val cappedOut: Boolean get() = awaySeconds > seconds
+
+    /** What a longer cap would have been worth, at the same rate. */
+    val lostToCap: Double
+        get() = if (!cappedOut || seconds <= 0) 0.0 else gained / seconds * (awaySeconds - seconds)
 }
 
 /** How many collectors to buy at once. */
@@ -435,7 +449,16 @@ object GameEngine {
         val capped = min(elapsedSeconds.toDouble(), mods.offlineCapHours * 3_600.0)
         val gained = massPerSecond(state) * capped * mods.offlineEfficiency
         val credited = credit(state, gained).copy(lastSeenAt = nowMillis)
-        return OfflineReport(credited, capped.toLong(), gained)
+        return OfflineReport(
+            state = credited,
+            seconds = capped.toLong(),
+            gained = gained,
+            awaySeconds = elapsedSeconds,
+            efficiency = mods.offlineEfficiency,
+            // The same breakdown the statistics tab shows, so the player can see which machine
+            // actually worked the night shift instead of only that some of them did.
+            shares = if (gained > 0.0) Statistics.shares(state) else emptyList(),
+        )
     }
 
     fun touch(state: GameState, nowMillis: Long): GameState = state.copy(lastSeenAt = nowMillis)
@@ -615,6 +638,18 @@ object GameEngine {
                     effect.collectorId,
                     effect.factor,
                 ) { a, b -> a * b }
+
+                is UpgradeEffect.CollectorSynergy -> mods.collectors.merge(
+                    effect.targetId,
+                    1.0 + effect.perUnit * state.ownedOf(effect.sourceId),
+                ) { a, b -> a * b }
+
+                is UpgradeEffect.FleetSynergy -> {
+                    val factor = 1.0 + effect.perUnit * state.ownedOf(effect.sourceId)
+                    for (collector in Collectors.all) {
+                        mods.collectors.merge(collector.id, factor) { a, b -> a * b }
+                    }
+                }
 
                 is UpgradeEffect.OfflineEfficiency ->
                     mods.offlineEfficiency = maxOf(mods.offlineEfficiency, effect.fraction)
