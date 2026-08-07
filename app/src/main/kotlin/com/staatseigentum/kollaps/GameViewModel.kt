@@ -141,6 +141,21 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _state.value = GameEngine.catchComet(_state.value, comet)
     }
 
+    fun startChallenge(challengeId: String) {
+        _state.value = GameEngine.startChallenge(_state.value, challengeId, System.currentTimeMillis())
+        persist()
+    }
+
+    fun abortChallenge() {
+        _state.value = GameEngine.abortChallenge(_state.value, System.currentTimeMillis())
+        persist()
+    }
+
+    fun finishChallenge() {
+        _state.value = GameEngine.finishChallenge(_state.value, System.currentTimeMillis())
+        persist()
+    }
+
     fun buyPrestigeUpgrade(upgradeId: String) {
         _state.value = GameEngine.buyPrestigeUpgrade(_state.value, upgradeId)
         persist()

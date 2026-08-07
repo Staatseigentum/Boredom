@@ -71,6 +71,18 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.catchComet(state, comet)
     }
 
+    override fun startChallenge(id: String) {
+        state = GameEngine.startChallenge(state, id, NOW)
+    }
+
+    override fun abortChallenge() {
+        state = GameEngine.abortChallenge(state, NOW)
+    }
+
+    override fun finishChallenge() {
+        state = GameEngine.finishChallenge(state, NOW)
+    }
+
     override fun buyPrestigeUpgrade(id: String) {
         state = GameEngine.buyPrestigeUpgrade(state, id)
     }

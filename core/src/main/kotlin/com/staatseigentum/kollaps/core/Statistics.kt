@@ -37,6 +37,10 @@ object Statistics {
             StatLine("Kollektoren gesamt", Numbers.format(state.collectors.values.sum().toDouble())),
             StatLine("Upgrades im Lauf", "${state.upgrades.size} / ${Upgrades.all.size}"),
             StatLine("Prestige-Upgrades", "${state.prestigeUpgrades.size} / ${PrestigeUpgrades.all.size}"),
+            StatLine("Herausforderungen", "${state.challengesDone.size} / ${Challenge.entries.size}"),
+            StatLine("Meilensteine", Numbers.format(
+                state.collectors.values.sumOf { Milestones.reached(it) }.toDouble(),
+            )),
         )
     }
 

@@ -23,6 +23,12 @@ data class Stats(
     val buffSecondsLeft: Double = 0.0,
     /** What the earned achievements are worth together. */
     val achievementMultiplier: Double = 1.0,
+    /** The challenge being run, if any, and whether it can be handed in or is already lost. */
+    val challenge: Challenge? = null,
+    val challengeMet: Boolean = false,
+    val challengeLost: Boolean = false,
+    /** Automatic taps per second, from prestige. Zero until one is bought. */
+    val autoTapsPerSecond: Double = 0.0,
 )
 
 /** A collector row in the shop. */
@@ -37,6 +43,9 @@ data class CollectorOffer(
     val everBought: Boolean,
     /** Hidden collectors are still too far away to be shown at all. */
     val visible: Boolean,
+    /** Milestones passed, and the count the next one lands on. */
+    val milestones: Int = 0,
+    val nextMilestoneAt: Int? = null,
 )
 
 /** An upgrade row in the shop. */
@@ -109,6 +118,10 @@ object GameEngine {
             buff = state.buff,
             buffSecondsLeft = state.buffSecondsLeft,
             achievementMultiplier = Achievements.multiplier(state),
+            challenge = state.challenge,
+            challengeMet = Challenge.isMet(state),
+            challengeLost = Challenge.isLost(state),
+            autoTapsPerSecond = mods.autoTapsPerSecond,
         )
     }
 
@@ -136,8 +149,33 @@ object GameEngine {
     fun tick(state: GameState, seconds: Double): GameState {
         if (seconds <= 0.0) return state
         val gained = massPerSecond(state) * seconds
-        val ticked = credit(state, gained).copy(playedSeconds = state.playedSeconds + seconds)
+        var ticked = credit(state, gained).copy(playedSeconds = state.playedSeconds + seconds)
+        ticked = autoTap(ticked, seconds)
+        if (ticked.activeChallenge != null) {
+            ticked = ticked.copy(challengeSeconds = ticked.challengeSeconds + seconds)
+        }
         return award(expireBuff(ticked, seconds))
+    }
+
+    /**
+     * Credits the automatic taps owed for [seconds].
+     *
+     * The mass is credited in full even for a fraction of a tap, because production is a
+     * continuous number anyway; only the *counter* has to wait for whole taps, and the remainder
+     * is carried so it is never lost. Automatic taps count towards achievements exactly like a
+     * finger, which is the point of buying one.
+     */
+    private fun autoTap(state: GameState, seconds: Double): GameState {
+        val perSecond = modifiersOf(state).autoTapsPerSecond
+        if (perSecond <= 0.0) return state
+
+        val taps = perSecond * seconds
+        val carried = state.autoTapCarry + taps
+        val whole = floor(carried)
+        return credit(state, massPerTap(state) * taps).copy(
+            taps = state.taps + whole.toLong(),
+            autoTapCarry = carried - whole,
+        )
     }
 
     /** Counts the running buff down. Only the tick does this, so a closed app does not burn it. */
@@ -204,7 +242,9 @@ object GameEngine {
     // ---------------------------------------------------------------- prestige
 
     fun canCollapse(state: GameState): Boolean =
-        state.runMass >= Tiers.last.threshold && pendingSingularities(state) >= 1.0
+        state.activeChallenge == null &&
+            state.runMass >= Tiers.last.threshold &&
+            pendingSingularities(state) >= 1.0
 
     /** Singularities the player would receive for collapsing right now. */
     fun pendingSingularities(state: GameState): Double {
@@ -242,9 +282,74 @@ object GameEngine {
                 cometsCaught = state.cometsCaught,
                 soundOn = state.soundOn,
                 hapticsOn = state.hapticsOn,
+                challengesDone = state.challengesDone,
             ),
         )
     }
+
+    // ---------------------------------------------------------------- challenges
+
+    /**
+     * Begins a challenge: the run starts over under a rule, and the prestige head start is
+     * withheld.
+     *
+     * Keeping the starting mass and the prefabricated fleet would defeat every challenge whose
+     * point is doing without one of them, and would make the timed one a formality. The permanent
+     * multipliers do carry over — a challenge unlocked three collapses in has to be winnable by
+     * the player who unlocked it.
+     */
+    fun startChallenge(state: GameState, challengeId: String, nowMillis: Long): GameState {
+        val challenge = Challenge.byId(challengeId) ?: return state
+        if (state.activeChallenge != null) return state
+        if (challenge.id in state.challengesDone) return state
+        if (state.collapses < challenge.requiredCollapses) return state
+
+        return freshRun(state, nowMillis).copy(
+            activeChallenge = challenge.id,
+            challengeSeconds = 0.0,
+        )
+    }
+
+    /** Gives a challenge up. The run resets, the challenge stays unfinished. */
+    fun abortChallenge(state: GameState, nowMillis: Long): GameState {
+        if (state.activeChallenge == null) return state
+        return freshRun(state, nowMillis)
+    }
+
+    /** Hands a met challenge in, which records the reward and starts an ordinary run. */
+    fun finishChallenge(state: GameState, nowMillis: Long): GameState {
+        val challenge = state.challenge ?: return state
+        if (!Challenge.isMet(state)) return state
+        return award(
+            freshRun(state, nowMillis).copy(
+                challengesDone = state.challengesDone + challenge.id,
+            ),
+        )
+    }
+
+    /**
+     * The state with the run wiped but everything permanent kept.
+     *
+     * Unlike [collapse] this pays nothing and counts nothing: it is what a challenge begins and
+     * ends with, so starting one is never a way to farm singularities.
+     */
+    private fun freshRun(state: GameState, nowMillis: Long): GameState = GameState(
+        singularities = state.singularities,
+        collapses = state.collapses,
+        taps = state.taps,
+        totalMass = state.totalMass,
+        bestTier = maxOf(state.bestTier, tierOf(state).index),
+        bestRunMass = maxOf(state.bestRunMass, state.runMass),
+        lastSeenAt = nowMillis,
+        startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
+        prestigeUpgrades = state.prestigeUpgrades,
+        achievements = state.achievements,
+        playedSeconds = state.playedSeconds,
+        cometsCaught = state.cometsCaught,
+        soundOn = state.soundOn,
+        hapticsOn = state.hapticsOn,
+        challengesDone = state.challengesDone,
+    )
 
     /** Mass a fresh run begins with, from prestige. */
     private fun startingMass(state: GameState): Double =
@@ -343,7 +448,9 @@ object GameEngine {
         if (owned <= 0) return 0.0
         val mods = modifiersOf(state)
         val tier = Tiers.forMass(state.runMass)
+        if (!mods.collectorsWork) return 0.0
         return owned * collector.baseRate * mods.collectorFactor(collector.id) *
+            Milestones.factor(owned) *
             mods.global * tier.productionMultiplier * singularityMultiplier(state)
     }
 
@@ -367,7 +474,14 @@ object GameEngine {
                 owned = owned,
                 amount = count,
                 cost = cost,
-                output = owned * collector.baseRate * mods.collectorFactor(collector.id) * scale,
+                output = if (mods.collectorsWork) {
+                    owned * collector.baseRate * mods.collectorFactor(collector.id) *
+                        Milestones.factor(owned) * scale
+                } else {
+                    0.0
+                },
+                milestones = Milestones.reached(owned),
+                nextMilestoneAt = Milestones.nextAt(owned),
                 affordable = count > 0 && cost <= state.mass,
                 everBought = owned > 0,
                 visible = visible,
@@ -419,10 +533,15 @@ object GameEngine {
     }
 
     private fun massPerSecond(state: GameState, mods: Modifiers, tier: CelestialTier): Double {
+        if (!mods.collectorsWork) return 0.0
         var base = 0.0
         for (collector in Collectors.all) {
             val owned = state.ownedOf(collector.id)
-            if (owned > 0) base += owned * collector.baseRate * mods.collectorFactor(collector.id)
+            if (owned > 0) {
+                base += owned * collector.baseRate *
+                    mods.collectorFactor(collector.id) *
+                    Milestones.factor(owned)
+            }
         }
         return base * mods.global * tier.productionMultiplier * singularityMultiplier(state)
     }
@@ -433,6 +552,7 @@ object GameEngine {
         tier: CelestialTier,
         perSecond: Double,
     ): Double {
+        if (!mods.tapsWork) return 0.0
         val base = (BASE_TAP + mods.tapFlat) *
             mods.tapMultiplier *
             mods.global *
@@ -457,21 +577,21 @@ object GameEngine {
 
         // Prestige first: it sets the floor the run-local upgrades then build on.
         for (id in state.prestigeUpgrades) {
-            when (val effect = PrestigeUpgrades.byId(id)?.effect) {
-                is PrestigeEffect.OfflineEfficiency ->
-                    mods.offlineEfficiency = maxOf(mods.offlineEfficiency, effect.fraction)
+            apply(mods, PrestigeUpgrades.byId(id)?.effect)
+        }
 
-                is PrestigeEffect.OfflineCapHours ->
-                    mods.offlineCapHours = maxOf(mods.offlineCapHours, effect.hours)
+        // Challenge rewards are permanent in the same way prestige is, and are the same kind of
+        // thing, so they go through the same switch rather than growing a parallel one.
+        for (id in state.challengesDone) {
+            apply(mods, Challenge.byId(id)?.reward)
+        }
 
-                is PrestigeEffect.GlobalMultiplier -> mods.global *= effect.factor
-                is PrestigeEffect.TapMultiplier -> mods.tapMultiplier *= effect.factor
-                is PrestigeEffect.CometFrequency -> mods.cometFrequency *= effect.factor
-                is PrestigeEffect.SingularityGain -> mods.singularityGain *= effect.factor
-                is PrestigeEffect.StartingCollectors -> Unit // only read when a run begins
-                is PrestigeEffect.StartingMass -> Unit // only read when a run begins
-                null -> Unit
-            }
+        // The running challenge, which is the only modifier that takes something away.
+        when (val rule = state.challenge?.rule) {
+            is ChallengeRule.NoCollectors -> mods.collectorsWork = false
+            is ChallengeRule.NoTaps -> mods.tapsWork = false
+            is ChallengeRule.Handicap -> mods.global *= rule.factor
+            null -> Unit
         }
 
         // Every achievement is worth a little, which is what stops them being decoration.
@@ -506,6 +626,28 @@ object GameEngine {
         return mods
     }
 
+    /** Folds one permanent effect in. Shared by prestige upgrades and challenge rewards. */
+    private fun apply(mods: Modifiers, effect: PrestigeEffect?) {
+        when (effect) {
+            is PrestigeEffect.OfflineEfficiency ->
+                mods.offlineEfficiency = maxOf(mods.offlineEfficiency, effect.fraction)
+
+            is PrestigeEffect.OfflineCapHours ->
+                mods.offlineCapHours = maxOf(mods.offlineCapHours, effect.hours)
+
+            is PrestigeEffect.GlobalMultiplier -> mods.global *= effect.factor
+            is PrestigeEffect.TapMultiplier -> mods.tapMultiplier *= effect.factor
+            is PrestigeEffect.CometFrequency -> mods.cometFrequency *= effect.factor
+            is PrestigeEffect.SingularityGain -> mods.singularityGain *= effect.factor
+            is PrestigeEffect.AutoTap ->
+                mods.autoTapsPerSecond = maxOf(mods.autoTapsPerSecond, effect.perSecond)
+
+            is PrestigeEffect.StartingCollectors -> Unit // only read when a run begins
+            is PrestigeEffect.StartingMass -> Unit // only read when a run begins
+            null -> Unit
+        }
+    }
+
     private class Modifiers {
         var tapFlat = 0.0
         var tapMultiplier = 1.0
@@ -515,6 +657,12 @@ object GameEngine {
         var offlineCapHours = BASE_OFFLINE_CAP_HOURS
         var cometFrequency = 1.0
         var singularityGain = 1.0
+        var autoTapsPerSecond = 0.0
+
+        /** A challenge can switch off a whole source of mass. */
+        var collectorsWork = true
+        var tapsWork = true
+
         val collectors = HashMap<String, Double>()
 
         fun collectorFactor(id: String): Double = collectors[id] ?: 1.0

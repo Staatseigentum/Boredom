@@ -25,7 +25,46 @@ sealed interface PrestigeEffect {
 
     /** Multiplies the mass a tap yields. */
     data class TapMultiplier(val factor: Double) : PrestigeEffect
+
+    /** Taps the body this often per second without anybody touching it. */
+    data class AutoTap(val perSecond: Double) : PrestigeEffect
 }
+
+/**
+ * What an effect does, in words.
+ *
+ * Lives on the effect rather than on the upgrade because challenges hand out the same effects and
+ * have to describe them the same way.
+ */
+val PrestigeEffect.text: String
+    get() = when (this) {
+        is PrestigeEffect.OfflineEfficiency ->
+            "Offline-Ertrag mindestens ${Numbers.formatPercent(fraction)}"
+
+        is PrestigeEffect.OfflineCapHours ->
+            "Offline-Zeit zählt bis zu ${hours.toInt()} Stunden"
+
+        is PrestigeEffect.StartingCollectors ->
+            "Jeder Kollektor startet mit $count Stück"
+
+        is PrestigeEffect.StartingMass ->
+            "Start mit ${Numbers.formatMass(mass)}"
+
+        is PrestigeEffect.CometFrequency ->
+            "Kometen kommen ${Numbers.formatMultiplier(factor)} so oft"
+
+        is PrestigeEffect.GlobalMultiplier ->
+            "${Numbers.formatMultiplier(factor)} auf alles, dauerhaft"
+
+        is PrestigeEffect.SingularityGain ->
+            "${Numbers.formatMultiplier(factor)} Singularitäten je Kollaps"
+
+        is PrestigeEffect.TapMultiplier ->
+            "${Numbers.formatMultiplier(factor)} Masse pro Tipp, dauerhaft"
+
+        is PrestigeEffect.AutoTap ->
+            "Tippt ${Numbers.format(perSecond)}× pro Sekunde von allein"
+    }
 
 /**
  * Something bought with singularities rather than with mass.
@@ -44,32 +83,7 @@ data class PrestigeUpgrade(
     /** Collapses the player needs before this is even shown. */
     val requiredCollapses: Int = 0,
 ) {
-    val effectText: String
-        get() = when (effect) {
-            is PrestigeEffect.OfflineEfficiency ->
-                "Offline-Ertrag mindestens ${Numbers.formatPercent(effect.fraction)}"
-
-            is PrestigeEffect.OfflineCapHours ->
-                "Offline-Zeit zählt bis zu ${effect.hours.toInt()} Stunden"
-
-            is PrestigeEffect.StartingCollectors ->
-                "Jeder Kollektor startet mit ${effect.count} Stück"
-
-            is PrestigeEffect.StartingMass ->
-                "Start mit ${Numbers.formatMass(effect.mass)}"
-
-            is PrestigeEffect.CometFrequency ->
-                "Kometen kommen ${Numbers.formatMultiplier(effect.factor)} so oft"
-
-            is PrestigeEffect.GlobalMultiplier ->
-                "${Numbers.formatMultiplier(effect.factor)} auf alles, dauerhaft"
-
-            is PrestigeEffect.SingularityGain ->
-                "${Numbers.formatMultiplier(effect.factor)} Singularitäten je Kollaps"
-
-            is PrestigeEffect.TapMultiplier ->
-                "${Numbers.formatMultiplier(effect.factor)} Masse pro Tipp, dauerhaft"
-        }
+    val effectText: String get() = effect.text
 }
 
 object PrestigeUpgrades {
@@ -102,6 +116,22 @@ object PrestigeUpgrades {
             flavor = "Du weißt inzwischen, wo man wartet.",
             cost = 8.0,
             effect = PrestigeEffect.CometFrequency(2.0),
+        ),
+        PrestigeUpgrade(
+            id = "p_auto_1",
+            name = "Kleiner Automat",
+            flavor = "Ein Arm, ein Motor, ein Takt. Er wird nicht müde und beschwert sich nie.",
+            cost = 12.0,
+            effect = PrestigeEffect.AutoTap(3.0),
+            requiredCollapses = 1,
+        ),
+        PrestigeUpgrade(
+            id = "p_auto_2",
+            name = "Schlagwerk",
+            flavor = "Zehn Arme im Takt. Du darfst zusehen — oder mittippen, das zählt dazu.",
+            cost = 40.0,
+            effect = PrestigeEffect.AutoTap(10.0),
+            requiredCollapses = 2,
         ),
         PrestigeUpgrade(
             id = "p_offline_2",

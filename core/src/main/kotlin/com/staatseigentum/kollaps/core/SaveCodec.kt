@@ -81,17 +81,27 @@ object SaveCodec {
         val knownAchievements = migrated.achievements.filterTo(mutableSetOf()) {
             Achievements.byId(it) != null
         }
+        val knownChallenges = migrated.challengesDone.filterTo(mutableSetOf()) {
+            Challenge.byId(it) != null
+        }
         if (knownCollectors.size != migrated.collectors.size ||
             knownUpgrades.size != migrated.upgrades.size ||
             knownPrestige.size != migrated.prestigeUpgrades.size ||
-            knownAchievements.size != migrated.achievements.size
+            knownAchievements.size != migrated.achievements.size ||
+            knownChallenges.size != migrated.challengesDone.size
         ) {
             migrated = migrated.copy(
                 collectors = knownCollectors,
                 upgrades = knownUpgrades,
                 prestigeUpgrades = knownPrestige,
                 achievements = knownAchievements,
+                challengesDone = knownChallenges,
             )
+        }
+        // A challenge that no longer exists would otherwise leave the run stuck under a rule
+        // nothing can lift.
+        if (migrated.activeChallenge != null && Challenge.byId(migrated.activeChallenge) == null) {
+            migrated = migrated.copy(activeChallenge = null, challengeSeconds = 0.0)
         }
         // A buff that was running when the app closed is not owed to anyone.
         if (migrated.buffSecondsLeft > 0.0) {

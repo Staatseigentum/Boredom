@@ -75,9 +75,19 @@ fun main(args: Array<String>) {
         }
         edit { GameEngine.award(it) }
     }
-    shoot("20-kollektoren", veteran, tab = 0, note = "(gespieltes Spiel)")
+    shoot("20-kollektoren", veteran, tab = 0, note = "(gespieltes Spiel, mit Meilensteinen)")
     shoot("21-erfolge", veteran, tab = 2)
     shoot("22-kosmos", veteran, tab = 3)
+
+    // The Kosmos tab shows either the list of challenges or the one being run, never both, so
+    // it takes two states to see the whole feature.
+    val challenging = DesktopGame().apply {
+        seekToTier(Tiers.indexOf("Saturn"))
+        edit { it.copy(collapses = 6, singularities = 34.0) }
+        startChallenge("c_hand")
+        edit { GameEngine.tick(it, 11 * 60.0) }
+    }
+    shoot("23-herausforderung", challenging, tab = 3, note = "(Herausforderung läuft)")
 
     // The tier change is its own bug surface, so it gets walked inside one composition rather
     // than photographed rung by rung — see [COLLAPSE_WALK].

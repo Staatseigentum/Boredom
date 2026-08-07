@@ -74,6 +74,24 @@ data class GameState(
 
     /** Whether tapping vibrates. */
     val hapticsOn: Boolean = true,
+
+    /** Id of the challenge being run, if any. */
+    val activeChallenge: String? = null,
+
+    /** Seconds of play spent inside the running challenge. Only the tick moves it. */
+    val challengeSeconds: Double = 0.0,
+
+    /** Challenges completed. Their rewards are permanent, like prestige upgrades. */
+    val challengesDone: Set<String> = emptySet(),
+
+    /**
+     * Fraction of an automatic tap carried over between ticks.
+     *
+     * The tick runs many times a second, so three automatic taps per second is a fraction of a
+     * tap each time. Without somewhere to keep the remainder the tap counter would round every
+     * one of them down to nothing.
+     */
+    val autoTapCarry: Double = 0.0,
 ) {
     fun ownedOf(collectorId: String): Int = collectors[collectorId] ?: 0
 
@@ -83,6 +101,9 @@ data class GameState(
 
     /** The buff currently running, or `null` once it has run out. */
     val buff: Buff? get() = if (buffSecondsLeft > 0.0) Buff.byId(buffId) else null
+
+    /** The challenge currently being run, or `null`. */
+    val challenge: Challenge? get() = Challenge.byId(activeChallenge)
 
     companion object {
         /**

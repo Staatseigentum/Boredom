@@ -97,6 +97,34 @@ object Achievements {
             },
         )
 
+        // ---- challenges
+        add(
+            Achievement("a_challenge_1", "Freiwillig schwerer", "Eine Herausforderung bestanden.") {
+                it.challengesDone.isNotEmpty()
+            },
+        )
+        add(
+            Achievement("a_challenge_all", "Alles mitgenommen", "Jede Herausforderung bestanden.") { state ->
+                Challenge.entries.all { it.id in state.challengesDone }
+            },
+        )
+
+        // ---- milestones
+        add(
+            Achievement(
+                "a_milestone_1",
+                "Erster Meilenstein",
+                "Fünfundzwanzig Stück von einer Sorte.",
+            ) { state -> state.collectors.values.any { it >= Milestones.STEP } },
+        )
+        add(
+            Achievement(
+                "a_milestone_8",
+                "Serienfertigung",
+                "Zweihundert Stück von einer Sorte — acht Meilensteine auf einem Kollektor.",
+            ) { state -> state.collectors.values.any { it >= Milestones.STEP * 8 } },
+        )
+
         // ---- the awkward ones
         add(
             Achievement(

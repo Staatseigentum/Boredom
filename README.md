@@ -20,11 +20,18 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **Offline-Produktion** — deine Kollektoren arbeiten weiter, während die App zu ist
   (standardmäßig 50 % für bis zu 8 Stunden, per Upgrade auf 100 % und 48 Stunden)
 - **Prestige** über den Kollaps: Singularitäten geben je +10 % auf alles, dauerhaft — und im
-  Kosmos-Tab **10 Prestige-Upgrades**, die sie dauerhaft ausgeben
+  Kosmos-Tab **12 Prestige-Upgrades**, die sie dauerhaft ausgeben
 - **Kometen**, die alle paar Minuten durchs Bild ziehen und nur zahlen, wenn man sie trifft:
   geschenkte Produktion, ein Schub, oder eine Minute mit hundertfachem Tippwert
-- **36 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
+- **40 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
   gerade wie viel liefert
+- **Meilensteine**: alle 25 Stück einer Sorte liefert dieser Kollektor 15 % mehr, dauerhaft und
+  ohne Zusatzkosten — der Zähler in der Shop-Zeile zählt jetzt auf etwas zu
+- **Vier Herausforderungen**: freiwillige Läufe unter einer Regel, die dir etwas wegnimmt —
+  ohne Kollektoren, ohne Tippen, mit halber Kraft, oder gegen die Uhr. Wer sie besteht, behält
+  die Belohnung für immer
+- **Automatischer Tipper** aus dem Prestige-Shop: drei bzw. zehn Tipps pro Sekunde, die zählen
+  wie deine eigenen
 - Deine Kollektoren **kreisen sichtbar** um den Körper, eine Bahn pro Sorte
 - **Spielstand exportieren und einlesen** — die App ist sideloaded, also liegt der Stand nur auf
   dem Gerät und geht mit einer Deinstallation verloren

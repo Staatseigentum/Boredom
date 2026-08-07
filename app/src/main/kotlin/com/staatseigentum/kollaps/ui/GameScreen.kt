@@ -77,6 +77,10 @@ interface GameActions {
     /** Catches a comet that drifted past and was tapped in time. */
     fun catchComet(comet: Comet)
 
+    fun startChallenge(id: String)
+    fun abortChallenge()
+    fun finishChallenge()
+
     fun buyPrestigeUpgrade(id: String)
     fun setSound(on: Boolean)
     fun setHaptics(on: Boolean)

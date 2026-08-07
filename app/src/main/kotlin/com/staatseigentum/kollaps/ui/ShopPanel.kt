@@ -35,6 +35,7 @@ import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.CollectorOffer
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.Milestones
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
@@ -224,6 +225,25 @@ private fun CollectorRow(offer: CollectorOffer, onBuy: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
+                // What the counter is counting towards. Without this the milestone bonus is a
+                // number that changes on its own and never says why.
+                if (offer.owned > 0) {
+                    val next = offer.nextMilestoneAt
+                    Text(
+                        text = buildString {
+                            if (offer.milestones > 0) {
+                                append("${Numbers.formatMultiplier(Milestones.factor(offer.owned))} aus ")
+                                append(if (offer.milestones == 1) "1 Meilenstein" else "${offer.milestones} Meilensteinen")
+                            }
+                            if (next != null) {
+                                if (isNotEmpty()) append(" · ")
+                                append("nächster bei $next")
+                            }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Nebula,
+                    )
+                }
             }
 
             Spacer(Modifier.width(8.dp))
@@ -361,6 +381,18 @@ private fun CosmosPanel(
         // Only worth showing once there is something to spend, and something to spend it on.
         if (state.collapses > 0 || state.singularities > 0.0) {
             item { PrestigeShop(state = state, onBuy = actions::buyPrestigeUpgrade) }
+        }
+
+        if (state.collapses > 0 || stats.challenge != null) {
+            item {
+                ChallengePanel(
+                    state = state,
+                    stats = stats,
+                    onStart = actions::startChallenge,
+                    onAbort = actions::abortChallenge,
+                    onFinish = actions::finishChallenge,
+                )
+            }
         }
 
         item { SectionTitle("Dieser Durchlauf") }
