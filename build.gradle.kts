@@ -1,11 +1,14 @@
 /**
- * Loads the Kotlin plugin once for the whole build.
+ * Deliberately empty, and it has to stay that way.
  *
- * Nothing is applied here; the point is the shared classpath. Without it each module loads the
- * Kotlin Gradle plugin separately, which Gradle warns is unsupported and "may break the build".
- * No version is given — those are pinned in `settings.gradle.kts`, which is what lets the
- * Android plugin stay out of this block so the desktop harness can be built without it.
+ * Declaring the Kotlin plugin here puts it on the root classpath while the Android plugin stays
+ * in `:app`, and Kotlin's Android support then cannot see AGP at all:
+ *
+ *     Could not generate a decorated class for type KotlinAndroidTarget.
+ *        > com/android/build/gradle/api/BaseVariant
+ *
+ * Declaring the Android plugin here as well would fix that and break the other end: naming it
+ * makes Gradle resolve it before any project is configured, so the desktop harness could not be
+ * built without the Android toolchain. Each module brings its own plugins, and the versions are
+ * pinned in `settings.gradle.kts`, which is what keeps them from disagreeing.
  */
-plugins {
-    id("org.jetbrains.kotlin.jvm") apply false
-}
