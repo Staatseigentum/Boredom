@@ -49,13 +49,48 @@ data class GameState(
 
     /** Wall clock of the first launch. */
     val startedAt: Long = 0,
+
+    /** Prestige upgrades bought. Unlike [upgrades], these survive a collapse. */
+    val prestigeUpgrades: Set<String> = emptySet(),
+
+    /** Achievements earned, across all runs. */
+    val achievements: Set<String> = emptySet(),
+
+    /** Seconds the game was actually on screen, for the statistics. */
+    val playedSeconds: Double = 0.0,
+
+    /** Comets caught, across all runs. */
+    val cometsCaught: Long = 0,
+
+    /** Id of the buff currently running, if any. */
+    val buffId: String? = null,
+
+    /** Seconds the current buff has left. Counted down by the tick, not by the wall clock, so
+     *  putting the phone away pauses it rather than wasting it. */
+    val buffSecondsLeft: Double = 0.0,
+
+    /** Whether the click sound plays. */
+    val soundOn: Boolean = true,
+
+    /** Whether tapping vibrates. */
+    val hapticsOn: Boolean = true,
 ) {
     fun ownedOf(collectorId: String): Int = collectors[collectorId] ?: 0
 
     fun owns(upgradeId: String): Boolean = upgradeId in upgrades
 
+    fun ownsPrestige(upgradeId: String): Boolean = upgradeId in prestigeUpgrades
+
+    /** The buff currently running, or `null` once it has run out. */
+    val buff: Buff? get() = if (buffSecondsLeft > 0.0) Buff.byId(buffId) else null
+
     companion object {
-        const val SAVE_VERSION = 1
+        /**
+         * Two: the first version had no prestige upgrades, achievements or buffs. Every field
+         * added since has a default, so an old save still reads — it simply arrives with none of
+         * them, which is exactly right for a player who has not earned any yet.
+         */
+        const val SAVE_VERSION = 2
 
         fun new(nowMillis: Long): GameState = GameState(
             lastSeenAt = nowMillis,

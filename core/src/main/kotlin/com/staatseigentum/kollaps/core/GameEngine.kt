@@ -18,6 +18,11 @@ data class Stats(
     val offlineCapSeconds: Long,
     val pendingSingularities: Double,
     val canCollapse: Boolean,
+    /** The buff running right now, if any, and how long it has left. */
+    val buff: Buff? = null,
+    val buffSecondsLeft: Double = 0.0,
+    /** What the earned achievements are worth together. */
+    val achievementMultiplier: Double = 1.0,
 )
 
 /** A collector row in the shop. */
@@ -101,6 +106,9 @@ object GameEngine {
             offlineCapSeconds = (mods.offlineCapHours * 3_600.0).toLong(),
             pendingSingularities = pendingSingularities(state),
             canCollapse = canCollapse(state),
+            buff = state.buff,
+            buffSecondsLeft = state.buffSecondsLeft,
+            achievementMultiplier = Achievements.multiplier(state),
         )
     }
 
@@ -119,17 +127,38 @@ object GameEngine {
 
     // ---------------------------------------------------------------- actions
 
-    /** Advances the simulation by [seconds] of production. */
+    /**
+     * Advances the simulation by [seconds] of production.
+     *
+     * Also the only place the clock moves: play time, the running buff and any achievement that
+     * has just come true are all settled here, so nothing else has to remember to do it.
+     */
     fun tick(state: GameState, seconds: Double): GameState {
         if (seconds <= 0.0) return state
         val gained = massPerSecond(state) * seconds
-        return credit(state, gained)
+        val ticked = credit(state, gained).copy(playedSeconds = state.playedSeconds + seconds)
+        return award(expireBuff(ticked, seconds))
+    }
+
+    /** Counts the running buff down. Only the tick does this, so a closed app does not burn it. */
+    private fun expireBuff(state: GameState, seconds: Double): GameState {
+        if (state.buffSecondsLeft <= 0.0) return state
+        val left = state.buffSecondsLeft - seconds
+        return if (left > 0.0) state.copy(buffSecondsLeft = left)
+        else state.copy(buffId = null, buffSecondsLeft = 0.0)
+    }
+
+    /** Records anything newly earned. Cheap enough to ask on every tick. */
+    fun award(state: GameState): GameState {
+        val earned = Achievements.newlyEarned(state)
+        return if (earned.isEmpty()) state
+        else state.copy(achievements = state.achievements + earned)
     }
 
     /** Taps the body once. */
     fun tap(state: GameState): GameState {
         val gained = massPerTap(state)
-        return credit(state.copy(taps = state.taps + 1), gained)
+        return award(credit(state.copy(taps = state.taps + 1), gained))
     }
 
     /** How much a single tap would yield right now, for the floating number. */
@@ -180,7 +209,8 @@ object GameEngine {
     /** Singularities the player would receive for collapsing right now. */
     fun pendingSingularities(state: GameState): Double {
         if (state.runMass < Tiers.last.threshold) return 0.0
-        return floor(SINGULARITY_SCALE * sqrt(state.runMass / Tiers.last.threshold))
+        val base = SINGULARITY_SCALE * sqrt(state.runMass / Tiers.last.threshold)
+        return floor(base * modifiersOf(state).singularityGain)
     }
 
     fun singularityMultiplier(state: GameState): Double =
@@ -193,17 +223,92 @@ object GameEngine {
     fun collapse(state: GameState, nowMillis: Long): GameState {
         if (!canCollapse(state)) return state
         val earned = pendingSingularities(state)
-        return GameState(
-            singularities = state.singularities + earned,
-            collapses = state.collapses + 1,
-            taps = state.taps,
-            totalMass = state.totalMass,
-            bestTier = maxOf(state.bestTier, tierOf(state).index),
-            bestRunMass = maxOf(state.bestRunMass, state.runMass),
-            lastSeenAt = nowMillis,
-            startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
+        return award(
+            GameState(
+                mass = startingMass(state),
+                collectors = startingCollectors(state),
+                singularities = state.singularities + earned,
+                collapses = state.collapses + 1,
+                taps = state.taps,
+                totalMass = state.totalMass,
+                bestTier = maxOf(state.bestTier, tierOf(state).index),
+                bestRunMass = maxOf(state.bestRunMass, state.runMass),
+                lastSeenAt = nowMillis,
+                startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
+                // Everything below is the point of collapsing: it is what carries over.
+                prestigeUpgrades = state.prestigeUpgrades,
+                achievements = state.achievements,
+                playedSeconds = state.playedSeconds,
+                cometsCaught = state.cometsCaught,
+                soundOn = state.soundOn,
+                hapticsOn = state.hapticsOn,
+            ),
         )
     }
+
+    /** Mass a fresh run begins with, from prestige. */
+    private fun startingMass(state: GameState): Double =
+        state.prestigeUpgrades.sumOf {
+            (PrestigeUpgrades.byId(it)?.effect as? PrestigeEffect.StartingMass)?.mass ?: 0.0
+        }
+
+    /** Collectors a fresh run begins with, from prestige. The best upgrade wins, they do not add. */
+    private fun startingCollectors(state: GameState): Map<String, Int> {
+        val count = state.prestigeUpgrades.maxOfOrNull {
+            (PrestigeUpgrades.byId(it)?.effect as? PrestigeEffect.StartingCollectors)?.count ?: 0
+        } ?: 0
+        if (count <= 0) return emptyMap()
+        return Collectors.all.associate { it.id to count }
+    }
+
+    /** Buys a prestige upgrade if it is offered and the singularities are there. */
+    fun buyPrestigeUpgrade(state: GameState, upgradeId: String): GameState {
+        val upgrade = PrestigeUpgrades.byId(upgradeId) ?: return state
+        if (state.ownsPrestige(upgradeId)) return state
+        if (state.collapses < upgrade.requiredCollapses) return state
+        if (upgrade.cost > state.singularities) return state
+
+        return award(
+            state.copy(
+                singularities = state.singularities - upgrade.cost,
+                prestigeUpgrades = state.prestigeUpgrades + upgradeId,
+            ),
+        )
+    }
+
+    // ---------------------------------------------------------------- comets
+
+    /** How much more often comets should come, after prestige. */
+    fun cometFrequency(state: GameState): Double = modifiersOf(state).cometFrequency
+
+    /**
+     * Catches a comet and pays out whatever it was carrying.
+     *
+     * A windfall is worth a fixed span of the player's *current* production, so it stays
+     * meaningful at every tier instead of turning into a rounding error by the third hour.
+     */
+    fun catchComet(state: GameState, comet: Comet): GameState {
+        val caught = state.copy(cometsCaught = state.cometsCaught + 1)
+        return award(
+            when (val reward = comet.reward) {
+                is CometReward.Windfall ->
+                    credit(caught, massPerSecond(caught) * reward.secondsOfProduction)
+
+                is CometReward.Timed -> caught.copy(
+                    buffId = reward.buff.id,
+                    // A second catch restarts the buff rather than stacking it, which keeps the
+                    // ceiling somewhere a player can reason about.
+                    buffSecondsLeft = reward.buff.seconds,
+                )
+            },
+        )
+    }
+
+    // ---------------------------------------------------------------- settings
+
+    fun setSound(state: GameState, on: Boolean): GameState = state.copy(soundOn = on)
+
+    fun setHaptics(state: GameState, on: Boolean): GameState = state.copy(hapticsOn = on)
 
     // ---------------------------------------------------------------- offline
 
@@ -339,6 +444,36 @@ object GameEngine {
 
     private fun modifiersOf(state: GameState): Modifiers {
         val mods = Modifiers()
+
+        // Prestige first: it sets the floor the run-local upgrades then build on.
+        for (id in state.prestigeUpgrades) {
+            when (val effect = PrestigeUpgrades.byId(id)?.effect) {
+                is PrestigeEffect.OfflineEfficiency ->
+                    mods.offlineEfficiency = maxOf(mods.offlineEfficiency, effect.fraction)
+
+                is PrestigeEffect.OfflineCapHours ->
+                    mods.offlineCapHours = maxOf(mods.offlineCapHours, effect.hours)
+
+                is PrestigeEffect.GlobalMultiplier -> mods.global *= effect.factor
+                is PrestigeEffect.TapMultiplier -> mods.tapMultiplier *= effect.factor
+                is PrestigeEffect.CometFrequency -> mods.cometFrequency *= effect.factor
+                is PrestigeEffect.SingularityGain -> mods.singularityGain *= effect.factor
+                is PrestigeEffect.StartingCollectors -> Unit // only read when a run begins
+                is PrestigeEffect.StartingMass -> Unit // only read when a run begins
+                null -> Unit
+            }
+        }
+
+        // Every achievement is worth a little, which is what stops them being decoration.
+        mods.global *= Achievements.multiplier(state)
+
+        // A buff is the only modifier with a clock on it.
+        when (state.buff) {
+            Buff.SURGE -> mods.global *= Buff.SURGE.factor
+            Buff.FRENZY -> mods.tapMultiplier *= Buff.FRENZY.factor
+            null -> Unit
+        }
+
         for (id in state.upgrades) {
             val upgrade = Upgrades.byId(id) ?: continue
             when (val effect = upgrade.effect) {
@@ -368,6 +503,8 @@ object GameEngine {
         var tapFraction = 0.0
         var offlineEfficiency = BASE_OFFLINE_EFFICIENCY
         var offlineCapHours = BASE_OFFLINE_CAP_HOURS
+        var cometFrequency = 1.0
+        var singularityGain = 1.0
         val collectors = HashMap<String, Double>()
 
         fun collectorFactor(id: String): Double = collectors[id] ?: 1.0
