@@ -22,10 +22,15 @@ object Milestones {
     /** The count at which the next milestone lands, or `null` once nothing is left to count to. */
     fun nextAt(owned: Int): Int? = if (owned < 0) STEP else (reached(owned) + 1) * STEP
 
-    /** What the milestones passed so far are worth together. */
-    fun factor(owned: Int): Double {
+    /**
+     * What the milestones passed so far are worth together.
+     *
+     * [each] is what one milestone multiplies by; it is a parameter because an Äonen upgrade can
+     * raise it, and the shop has to be able to show the raised number rather than the base one.
+     */
+    fun factor(owned: Int, each: Double = FACTOR): Double {
         var result = 1.0
-        repeat(reached(owned)) { result *= FACTOR }
+        repeat(reached(owned)) { result *= each }
         return result
     }
 }

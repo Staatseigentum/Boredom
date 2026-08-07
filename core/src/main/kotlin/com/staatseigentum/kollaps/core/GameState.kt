@@ -92,6 +92,33 @@ data class GameState(
      * one of them down to nothing.
      */
     val autoTapCarry: Double = 0.0,
+
+    /** Äonen from big bangs. The currency below the singularity. */
+    val aeons: Double = 0.0,
+
+    /** Äonen upgrades bought. These survive even a big bang. */
+    val aeonUpgrades: Set<String> = emptySet(),
+
+    /** How often the player has thrown a whole universe away. */
+    val bigBangs: Int = 0,
+
+    /** Whether the automatic buyer is switched on. Off by default even once it is unlocked. */
+    val autoBuyOn: Boolean = false,
+
+    /** Id of the event waiting for an answer, if any. */
+    val pendingEvent: String? = null,
+
+    /**
+     * Seconds of play until the next event.
+     *
+     * Zero on a fresh save, which the tick reads as "not scheduled yet" and fills in. Counting in
+     * play time rather than wall clock means an event cannot be waiting the moment the app opens
+     * after a night away.
+     */
+    val nextEventSeconds: Double = 0.0,
+
+    /** Events answered, for the statistics. */
+    val eventsAnswered: Long = 0,
 ) {
     fun ownedOf(collectorId: String): Int = collectors[collectorId] ?: 0
 
@@ -99,11 +126,16 @@ data class GameState(
 
     fun ownsPrestige(upgradeId: String): Boolean = upgradeId in prestigeUpgrades
 
+    fun ownsAeon(upgradeId: String): Boolean = upgradeId in aeonUpgrades
+
     /** The buff currently running, or `null` once it has run out. */
     val buff: Buff? get() = if (buffSecondsLeft > 0.0) Buff.byId(buffId) else null
 
     /** The challenge currently being run, or `null`. */
     val challenge: Challenge? get() = Challenge.byId(activeChallenge)
+
+    /** The event waiting for an answer, or `null`. */
+    val event: CosmicEvent? get() = CosmicEvent.byId(pendingEvent)
 
     companion object {
         /**

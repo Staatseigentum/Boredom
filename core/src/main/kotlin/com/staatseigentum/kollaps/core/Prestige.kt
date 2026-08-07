@@ -28,6 +28,15 @@ sealed interface PrestigeEffect {
 
     /** Taps the body this often per second without anybody touching it. */
     data class AutoTap(val perSecond: Double) : PrestigeEffect
+
+    /** Replaces what one singularity is worth, when it is more than the base. */
+    data class SingularityBonus(val perSingularity: Double) : PrestigeEffect
+
+    /** Adds to what each collector milestone multiplies by. */
+    data class MilestoneBonus(val extra: Double) : PrestigeEffect
+
+    /** Unlocks the automatic buyer. Whether it actually runs is a setting. */
+    data object AutoBuy : PrestigeEffect
 }
 
 /**
@@ -64,6 +73,17 @@ val PrestigeEffect.text: String
 
         is PrestigeEffect.AutoTap ->
             "Tippt ${Numbers.format(perSecond)}× pro Sekunde von allein"
+
+        is PrestigeEffect.SingularityBonus ->
+            "Jede Singularität gibt ${Numbers.formatPercent(perSingularity)} statt " +
+                "${Numbers.formatPercent(GameEngine.SINGULARITY_BONUS)}"
+
+        is PrestigeEffect.AutoBuy ->
+            "Kauft Kollektoren von allein, sobald du das Vierfache übrig hast"
+
+        is PrestigeEffect.MilestoneBonus ->
+            "Jeder Meilenstein gibt ${Numbers.formatPercent(Milestones.FACTOR - 1.0 + extra)} " +
+                "statt ${Numbers.formatPercent(Milestones.FACTOR - 1.0)}"
     }
 
 /**
@@ -156,6 +176,14 @@ object PrestigeUpgrades {
             cost = 20.0,
             effect = PrestigeEffect.GlobalMultiplier(3.0),
             requiredCollapses = 1,
+        ),
+        PrestigeUpgrade(
+            id = "p_autobuy",
+            name = "Selbsttätige Beschaffung",
+            flavor = "Sie kauft nach, wenn reichlich da ist, und lässt dir den Rest für Upgrades.",
+            cost = 25.0,
+            effect = PrestigeEffect.AutoBuy,
+            requiredCollapses = 2,
         ),
         PrestigeUpgrade(
             id = "p_singularity",

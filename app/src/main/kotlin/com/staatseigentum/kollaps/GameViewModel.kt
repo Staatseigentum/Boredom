@@ -141,6 +141,25 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _state.value = GameEngine.catchComet(_state.value, comet)
     }
 
+    fun chooseEvent(optionIndex: Int) {
+        _state.value = GameEngine.chooseEvent(_state.value, optionIndex)
+        persist()
+    }
+
+    fun dismissEvent() {
+        _state.value = GameEngine.dismissEvent(_state.value)
+    }
+
+    fun bigBang() {
+        _state.value = GameEngine.bigBang(_state.value, System.currentTimeMillis())
+        persist()
+    }
+
+    fun buyAeonUpgrade(upgradeId: String) {
+        _state.value = GameEngine.buyAeonUpgrade(_state.value, upgradeId)
+        persist()
+    }
+
     fun startChallenge(challengeId: String) {
         _state.value = GameEngine.startChallenge(_state.value, challengeId, System.currentTimeMillis())
         persist()
@@ -168,6 +187,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setHaptics(on: Boolean) {
         _state.value = GameEngine.setHaptics(_state.value, on)
+        persist()
+    }
+
+    fun setAutoBuy(on: Boolean) {
+        _state.value = GameEngine.setAutoBuy(_state.value, on)
         persist()
     }
 

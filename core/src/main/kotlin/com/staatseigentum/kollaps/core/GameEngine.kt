@@ -29,6 +29,12 @@ data class Stats(
     val challengeLost: Boolean = false,
     /** Automatic taps per second, from prestige. Zero until one is bought. */
     val autoTapsPerSecond: Double = 0.0,
+    /** Whether the automatic buyer is available at all. */
+    val autoBuyUnlocked: Boolean = false,
+    /** The second reset: whether it exists yet, and what it would pay. */
+    val bigBangUnlocked: Boolean = false,
+    val pendingAeons: Double = 0.0,
+    val canBigBang: Boolean = false,
 )
 
 /** A collector row in the shop. */
@@ -109,6 +115,9 @@ object GameEngine {
     /** A collector shows up in the shop once its price is within reach. */
     private const val VISIBILITY_FACTOR = 0.35
 
+    /** How many times the price the automatic buyer wants in hand before it spends. */
+    const val AUTO_BUY_RESERVE = 4.0
+
     // ---------------------------------------------------------------- derived state
 
     fun stats(state: GameState): Stats {
@@ -136,6 +145,10 @@ object GameEngine {
             challengeMet = Challenge.isMet(state),
             challengeLost = Challenge.isLost(state),
             autoTapsPerSecond = mods.autoTapsPerSecond,
+            autoBuyUnlocked = mods.autoBuy,
+            bigBangUnlocked = BigBang.isUnlocked(state),
+            pendingAeons = BigBang.pending(state),
+            canBigBang = BigBang.canBang(state),
         )
     }
 
@@ -165,6 +178,8 @@ object GameEngine {
         val gained = massPerSecond(state) * seconds
         var ticked = credit(state, gained).copy(playedSeconds = state.playedSeconds + seconds)
         ticked = autoTap(ticked, seconds)
+        ticked = autoBuy(ticked)
+        ticked = advanceEvents(ticked, seconds)
         if (ticked.activeChallenge != null) {
             ticked = ticked.copy(challengeSeconds = ticked.challengeSeconds + seconds)
         }
@@ -190,6 +205,91 @@ object GameEngine {
             taps = state.taps + whole.toLong(),
             autoTapCarry = carried - whole,
         )
+    }
+
+    /**
+     * Moves the event clock, and puts one on the table when it runs out.
+     *
+     * Nothing happens while an event is already waiting: a queue of unanswered questions would
+     * turn a decision into paperwork.
+     */
+    private fun advanceEvents(state: GameState, seconds: Double): GameState {
+        if (!CosmicEvent.appearsAt(state)) return state
+        if (state.pendingEvent != null) return state
+
+        // A fresh save has no schedule yet; the first one is a whole interval away.
+        if (state.nextEventSeconds <= 0.0) {
+            return state.copy(nextEventSeconds = eventInterval(state))
+        }
+
+        val left = state.nextEventSeconds - seconds
+        if (left > 0.0) return state.copy(nextEventSeconds = left)
+
+        return state.copy(
+            pendingEvent = CosmicEvent.pick(state).id,
+            nextEventSeconds = eventInterval(state),
+        )
+    }
+
+    /** Spread across the window, derived from the save so it needs no random source. */
+    private fun eventInterval(state: GameState): Double {
+        val span = CosmicEvent.MAX_SECONDS - CosmicEvent.MIN_SECONDS
+        val spread = (state.playedSeconds.toLong() * 37 + state.taps * 11).mod(1_000L) / 1_000.0
+        return CosmicEvent.MIN_SECONDS + span * spread
+    }
+
+    /**
+     * Answers the waiting event and pays out whatever that option was worth.
+     *
+     * Same two shapes a comet pays in, and deliberately so: a windfall is mass in hand, a buff is
+     * mass you have to be present to use, and the whole point of the question is picking between
+     * those two.
+     */
+    fun chooseEvent(state: GameState, optionIndex: Int): GameState {
+        val event = state.event ?: return state
+        val option = event.optionAt(optionIndex) ?: return state
+
+        val answered = state.copy(
+            pendingEvent = null,
+            eventsAnswered = state.eventsAnswered + 1,
+        )
+        return award(
+            when (val reward = option.reward) {
+                is CometReward.Windfall ->
+                    credit(answered, massPerSecond(answered) * reward.secondsOfProduction)
+
+                is CometReward.Timed -> answered.copy(
+                    buffId = reward.buff.id,
+                    buffSecondsLeft = reward.buff.seconds,
+                )
+            },
+        )
+    }
+
+    /** Turns the event down. Nothing is paid, and the clock simply starts again. */
+    fun dismissEvent(state: GameState): GameState =
+        if (state.pendingEvent == null) state else state.copy(pendingEvent = null)
+
+    /**
+     * Buys one collector, if the buyer is on and the mass is comfortably there.
+     *
+     * The reserve is the whole design: an automatic buyer that spends down to the last kilogram
+     * is a machine that stops you ever affording an upgrade, and upgrades are worth far more than
+     * one more copy of anything. Requiring four times the price means it buys out of surplus and
+     * quietly stops as prices climb — exactly when the player wants to be saving.
+     *
+     * One per tick rather than a loop, so the shop cannot empty itself in a single frame.
+     */
+    private fun autoBuy(state: GameState): GameState {
+        if (!state.autoBuyOn) return state
+        if (!modifiersOf(state).autoBuy) return state
+
+        val best = collectorOffers(state, BuyAmount.ONE)
+            .filter { it.visible && it.amount > 0 && it.cost * AUTO_BUY_RESERVE <= state.mass }
+            .minByOrNull { it.cost / it.collector.baseRate }
+            ?: return state
+
+        return buyCollector(state, best.collector.id, BuyAmount.ONE)
     }
 
     /** Counts the running buff down. Only the tick does this, so a closed app does not burn it. */
@@ -268,7 +368,10 @@ object GameEngine {
     }
 
     fun singularityMultiplier(state: GameState): Double =
-        1.0 + SINGULARITY_BONUS * state.singularities
+        singularityMultiplier(state, modifiersOf(state))
+
+    private fun singularityMultiplier(state: GameState, mods: Modifiers): Double =
+        1.0 + mods.singularityBonus * state.singularities
 
     /**
      * Collapses the black hole: the run resets to a meteorite, but the singularities earned
@@ -296,7 +399,64 @@ object GameEngine {
                 cometsCaught = state.cometsCaught,
                 soundOn = state.soundOn,
                 hapticsOn = state.hapticsOn,
+                autoBuyOn = state.autoBuyOn,
+                eventsAnswered = state.eventsAnswered,
                 challengesDone = state.challengesDone,
+                aeons = state.aeons,
+                aeonUpgrades = state.aeonUpgrades,
+                bigBangs = state.bigBangs,
+            ),
+        )
+    }
+
+    // ---------------------------------------------------------------- big bang
+
+    /**
+     * Throws the whole universe away: singularities, prestige upgrades, collapses, the run.
+     *
+     * What survives is what the player *is* rather than what they own — achievements, challenges
+     * beaten, lifetime totals — plus the Äonen this pays out. Refusing while a challenge is
+     * running is the same rule the collapse follows: one reset at a time.
+     */
+    fun bigBang(state: GameState, nowMillis: Long): GameState {
+        if (!BigBang.canBang(state)) return state
+        val earned = BigBang.pending(state)
+
+        return award(
+            GameState(
+                lastSeenAt = nowMillis,
+                startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
+                // Kept: everything that is a record rather than a possession.
+                taps = state.taps,
+                totalMass = state.totalMass,
+                bestTier = maxOf(state.bestTier, tierOf(state).index),
+                bestRunMass = maxOf(state.bestRunMass, state.runMass),
+                achievements = state.achievements,
+                challengesDone = state.challengesDone,
+                playedSeconds = state.playedSeconds,
+                cometsCaught = state.cometsCaught,
+                soundOn = state.soundOn,
+                hapticsOn = state.hapticsOn,
+                autoBuyOn = state.autoBuyOn,
+                eventsAnswered = state.eventsAnswered,
+                // The point of pressing it.
+                aeons = state.aeons + earned,
+                aeonUpgrades = state.aeonUpgrades,
+                bigBangs = state.bigBangs + 1,
+            ),
+        )
+    }
+
+    /** Buys an Äonen upgrade if it is unbought and affordable. */
+    fun buyAeonUpgrade(state: GameState, upgradeId: String): GameState {
+        val upgrade = AeonUpgrades.byId(upgradeId) ?: return state
+        if (state.ownsAeon(upgradeId)) return state
+        if (upgrade.cost > state.aeons) return state
+
+        return award(
+            state.copy(
+                aeons = state.aeons - upgrade.cost,
+                aeonUpgrades = state.aeonUpgrades + upgradeId,
             ),
         )
     }
@@ -362,7 +522,12 @@ object GameEngine {
         cometsCaught = state.cometsCaught,
         soundOn = state.soundOn,
         hapticsOn = state.hapticsOn,
+        autoBuyOn = state.autoBuyOn,
+        eventsAnswered = state.eventsAnswered,
         challengesDone = state.challengesDone,
+        aeons = state.aeons,
+        aeonUpgrades = state.aeonUpgrades,
+        bigBangs = state.bigBangs,
     )
 
     /** Mass a fresh run begins with, from prestige. */
@@ -429,6 +594,11 @@ object GameEngine {
 
     fun setHaptics(state: GameState, on: Boolean): GameState = state.copy(hapticsOn = on)
 
+    fun setAutoBuy(state: GameState, on: Boolean): GameState = state.copy(autoBuyOn = on)
+
+    /** Whether the automatic buyer has been unlocked at all. */
+    fun hasAutoBuy(state: GameState): Boolean = modifiersOf(state).autoBuy
+
     // ---------------------------------------------------------------- offline
 
     /**
@@ -473,14 +643,14 @@ object GameEngine {
         val tier = Tiers.forMass(state.runMass)
         if (!mods.collectorsWork) return 0.0
         return owned * collector.baseRate * mods.collectorFactor(collector.id) *
-            Milestones.factor(owned) *
-            mods.global * tier.productionMultiplier * singularityMultiplier(state)
+            Milestones.factor(owned, mods.milestoneFactor) *
+            mods.global * tier.productionMultiplier * singularityMultiplier(state, mods)
     }
 
     fun collectorOffers(state: GameState, amount: BuyAmount): List<CollectorOffer> {
         val mods = modifiersOf(state)
         val tier = Tiers.forMass(state.runMass)
-        val scale = mods.global * tier.productionMultiplier * singularityMultiplier(state)
+        val scale = mods.global * tier.productionMultiplier * singularityMultiplier(state, mods)
 
         return Collectors.all.mapIndexed { position, collector ->
             val owned = state.ownedOf(collector.id)
@@ -499,7 +669,7 @@ object GameEngine {
                 cost = cost,
                 output = if (mods.collectorsWork) {
                     owned * collector.baseRate * mods.collectorFactor(collector.id) *
-                        Milestones.factor(owned) * scale
+                        Milestones.factor(owned, mods.milestoneFactor) * scale
                 } else {
                     0.0
                 },
@@ -563,10 +733,10 @@ object GameEngine {
             if (owned > 0) {
                 base += owned * collector.baseRate *
                     mods.collectorFactor(collector.id) *
-                    Milestones.factor(owned)
+                    Milestones.factor(owned, mods.milestoneFactor)
             }
         }
-        return base * mods.global * tier.productionMultiplier * singularityMultiplier(state)
+        return base * mods.global * tier.productionMultiplier * singularityMultiplier(state, mods)
     }
 
     private fun massPerTap(
@@ -580,7 +750,7 @@ object GameEngine {
             mods.tapMultiplier *
             mods.global *
             tier.productionMultiplier *
-            singularityMultiplier(state)
+            singularityMultiplier(state, mods)
         return base + perSecond * mods.tapFraction
     }
 
@@ -598,7 +768,11 @@ object GameEngine {
     private fun modifiersOf(state: GameState): Modifiers {
         val mods = Modifiers()
 
-        // Prestige first: it sets the floor the run-local upgrades then build on.
+        // Äonen first, then prestige, then the run: deepest layer sets the floor the shallower
+        // ones build on.
+        for (id in state.aeonUpgrades) {
+            apply(mods, AeonUpgrades.byId(id)?.effect)
+        }
         for (id in state.prestigeUpgrades) {
             apply(mods, PrestigeUpgrades.byId(id)?.effect)
         }
@@ -677,6 +851,12 @@ object GameEngine {
             is PrestigeEffect.AutoTap ->
                 mods.autoTapsPerSecond = maxOf(mods.autoTapsPerSecond, effect.perSecond)
 
+            is PrestigeEffect.SingularityBonus ->
+                mods.singularityBonus = maxOf(mods.singularityBonus, effect.perSingularity)
+
+            is PrestigeEffect.MilestoneBonus -> mods.milestoneFactor += effect.extra
+            is PrestigeEffect.AutoBuy -> mods.autoBuy = true
+
             is PrestigeEffect.StartingCollectors -> Unit // only read when a run begins
             is PrestigeEffect.StartingMass -> Unit // only read when a run begins
             null -> Unit
@@ -693,6 +873,9 @@ object GameEngine {
         var cometFrequency = 1.0
         var singularityGain = 1.0
         var autoTapsPerSecond = 0.0
+        var singularityBonus = SINGULARITY_BONUS
+        var milestoneFactor = Milestones.FACTOR
+        var autoBuy = false
 
         /** A challenge can switch off a whole source of mass. */
         var collectorsWork = true

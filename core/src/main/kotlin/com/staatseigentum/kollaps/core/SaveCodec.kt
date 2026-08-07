@@ -84,11 +84,15 @@ object SaveCodec {
         val knownChallenges = migrated.challengesDone.filterTo(mutableSetOf()) {
             Challenge.byId(it) != null
         }
+        val knownAeons = migrated.aeonUpgrades.filterTo(mutableSetOf()) {
+            AeonUpgrades.byId(it) != null
+        }
         if (knownCollectors.size != migrated.collectors.size ||
             knownUpgrades.size != migrated.upgrades.size ||
             knownPrestige.size != migrated.prestigeUpgrades.size ||
             knownAchievements.size != migrated.achievements.size ||
-            knownChallenges.size != migrated.challengesDone.size
+            knownChallenges.size != migrated.challengesDone.size ||
+            knownAeons.size != migrated.aeonUpgrades.size
         ) {
             migrated = migrated.copy(
                 collectors = knownCollectors,
@@ -96,12 +100,17 @@ object SaveCodec {
                 prestigeUpgrades = knownPrestige,
                 achievements = knownAchievements,
                 challengesDone = knownChallenges,
+                aeonUpgrades = knownAeons,
             )
         }
         // A challenge that no longer exists would otherwise leave the run stuck under a rule
         // nothing can lift.
         if (migrated.activeChallenge != null && Challenge.byId(migrated.activeChallenge) == null) {
             migrated = migrated.copy(activeChallenge = null, challengeSeconds = 0.0)
+        }
+        // Same for an event nobody can answer any more.
+        if (migrated.pendingEvent != null && CosmicEvent.byId(migrated.pendingEvent) == null) {
+            migrated = migrated.copy(pendingEvent = null)
         }
         // A buff that was running when the app closed is not owed to anyone.
         if (migrated.buffSecondsLeft > 0.0) {

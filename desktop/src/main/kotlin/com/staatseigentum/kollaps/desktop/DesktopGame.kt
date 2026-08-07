@@ -71,6 +71,22 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.catchComet(state, comet)
     }
 
+    override fun chooseEvent(optionIndex: Int) {
+        state = GameEngine.chooseEvent(state, optionIndex)
+    }
+
+    override fun dismissEvent() {
+        state = GameEngine.dismissEvent(state)
+    }
+
+    override fun bigBang() {
+        state = GameEngine.bigBang(state, NOW)
+    }
+
+    override fun buyAeonUpgrade(id: String) {
+        state = GameEngine.buyAeonUpgrade(state, id)
+    }
+
     override fun startChallenge(id: String) {
         state = GameEngine.startChallenge(state, id, NOW)
     }
@@ -93,6 +109,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
 
     override fun setHaptics(on: Boolean) {
         state = GameEngine.setHaptics(state, on)
+    }
+
+    override fun setAutoBuy(on: Boolean) {
+        state = GameEngine.setAutoBuy(state, on)
     }
 
     override fun importSave(block: String): Boolean {

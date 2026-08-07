@@ -77,6 +77,13 @@ interface GameActions {
     /** Catches a comet that drifted past and was tapped in time. */
     fun catchComet(comet: Comet)
 
+    /** Answers the waiting event with one of its two options. */
+    fun chooseEvent(optionIndex: Int)
+    fun dismissEvent()
+
+    fun bigBang()
+    fun buyAeonUpgrade(id: String)
+
     fun startChallenge(id: String)
     fun abortChallenge()
     fun finishChallenge()
@@ -84,6 +91,7 @@ interface GameActions {
     fun buyPrestigeUpgrade(id: String)
     fun setSound(on: Boolean)
     fun setHaptics(on: Boolean)
+    fun setAutoBuy(on: Boolean)
 
     /** Replaces the running game with an exported one. False when the block was not readable. */
     fun importSave(block: String): Boolean
@@ -162,6 +170,14 @@ fun GameScreen(
 
             if (GameEngine.hasUncelebratedTier(state)) {
                 TierCelebration(tier = stats.tier, onDismiss = actions::acknowledgeTier)
+            }
+
+            state.event?.let { event ->
+                EventDialog(
+                    event = event,
+                    onChoose = actions::chooseEvent,
+                    onDismiss = actions::dismissEvent,
+                )
             }
 
             updateDialog()

@@ -32,7 +32,9 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.Achievements
+import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.PrestigeUpgrades
 import com.staatseigentum.kollaps.core.Statistics
@@ -221,8 +223,10 @@ fun PrestigeShop(state: GameState, onBuy: (String) -> Unit) {
 @Composable
 fun SettingsSection(
     state: GameState,
+    stats: Stats,
     onSound: (Boolean) -> Unit,
     onHaptics: (Boolean) -> Unit,
+    onAutoBuy: (Boolean) -> Unit,
     onExport: () -> String,
     onImport: (String) -> Boolean,
 ) {
@@ -237,6 +241,20 @@ fun SettingsSection(
         Toggle("Klickgeräusch", state.soundOn) { onSound(!state.soundOn) }
         Spacer(Modifier.height(6.dp))
         Toggle("Vibration", state.hapticsOn) { onHaptics(!state.hapticsOn) }
+
+        // Only once it has been bought — a switch for something you do not own explains nothing.
+        if (stats.autoBuyUnlocked) {
+            Spacer(Modifier.height(6.dp))
+            Toggle("Kollektoren automatisch kaufen", state.autoBuyOn) {
+                onAutoBuy(!state.autoBuyOn)
+            }
+            Text(
+                text = "Kauft nach, sobald du das ${GameEngine.AUTO_BUY_RESERVE.toInt()}-fache " +
+                    "des Preises übrig hast — der Rest bleibt für Upgrades liegen.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Muted,
+            )
+        }
 
         Spacer(Modifier.height(14.dp))
         PixelLabel("Spielstand", size = 13, color = Muted)

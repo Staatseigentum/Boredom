@@ -109,6 +109,23 @@ object Achievements {
             },
         )
 
+        // ---- the big bang
+        add(
+            Achievement("a_bigbang_1", "Von vorn, wirklich", "Ein ganzes Universum weggeworfen.") {
+                it.bigBangs >= 1
+            },
+        )
+        add(
+            Achievement("a_bigbang_5", "Serientäter", "Fünf Universen. Keines davon vermisst.") {
+                it.bigBangs >= 5
+            },
+        )
+        add(
+            Achievement("a_aeon_all", "Zeitlos", "Jedes Äonen-Upgrade gekauft.") { state ->
+                AeonUpgrades.all.all { it.id in state.aeonUpgrades }
+            },
+        )
+
         // ---- milestones
         add(
             Achievement(

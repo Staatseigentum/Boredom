@@ -383,6 +383,17 @@ private fun CosmosPanel(
             item { PrestigeShop(state = state, onBuy = actions::buyPrestigeUpgrade) }
         }
 
+        if (stats.bigBangUnlocked) {
+            item {
+                BigBangPanel(
+                    state = state,
+                    stats = stats,
+                    onBigBang = actions::bigBang,
+                    onBuy = actions::buyAeonUpgrade,
+                )
+            }
+        }
+
         if (state.collapses > 0 || stats.challenge != null) {
             item {
                 ChallengePanel(
@@ -412,8 +423,10 @@ private fun CosmosPanel(
         item {
             SettingsSection(
                 state = state,
+                stats = stats,
                 onSound = actions::setSound,
                 onHaptics = actions::setHaptics,
+                onAutoBuy = actions::setAutoBuy,
                 onExport = actions::exportSave,
                 onImport = actions::importSave,
             )
