@@ -13,10 +13,10 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **25 Stufen** vom Meteoriten bis zum Schwarzen Loch, jede mit eigenem Aussehen und eigenem
   Produktionsmultiplikator. Die letzten vier sind der Zusammenbruch: Hyperriese, Weißer Zwerg,
   Neutronenstern, Magnetar
-- **12 Kollektoren** als Idle-Produzenten, vom Staubfänger bis zum Urknall-Echo, mit
+- **17 Kollektoren** als Idle-Produzenten, vom Staubfänger bis zum Omega-Kollektor, mit
   Cookie-Clicker-typischer Preissteigerung von 15 % pro Stück
-- **97 Upgrades**: Tipp-Verstärker, fünf Verdopplungsstufen pro Kollektor, globale
-  Multiplikatoren, Offline-Verbesserungen — und **14 Synergien**, bei denen ein Kollektor einen
+- **128 Upgrades**: Tipp-Verstärker, fünf Verdopplungsstufen pro Kollektor, globale
+  Multiplikatoren, Offline-Verbesserungen — und **20 Synergien**, bei denen ein Kollektor einen
   anderen verstärkt. Sie sind die einzigen Upgrades, deren Stärke davon abhängt, wie die Flotte
   aussieht
 - **Offline-Produktion** — deine Kollektoren arbeiten weiter, während die App zu ist
@@ -25,7 +25,7 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   Kosmos-Tab **13 Prestige-Upgrades**, die sie dauerhaft ausgeben
 - **Kometen**, die alle paar Minuten durchs Bild ziehen und nur zahlen, wenn man sie trifft:
   geschenkte Produktion, ein Schub, oder eine Minute mit hundertfachem Tippwert
-- **43 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
+- **45 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
   gerade wie viel liefert
 - **Meilensteine**: alle 25 Stück einer Sorte liefert dieser Kollektor 15 % mehr, dauerhaft und
   ohne Zusatzkosten — der Zähler in der Shop-Zeile zählt jetzt auf etwas zu

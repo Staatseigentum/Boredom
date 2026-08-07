@@ -50,6 +50,8 @@ object Achievements {
         add(collector("a_drone_50", "Schwarm", "Fünfzig Drohnen, die nie schlafen.", "drone", 50))
         add(collector("a_dyson_10", "Halber Ring", "Zehn Spiegel um einen Stern.", "dyson", 10))
         add(collector("a_echo_1", "Nachhall", "Der erste Augenblick, eingefangen.", "echo", 1))
+        add(collector("a_weber_5", "Verwoben", "Fünf Weber an derselben Kausalkette.", "weber", 5))
+        add(collector("a_omega_1", "Das letzte Gerät", "Sammelt ein, was übrig sein wird.", "omega", 1))
         add(
             Achievement(
                 "a_all_collectors",

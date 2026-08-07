@@ -272,12 +272,18 @@ object Upgrades {
         Synergy("quantum", "extractor", 0.002, "Vorgespannter Rand", "Der Horizont gibt williger her, wenn das Vakuum schon zittert."),
         Synergy("extractor", "dilator", 0.001, "Geliehene Krümmung", "Zeit dehnt sich leichter dort, wo die Raumzeit ohnehin schon reißt."),
         Synergy("dilator", "echo", 0.001, "Gedehnter Nachhall", "Eine Sekunde Urknall dauert drinnen erheblich länger."),
+        Synergy("echo", "vakuum", 0.001, "Nachhall im Kessel", "Der Nachhall rührt das Nichts um, und das Nichts gibt nach."),
+        Synergy("vakuum", "faltwerk", 0.001, "Vorgeklärtes Vakuum", "Ein sauberer Raum lässt sich sauberer falten."),
+        Synergy("faltwerk", "weber", 0.001, "Kurze Fäden", "Zwischen zwei Falten ist der Weg von Ursache zu Wirkung kaum noch einer."),
+        Synergy("weber", "urgrund", 0.001, "Gespanntes Gewebe", "Wo alles zusammenhängt, hängt auch der Grund mit dran."),
+        Synergy("urgrund", "omega", 0.001, "Vom Ende her", "Wer weiß, was unten liegt, weiß auch, was übrig bleibt."),
     )
 
     private val fleetSynergies = listOf(
         Triple("dyson", 0.001, "Gemeinsame Netze" to "Ein Stern versorgt jede Maschine, die du hast."),
         Triple("extractor", 0.001, "Geteilter Horizont" to "Alle zapfen dieselbe Quelle an, und keiner merkt es dem anderen an."),
         Triple("echo", 0.002, "Gleichgeschaltet" to "Die ganze Anlage schwingt im Takt des ersten Augenblicks."),
+        Triple("omega", 0.002, "Rückwärts geplant" to "Jede Maschine tut schon jetzt, was sie am Ende getan haben wird."),
     )
 
     private val synergyPairUpgrades: List<Upgrade> =

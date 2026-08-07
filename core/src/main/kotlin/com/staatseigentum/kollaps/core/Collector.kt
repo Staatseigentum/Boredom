@@ -124,6 +124,41 @@ object Collectors {
             baseCost = 14_000_000_000_000.0,
             baseRate = 65_000_000.0,
         ),
+        Collector(
+            id = "vakuum",
+            name = "Vakuumdestillat",
+            flavor = "Destilliert das Nichts, bis unten etwas übrig bleibt. Fragt nicht, was.",
+            baseCost = 200_000_000_000_000.0,
+            baseRate = 420_000_000.0,
+        ),
+        Collector(
+            id = "faltwerk",
+            name = "Faltwerk",
+            flavor = "Legt den Raum in Falten und schüttelt aus, was zwischen ihnen hängt.",
+            baseCost = 2_800_000_000_000_000.0,
+            baseRate = 2_700_000_000.0,
+        ),
+        Collector(
+            id = "weber",
+            name = "Kausalitätsweber",
+            flavor = "Knüpft Ursache an Wirkung, bis Materie der kürzeste Weg zwischen beiden ist.",
+            baseCost = 40_000_000_000_000_000.0,
+            baseRate = 17_500_000_000.0,
+        ),
+        Collector(
+            id = "urgrund",
+            name = "Urgrund-Anzapfung",
+            flavor = "Unter allem liegt noch etwas. Von dort holt sie es hoch.",
+            baseCost = 550_000_000_000_000_000.0,
+            baseRate = 115_000_000_000.0,
+        ),
+        Collector(
+            id = "omega",
+            name = "Omega-Kollektor",
+            flavor = "Sammelt ein, was übrig sein wird. Rückwärts, vom Ende her.",
+            baseCost = 7_500_000_000_000_000_000.0,
+            baseRate = 750_000_000_000.0,
+        ),
     )
 
     private val index: Map<String, Collector> = all.associateBy { it.id }
