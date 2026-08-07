@@ -45,15 +45,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.staatseigentum.kollaps.GameViewModel
+import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Numbers
+import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
-import com.staatseigentum.kollaps.update.UpdateViewModel
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Space
@@ -62,18 +61,39 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
+/** Everything the screen can ask the game to do. */
+interface GameActions {
+    /** Returns the mass the tap produced, for the floating number. */
+    fun tap(): Double
+    fun setBuyAmount(amount: BuyAmount)
+    fun buyCollector(id: String)
+    fun buyUpgrade(id: String)
+    fun collapse()
+    fun dismissOfflineReport()
+    fun acknowledgeTier()
+}
+
+/**
+ * The whole game, taking plain state and callbacks rather than view models.
+ *
+ * That is what lets the desktop harness run this exact screen instead of a lookalike: nothing
+ * here knows about Android, persistence or the updater. The app supplies a thin wrapper that
+ * collects the flows, and the updater is handed in as two slots because it is Android-only —
+ * no other platform can install an APK over itself.
+ */
 @Composable
-fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
-    val state by model.state.collectAsStateWithLifecycle()
-    val stats by model.stats.collectAsStateWithLifecycle()
-    val buyAmount by model.buyAmount.collectAsStateWithLifecycle()
-    val offlineReport by model.offlineReport.collectAsStateWithLifecycle()
-    val updatePrompt by updateModel.prompt.collectAsStateWithLifecycle()
-
-    LaunchedEffect(Unit) { updateModel.checkOnLaunch() }
-
+fun GameScreen(
+    state: GameState,
+    stats: Stats,
+    buyAmount: BuyAmount,
+    offlineReport: OfflineReport?,
+    actions: GameActions,
+    modifier: Modifier = Modifier,
+    updateSection: @Composable () -> Unit = {},
+    updateDialog: @Composable () -> Unit = {},
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(Space),
     ) {
@@ -91,7 +111,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
 
             TapArea(
                 tier = stats.tier,
-                onTap = model::tap,
+                onTap = actions::tap,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f),
@@ -101,28 +121,26 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
                 state = state,
                 stats = stats,
                 buyAmount = buyAmount,
-                onBuyAmount = model::setBuyAmount,
-                onBuyCollector = model::buyCollector,
-                onBuyUpgrade = model::buyUpgrade,
-                onCollapse = model::collapse,
+                onBuyAmount = actions::setBuyAmount,
+                onBuyCollector = actions::buyCollector,
+                onBuyUpgrade = actions::buyUpgrade,
+                onCollapse = actions::collapse,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1.15f),
-                updateSection = { UpdateCard(updateModel) },
+                updateSection = updateSection,
             )
         }
 
         offlineReport?.let { report ->
-            OfflineDialog(report = report, onDismiss = model::dismissOfflineReport)
+            OfflineDialog(report = report, onDismiss = actions::dismissOfflineReport)
         }
 
         if (GameEngine.hasUncelebratedTier(state)) {
-            TierCelebration(tier = stats.tier, onDismiss = model::acknowledgeTier)
+            TierCelebration(tier = stats.tier, onDismiss = actions::acknowledgeTier)
         }
 
-        if (updatePrompt) {
-            UpdateDialog(updateModel)
-        }
+        updateDialog()
     }
 }
 

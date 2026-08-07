@@ -24,3 +24,4 @@ rootProject.name = "Kollaps"
 
 include(":app")
 include(":core")
+include(":desktop")

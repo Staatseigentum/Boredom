@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
-import com.staatseigentum.kollaps.ui.theme.PixelDisplay
+import com.staatseigentum.kollaps.ui.theme.LocalDisplayFont
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.floor
@@ -112,7 +112,7 @@ fun PixelLabel(
         text = text.uppercase(),
         modifier = modifier,
         color = color,
-        fontFamily = PixelDisplay,
+        fontFamily = LocalDisplayFont.current,
         fontWeight = FontWeight.Bold,
         fontSize = size.sp,
         letterSpacing = 0.5.sp,

@@ -1,6 +1,5 @@
 package com.staatseigentum.kollaps.ui
 
-import android.graphics.Bitmap
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -8,20 +7,17 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.pixel.PixelPlanet
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -37,12 +33,17 @@ fun CelestialBody(
     tier: CelestialTier,
     modifier: Modifier = Modifier,
 ) {
-    // Rendering the sheet costs tens of milliseconds, so it happens off the main thread and the
-    // body appears once it is ready. The cache matters here: the tap area and the tier
-    // celebration are two separate composables showing the same body at the same moment, and
-    // without it they would each pay for their own copy.
-    val frames by produceState<List<ImageBitmap>?>(initialValue = SpriteCache.ready(tier), tier.index) {
-        if (value == null) value = SpriteCache.sheet(tier)
+    val factory = LocalSpriteFactory.current
+
+    // Keyed on the tier, which is the whole point: this used to be a produceState, whose backing
+    // remember carries no key, so on a tier change the state kept the previous body's sheet and
+    // the producer — seeing a non-null value — never loaded the new one.
+    var sheet by remember(tier.index) { mutableStateOf(SpriteCache.ready(tier)) }
+    LaunchedEffect(tier.index) {
+        // Rendering costs tens of milliseconds, so it happens off the main thread and the body
+        // appears once it is ready. The cache matters: the tap area and the tier celebration are
+        // two composables showing the same body at the same moment.
+        if (sheet == null) sheet = SpriteCache.sheet(tier, factory)
     }
 
     val transition = rememberInfiniteTransition(label = "body-${tier.index}")
@@ -55,11 +56,12 @@ fun CelestialBody(
         label = "spin",
     )
 
-    val side = PixelPlanet.size(tier)
-
     Canvas(modifier = modifier) {
-        val sheet = frames ?: return@Canvas
-        val index = (phase * PixelPlanet.FRAMES).toInt().coerceIn(0, sheet.lastIndex)
+        val current = sheet ?: return@Canvas
+        // The edge length comes off the sheet rather than from the tier, so the source rectangle
+        // can never be a different size than the bitmap it is read from.
+        val side = current.side
+        val index = (phase * PixelPlanet.FRAMES).toInt().coerceIn(0, current.frames.lastIndex)
 
         val available = min(size.width, size.height) * PixelPlanet.spriteFraction(tier)
         // Whole-number scaling is what keeps the pixels square.
@@ -67,7 +69,7 @@ fun CelestialBody(
         val drawn = side * scale
 
         drawImage(
-            image = sheet[index],
+            image = current.frames[index],
             srcOffset = IntOffset.Zero,
             srcSize = IntSize(side, side),
             dstOffset = IntOffset(
@@ -78,47 +80,4 @@ fun CelestialBody(
             filterQuality = FilterQuality.None,
         )
     }
-}
-
-/**
- * Keeps the last couple of sprite sheets around.
- *
- * Two is enough on purpose: the game only ever shows the current body, and the sheet for the
- * largest tier is several megabytes. Holding all eighteen would cost far more memory than the
- * rendering it saves is worth.
- */
-private object SpriteCache {
-
-    private const val KEEP = 2
-
-    private val lock = Mutex()
-    private val sheets = LinkedHashMap<Int, List<ImageBitmap>>()
-
-    /** The sheet if it has already been built, for showing a body without a blank frame first. */
-    fun ready(tier: CelestialTier): List<ImageBitmap>? = synchronized(sheets) { sheets[tier.index] }
-
-    suspend fun sheet(tier: CelestialTier): List<ImageBitmap> {
-        ready(tier)?.let { return it }
-        return lock.withLock {
-            // Another caller may have finished it while this one waited for the lock.
-            ready(tier) ?: withContext(Dispatchers.Default) {
-                val side = PixelPlanet.size(tier)
-                PixelPlanet.frames(tier).map { it.toImageBitmap(side) }
-            }.also { built ->
-                synchronized(sheets) {
-                    sheets[tier.index] = built
-                    while (sheets.size > KEEP) {
-                        val oldest = sheets.keys.first()
-                        sheets.remove(oldest)
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun IntArray.toImageBitmap(side: Int): ImageBitmap {
-    val bitmap = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
-    bitmap.setPixels(this, 0, side, 0, 0, side, side)
-    return bitmap.asImageBitmap()
 }

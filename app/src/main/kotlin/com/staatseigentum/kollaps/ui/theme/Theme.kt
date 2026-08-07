@@ -4,13 +4,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.staatseigentum.kollaps.R
 
 val Space = Color(0xFF05060F)
 val SpaceElevated = Color(0xFF0E1226)
@@ -40,52 +40,51 @@ private val KollapsColors = darkColorScheme(
 )
 
 /**
+ * The capitals face, for the counter, the headings and the buttons.
+ *
+ * Reached through a composition local rather than a top level value because the font files are
+ * loaded differently on each platform — from Android resources in the app, from the classpath in
+ * the desktop harness — and everything else about the interface is identical.
+ */
+val LocalDisplayFont = staticCompositionLocalOf<FontFamily> { FontFamily.Monospace }
+
+/**
  * Two pixel faces rather than one, because the game asks two different things of its text.
  *
- * [PixelDisplay] is Silkscreen: a capitals-only face on a five pixel grid, which is exactly right
- * for the counter, the headings and the buttons — short, loud, and already uppercase in the code.
- * Set a paragraph of German in it and it shouts.
- *
- * [PixelText] is VT323, which has real lowercase and stays readable at the sizes the flavour
- * texts and shop rows need. Point sizes run higher than they did for the system monospace: both
- * faces draw small for their nominal size, so the numbers below are chosen to end up at the same
- * physical size on screen as before.
+ * The display face is Silkscreen: capitals only on a five pixel grid, which is exactly right for
+ * short, loud strings that the code already uppercases. Set a paragraph of German in it and it
+ * shouts. The text face is VT323, which has real lowercase and stays readable at the sizes the
+ * flavour texts and shop rows need. Point sizes run higher than they did for the system
+ * monospace: both faces draw small for their nominal size.
  */
-val PixelDisplay = FontFamily(
-    Font(R.font.silkscreen_regular, FontWeight.Normal),
-    Font(R.font.silkscreen_bold, FontWeight.Bold),
-)
-
-val PixelText = FontFamily(Font(R.font.vt323_regular))
-
-private val KollapsTypography = Typography(
+fun kollapsTypography(display: FontFamily, text: FontFamily) = Typography(
     displayMedium = TextStyle(
-        fontFamily = PixelDisplay,
+        fontFamily = display,
         fontWeight = FontWeight.Bold,
         fontSize = 30.sp,
         letterSpacing = 0.sp,
     ),
     titleLarge = TextStyle(
-        fontFamily = PixelDisplay,
+        fontFamily = display,
         fontWeight = FontWeight.Bold,
         fontSize = 16.sp,
         letterSpacing = 0.5.sp,
     ),
     bodyLarge = TextStyle(
-        fontFamily = PixelText,
+        fontFamily = text,
         fontSize = 20.sp,
     ),
     bodyMedium = TextStyle(
-        fontFamily = PixelText,
+        fontFamily = text,
         fontSize = 17.sp,
     ),
     bodySmall = TextStyle(
-        fontFamily = PixelText,
+        fontFamily = text,
         fontSize = 15.sp,
         lineHeight = 18.sp,
     ),
     labelLarge = TextStyle(
-        fontFamily = PixelDisplay,
+        fontFamily = display,
         fontWeight = FontWeight.Bold,
         fontSize = 12.sp,
         letterSpacing = 0.5.sp,
@@ -93,10 +92,16 @@ private val KollapsTypography = Typography(
 )
 
 @Composable
-fun KollapsTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = KollapsColors,
-        typography = KollapsTypography,
-        content = content,
-    )
+fun KollapsTheme(
+    display: FontFamily,
+    text: FontFamily,
+    content: @Composable () -> Unit,
+) {
+    CompositionLocalProvider(LocalDisplayFont provides display) {
+        MaterialTheme(
+            colorScheme = KollapsColors,
+            typography = kollapsTypography(display, text),
+            content = content,
+        )
+    }
 }

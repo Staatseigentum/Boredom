@@ -56,3 +56,36 @@ jobs:
           name: core-test-report
           path: core/build/reports/tests/test
           if-no-files-found: ignore
+
+  screenshots:
+    name: Bildschirme aus der Desktop-Fassung
+    runs-on: ubuntu-latest
+
+    # The harness compiles the app's own interface sources against Compose Multiplatform and
+    # renders them without a display, so every run leaves behind pictures of the actual screen.
+    # That is the only automated look at the interface there is — nothing else in this pipeline
+    # ever draws it.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Bildschirme rendern
+        run: |
+          ./gradlew --configure-on-demand --no-daemon --stacktrace \
+            :desktop:run -PmainClass=com.staatseigentum.kollaps.desktop.ScreenshotsKt \
+            --args="build/screenshots"
+
+      - name: Bildschirme hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: kollaps-bildschirme
+          path: build/screenshots/*.png
+          if-no-files-found: error

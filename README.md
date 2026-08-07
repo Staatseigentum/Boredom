@@ -43,16 +43,42 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 
 ## Aufbau
 
-| Modul   | Inhalt |
-| ------- | ------ |
-| `core`  | Reines Kotlin, keine Android-Abhängigkeit: Spielregeln, Inhalte, Zahlenformatierung, Speicherformat, Sprite-Renderer |
-| `app`   | Android-App mit Jetpack Compose: Rendering, Eingabe, Persistenz, Lebenszyklus |
+| Modul     | Inhalt |
+| --------- | ------ |
+| `core`    | Reines Kotlin, keine Android-Abhängigkeit: Spielregeln, Inhalte, Zahlenformatierung, Speicherformat, Sprite-Renderer |
+| `app`     | Android-App mit Jetpack Compose: Rendering, Eingabe, Persistenz, Lebenszyklus |
+| `desktop` | Testfassung am Rechner. Führt **dieselbe** Oberfläche aus wie die App |
 
 Die Trennung ist Absicht: weil `core` nichts von Android weiß, lässt sich die komplette Simulation
 in Unit-Tests im Schnelldurchlauf spielen. `BalanceSimulationTest` lässt einen Bot das Spiel
 durchspielen und prüft damit die Progression, statt sie zu schätzen. Aus demselben Grund liegt
 auch der Sprite-Renderer dort: `PixelPlanet` gibt rohe Pixelpuffer zurück, die die App zu Bitmaps
 macht — dadurch lassen sich die Planeten ohne Gerät rendern und in `PixelPlanetTest` prüfen.
+
+## Am Rechner spielen
+
+```bash
+./gradlew --configure-on-demand :desktop:run              # von vorn
+./gradlew --configure-on-demand :desktop:run --args="--tier 17"   # direkt beim Neutronenstern
+```
+
+Das ist kein Nachbau: `desktop` kompiliert die Oberflächen-Quellen direkt aus `app`. Möglich ist
+das, weil Compose Multiplatform dieselbe `androidx.compose.*`-API veröffentlicht wie die
+Android-Artefakte — ein Quelltext genügt beiden. Ausgenommen sind nur die wirklich
+Android-gebundenen Dateien, und die sind einzeln aufgezählt statt per Muster, damit eine neue
+Datei eine Entscheidung erzwingt statt still zu verschwinden.
+
+Ohne Bildschirm geht es auch. Der folgende Aufruf rendert echte Spielbildschirme als PNG:
+
+```bash
+./gradlew --configure-on-demand :desktop:run \
+  -PmainClass=com.staatseigentum.kollaps.desktop.ScreenshotsKt --args="build/screenshots"
+```
+
+Der CI-Lauf macht genau das bei jedem Push und hängt die Bilder als Artefakt an. Es ist der
+einzige automatische Blick auf die Oberfläche, den das Projekt hat — sonst zeichnet sie nichts.
+Gefunden hat der Harness unter anderem den Fehler, bei dem nach einem Stufenwechsel das Sprite
+der *vorherigen* Stufe angezeigt und dabei auf die Kantenlänge der neuen zugeschnitten wurde.
 
 ## Bauen
 
