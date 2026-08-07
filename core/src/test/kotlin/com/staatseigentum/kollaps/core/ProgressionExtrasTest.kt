@@ -269,3 +269,103 @@ class ProgressionExtrasTest {
         const val NOW = 1_700_000_000_000L
     }
 }
+
+/** The save export and the statistics, both of which read state rather than change it. */
+class SaveAndStatisticsTest {
+
+    private fun played(): GameState = GameState.new(NOW).copy(
+        mass = 1e12,
+        runMass = 1e12,
+        totalMass = 5e12,
+        collectors = mapOf("dust" to 200, "drone" to 40, "dyson" to 3),
+        upgrades = setOf("tap_1", "dust_10"),
+        prestigeUpgrades = setOf("p_offline_1"),
+        achievements = setOf("a_taps_100", "a_comet_1"),
+        singularities = 14.0,
+        collapses = 2,
+        taps = 4_321,
+        cometsCaught = 17,
+        playedSeconds = 9_876.0,
+    )
+
+    @Test
+    fun `an exported save reads back as the same game`() {
+        val original = played()
+        val block = SaveCodec.export(original)
+        val restored = SaveCodec.import(block)
+        assertNotNull(restored)
+        assertEquals(original.copy(version = GameState.SAVE_VERSION), restored)
+    }
+
+    @Test
+    fun `an export survives being wrapped and spaced by a messaging app`() {
+        val block = SaveCodec.export(played())
+        val mangled = block.chunked(40).joinToString("\n  ") + "\n"
+        assertNotNull(SaveCodec.import(mangled), "Umbrüche machen den Export unlesbar")
+    }
+
+    @Test
+    fun `anything that is not one of our exports is refused`() {
+        assertNull(SaveCodec.import(null))
+        assertNull(SaveCodec.import(""))
+        assertNull(SaveCodec.import("Hallo, wie geht es dir?"))
+        assertNull(SaveCodec.import("KOLLAPS1:nicht-wirklich-base64!!"))
+        // Right prefix, but the payload is not a save.
+        assertNull(SaveCodec.import("KOLLAPS1:" + Base64.encode("{\"nope\":1}")))
+    }
+
+    @Test
+    fun `a running buff is not owed to the player after a restart`() {
+        val buffed = GameEngine.catchComet(played(), Comet.SURGE)
+        val reloaded = SaveCodec.decode(SaveCodec.encode(buffed))
+        assertNotNull(reloaded)
+        assertNull(reloaded.buff, "Der Buff lief nach dem Neustart weiter")
+    }
+
+    @Test
+    fun `a save from before prestige existed still loads`() {
+        // Exactly the shape version one wrote: none of the newer fields are present at all.
+        val old = """
+            {"version":1,"mass":1000.0,"runMass":1000.0,"totalMass":1000.0,
+             "collectors":{"dust":3},"upgrades":["tap_1"],"singularities":0.0,
+             "collapses":0,"taps":12,"bestTier":0,"bestRunMass":1000.0,
+             "celebratedTier":0,"lastSeenAt":1,"startedAt":1}
+        """.trimIndent()
+        val loaded = SaveCodec.decode(old)
+        assertNotNull(loaded)
+        assertEquals(GameState.SAVE_VERSION, loaded.version)
+        assertEquals(3, loaded.ownedOf("dust"))
+        assertTrue(loaded.prestigeUpgrades.isEmpty())
+        assertTrue(loaded.achievements.isEmpty())
+        assertTrue(loaded.soundOn, "Der Ton war nach dem Laden aus")
+    }
+
+    @Test
+    fun `statistics report what the save has been carrying all along`() {
+        val lines = Statistics.lines(played())
+        assertTrue(lines.isNotEmpty())
+        assertTrue(lines.any { it.label == "Tipps" && it.value.isNotBlank() })
+        assertTrue(lines.any { it.label == "Kometen gefangen" })
+        assertTrue(lines.any { it.label == "Erfolge" && it.value.startsWith("2 /") })
+    }
+
+    @Test
+    fun `collector shares add up and are ordered by contribution`() {
+        val shares = Statistics.shares(played())
+        assertEquals(3, shares.size)
+        assertEquals(
+            1.0,
+            shares.map { it.share.toDouble() }.sum(),
+            absoluteTolerance = 1e-4,
+        )
+        assertTrue(
+            shares.zipWithNext().all { (a, b) -> a.output >= b.output },
+            "Die Anteile sind nicht nach Beitrag sortiert",
+        )
+        assertTrue(Statistics.shares(GameState.new(NOW)).isEmpty())
+    }
+
+    private companion object {
+        const val NOW = 1_700_000_000_000L
+    }
+}

@@ -337,6 +337,16 @@ object GameEngine {
 
     // ---------------------------------------------------------------- shop
 
+    /** What one collector contributes to the total production right now. */
+    fun collectorOutput(state: GameState, collector: Collector): Double {
+        val owned = state.ownedOf(collector.id)
+        if (owned <= 0) return 0.0
+        val mods = modifiersOf(state)
+        val tier = Tiers.forMass(state.runMass)
+        return owned * collector.baseRate * mods.collectorFactor(collector.id) *
+            mods.global * tier.productionMultiplier * singularityMultiplier(state)
+    }
+
     fun collectorOffers(state: GameState, amount: BuyAmount): List<CollectorOffer> {
         val mods = modifiersOf(state)
         val tier = Tiers.forMass(state.runMass)
