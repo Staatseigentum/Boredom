@@ -17,14 +17,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.core.Comets
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Starlight
-import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 /** A comet on its way across the sky, and where it has got to. */
@@ -72,22 +74,40 @@ fun CometOverlay(
     val current = flight ?: return
     val progress = travel.value
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .pointerInput(current) {
-                detectTapGestures { tap ->
-                    val head = headOf(current, progress, size.width.toFloat(), size.height.toFloat())
-                    // A generous radius: it is moving, it is small, and missing a comet the
-                    // player did see is far more annoying than catching one they nearly missed.
-                    val reach = 44.dp.toPx()
-                    if (abs(tap.x - head.x) < reach && abs(tap.y - head.y) < reach) {
+    Box(modifier = modifier.fillMaxSize()) {
+        // The catcher is a small box that follows the head, not a sheet over the whole screen.
+        // A full-size tap catcher swallowed every tap that missed, so for the eleven seconds a
+        // comet was crossing, tapping the planet quietly did nothing.
+        val reach = 44.dp
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .layout { measurable, constraints ->
+                    val side = (reach * 2).roundToPx()
+                    val placeable = measurable.measure(Constraints.fixed(side, side))
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        val head = headOf(
+                            current,
+                            progress,
+                            constraints.maxWidth.toFloat(),
+                            constraints.maxHeight.toFloat(),
+                        )
+                        placeable.place(
+                            (head.x - side / 2f).roundToInt(),
+                            (head.y - side / 2f).roundToInt(),
+                        )
+                    }
+                }
+                .pointerInput(current) {
+                    // Anywhere in the box counts: it is moving, it is small, and missing a comet
+                    // the player did see is worse than catching one they nearly missed.
+                    detectTapGestures {
                         onCatch(current.comet)
                         flight = null
                     }
-                }
-            },
-    ) {
+                },
+        )
+
         Canvas(modifier = Modifier.fillMaxSize()) {
             if (size.width <= 0f || size.height <= 0f) return@Canvas
             val head = headOf(current, progress, size.width, size.height)
