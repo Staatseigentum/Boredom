@@ -49,6 +49,15 @@ dependencies {
     implementation(compose.material3)
 }
 
+/**
+ * Run from the repository root, not from this module's directory. The harness reads the app's
+ * font files by relative path and writes its screenshots where the CI job looks for them; both
+ * assume the root, and both fail quietly if the process starts a directory deeper.
+ */
+tasks.named<JavaExec>("run") {
+    workingDir = rootProject.projectDir
+}
+
 application {
     mainClass.set(
         providers.gradleProperty("mainClass").orElse("com.staatseigentum.kollaps.desktop.MainKt"),

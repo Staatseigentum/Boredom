@@ -34,13 +34,19 @@ jobs:
           "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Spiellogik testen
-        run: ./gradlew :core:test --no-daemon
+        run: |
+          set -o pipefail
+          ./gradlew :core:test --no-daemon --console=plain 2>&1 | tail -n 40
 
       - name: Debug-APK bauen
-        run: ./gradlew :app:assembleDebug --no-daemon
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleDebug --no-daemon --console=plain 2>&1 | tail -n 40
 
       - name: Release-APK bauen (unsigniert, prüft R8)
-        run: ./gradlew :app:assembleRelease --no-daemon
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleRelease --no-daemon --console=plain 2>&1 | tail -n 40
 
       - name: APK hochladen
         uses: actions/upload-artifact@v4
@@ -79,9 +85,10 @@ jobs:
 
       - name: Bildschirme rendern
         run: |
-          ./gradlew --configure-on-demand --no-daemon \
+          set -o pipefail
+          ./gradlew --configure-on-demand --no-daemon --console=plain \
             :desktop:run -PmainClass=com.staatseigentum.kollaps.desktop.ScreenshotsKt \
-            --args="build/screenshots"
+            --args="build/screenshots" 2>&1 | tail -n 40
 
       - name: Bildschirme hochladen
         uses: actions/upload-artifact@v4
