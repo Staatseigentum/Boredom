@@ -32,7 +32,7 @@ fun main(args: Array<String>) {
             height = (height * density.density).toInt(),
             density = density,
         ) {
-            StillGame(game, width, height)
+            DesktopPlatform { StillGame(game, width, height) }
         }.let { scene ->
             try {
                 // A couple of frames so layout settles and the spin animation has a value.
@@ -66,7 +66,7 @@ fun main(args: Array<String>) {
         height = (height * density.density).toInt(),
         density = density,
     ) {
-        StillGame(game, width, height)
+        DesktopPlatform { StillGame(game, width, height) }
     }.let { scene ->
       try {
         var time = 0L
