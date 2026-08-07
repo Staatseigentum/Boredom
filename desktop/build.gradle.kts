@@ -1,14 +1,9 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.compose.multiplatform)
     application
 }
-
-/**
- * Compose Multiplatform artifacts, pulled in by coordinate rather than through the Compose Gradle
- * plugin: the harness only needs the libraries, not the native packaging the plugin exists for.
- */
-private val composeVersion = libs.versions.composeMultiplatform.get()
 
 /**
  * The desktop harness.
@@ -47,11 +42,11 @@ dependencies {
     implementation(project(":core"))
     implementation(libs.kotlinx.coroutines.swing)
 
-    implementation("org.jetbrains.compose.desktop:desktop-jvm:$composeVersion")
-    implementation("org.jetbrains.compose.runtime:runtime:$composeVersion")
-    implementation("org.jetbrains.compose.foundation:foundation:$composeVersion")
-    implementation("org.jetbrains.compose.material3:material3:$composeVersion")
-    implementation("org.jetbrains.compose.ui:ui:$composeVersion")
+    // `currentOs` rather than the plain desktop artifact: it is what pulls in the Skia native
+    // library for the machine doing the building. Without it everything compiles and then dies
+    // at the first bitmap with "Cannot find libskiko-linux-x64.so".
+    implementation(compose.desktop.currentOs)
+    implementation(compose.material3)
 }
 
 application {

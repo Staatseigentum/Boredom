@@ -1,11 +1,18 @@
 /**
- * Deliberately empty.
+ * Version pinning only — nothing here is applied.
  *
- * Declaring the plugins here with `apply false` only pinned versions, which the version catalog
- * already does — but it also made Gradle resolve every plugin, the Android one included, before
- * any project was configured. That meant the desktop harness could not be built without the
- * Android toolchain, which defeats the point of having a harness that runs anywhere.
+ * The Kotlin plugins have to be declared at the root even though no root project uses them:
+ * loading the Kotlin Gradle plugin separately per subproject is unsupported and warns that it
+ * "may break the build". Declaring it once here puts it on a shared classpath.
  *
- * Each module now brings its own plugins, so `gradle --configure-on-demand :desktop:run` touches
- * nothing Android at all.
+ * The Android plugin is deliberately absent. Naming it here — even with `apply false` — makes
+ * Gradle resolve it before any project is configured, which meant the desktop harness could not
+ * be built without the Android toolchain. It is declared in `:app`, the only module that needs
+ * it, so `gradle --configure-on-demand :desktop:run` touches nothing Android at all.
  */
+plugins {
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.compose.multiplatform) apply false
+}
