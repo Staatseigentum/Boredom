@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import com.staatseigentum.kollaps.R
+import com.staatseigentum.kollaps.ui.theme.KollapsTheme
 
 /**
  * Everything the interface needs that only Android can supply. Kept in one file so the rest of
