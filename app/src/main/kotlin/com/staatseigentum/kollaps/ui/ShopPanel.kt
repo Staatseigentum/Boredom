@@ -49,22 +49,21 @@ import com.staatseigentum.kollaps.ui.theme.SpaceCard
 import com.staatseigentum.kollaps.ui.theme.SpaceElevated
 import com.staatseigentum.kollaps.ui.theme.Starlight
 
-private val TABS = listOf("Kollektoren", "Upgrades", "Kosmos")
+private val TABS = listOf("Kollektoren", "Upgrades", "Erfolge", "Kosmos")
 
 @Composable
 fun ShopPanel(
     state: GameState,
     stats: Stats,
     buyAmount: BuyAmount,
-    onBuyAmount: (BuyAmount) -> Unit,
-    onBuyCollector: (String) -> Unit,
-    onBuyUpgrade: (String) -> Unit,
-    onCollapse: () -> Unit,
+    actions: GameActions,
     modifier: Modifier = Modifier,
+    /** Which tab the shop opens on. Only the harness passes anything else. */
+    startTab: Int = 0,
     /** The update section, handed in so the shop stays free of any networking concern. */
     updateSection: @Composable () -> Unit = {},
 ) {
-    var tab by rememberSaveable { mutableIntStateOf(0) }
+    var tab by rememberSaveable { mutableIntStateOf(startTab.coerceIn(TABS.indices)) }
 
     Column(modifier = modifier.background(SpaceElevated)) {
         // A hard rule instead of an elevation shadow.
@@ -90,19 +89,21 @@ fun ShopPanel(
             0 -> CollectorList(
                 state = state,
                 buyAmount = buyAmount,
-                onBuyAmount = onBuyAmount,
-                onBuy = onBuyCollector,
+                onBuyAmount = actions::setBuyAmount,
+                onBuy = actions::buyCollector,
             )
 
             1 -> UpgradeList(
                 offers = GameEngine.upgradeOffers(state),
-                onBuy = onBuyUpgrade,
+                onBuy = actions::buyUpgrade,
             )
+
+            2 -> AchievementList(state = state)
 
             else -> CosmosPanel(
                 state = state,
                 stats = stats,
-                onCollapse = onCollapse,
+                actions = actions,
                 updateSection = updateSection,
             )
         }
@@ -127,10 +128,12 @@ private fun PixelTab(
             .padding(vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
+        // Four tabs on a phone leave "Kollektoren" about sixty pixels of width, so the tab
+        // strip runs a size smaller than the labels inside the panels.
         PixelLabel(
             text = title,
             color = if (selected) Starlight else Muted,
-            size = 12,
+            size = 10,
         )
     }
 }
@@ -306,7 +309,7 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
 private fun CosmosPanel(
     state: GameState,
     stats: Stats,
-    onCollapse: () -> Unit,
+    actions: GameActions,
     updateSection: @Composable () -> Unit,
 ) {
     var confirming by remember { mutableStateOf(false) }
@@ -342,7 +345,7 @@ private fun CosmosPanel(
                     label = if (confirming) "Wirklich kollabieren?" else "Kollabieren",
                     onClick = {
                         if (confirming) {
-                            onCollapse()
+                            actions.collapse()
                             confirming = false
                         } else {
                             confirming = true
@@ -355,25 +358,34 @@ private fun CosmosPanel(
             }
         }
 
+        // Only worth showing once there is something to spend, and something to spend it on.
+        if (state.collapses > 0 || state.singularities > 0.0) {
+            item { PrestigeShop(state = state, onBuy = actions::buyPrestigeUpgrade) }
+        }
+
         item { SectionTitle("Dieser Durchlauf") }
         item { StatRow("Gesammelt", Numbers.formatMass(state.runMass)) }
         item { StatRow("Produktion", Numbers.formatRate(stats.massPerSecond)) }
         item { StatRow("Pro Tipp", Numbers.formatMass(stats.massPerTap)) }
         item { StatRow("Kollektoren", state.collectors.values.sum().toString()) }
         item { StatRow("Upgrades", "${state.upgrades.size} von ${Upgrades.all.size}") }
-
-        item { SectionTitle("Insgesamt") }
-        item { StatRow("Masse aller Zeiten", Numbers.formatMass(state.totalMass)) }
-        item { StatRow("Tipps", state.taps.toString()) }
-        item { StatRow("Kollapse", state.collapses.toString()) }
-        item { StatRow("Singularitäten", Numbers.format(state.singularities)) }
-        item { StatRow("Bonus daraus", Numbers.formatMultiplier(stats.singularityMultiplier)) }
         item { StatRow("Beste Stufe", Tiers.byIndex(state.bestTier).name) }
-        item { StatRow("Bester Durchlauf", Numbers.formatMass(state.bestRunMass)) }
+        item { StatRow("Bonus aus Singularitäten", Numbers.formatMultiplier(stats.singularityMultiplier)) }
 
         item { SectionTitle("Wenn du weg bist") }
         item { StatRow("Offline-Ertrag", Numbers.formatPercent(stats.offlineEfficiency)) }
         item { StatRow("Offline-Grenze", Numbers.formatDuration(stats.offlineCapSeconds)) }
+
+        item { Spacer(Modifier.height(8.dp)) }
+        item {
+            SettingsSection(
+                state = state,
+                onSound = actions::setSound,
+                onHaptics = actions::setHaptics,
+                onExport = actions::exportSave,
+                onImport = actions::importSave,
+            )
+        }
 
         item { Spacer(Modifier.height(8.dp)) }
         item { updateSection() }

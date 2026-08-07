@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.staatseigentum.kollaps.core.BuyAmount
+import com.staatseigentum.kollaps.core.Comet
+import com.staatseigentum.kollaps.core.SaveCodec
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.OfflineReport
@@ -65,12 +67,47 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.acknowledgeTier(state)
     }
 
+    override fun catchComet(comet: Comet) {
+        state = GameEngine.catchComet(state, comet)
+    }
+
+    override fun buyPrestigeUpgrade(id: String) {
+        state = GameEngine.buyPrestigeUpgrade(state, id)
+    }
+
+    override fun setSound(on: Boolean) {
+        state = GameEngine.setSound(state, on)
+    }
+
+    override fun setHaptics(on: Boolean) {
+        state = GameEngine.setHaptics(state, on)
+    }
+
+    override fun importSave(block: String): Boolean {
+        val loaded = SaveCodec.import(block) ?: return false
+        state = loaded
+        return true
+    }
+
+    override fun exportSave(): String = SaveCodec.export(state)
+
     /**
      * Puts the run straight onto a tier, with the celebration already acknowledged.
      *
      * Reaching the second to last body by playing takes about four hours, which is not a way to
      * look at a bug on it.
      */
+    /**
+     * Shapes the state directly.
+     *
+     * The harness regularly needs states no amount of playing would reach in a build step — a
+     * player six collapses in, with a shelf of achievements — and the alternative is a seek
+     * method per screenshot.
+     */
+    fun edit(block: (GameState) -> GameState) {
+        state = block(state)
+    }
+
     fun seekToTier(index: Int) {
         val tier = com.staatseigentum.kollaps.core.Tiers.all[index]
         state = state.copy(

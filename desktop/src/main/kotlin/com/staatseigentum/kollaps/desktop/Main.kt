@@ -64,7 +64,7 @@ fun RunningGame(game: DesktopGame, modifier: Modifier = Modifier) {
 
 /** The game at a fixed size and a fixed moment, for rendering to an image. */
 @Composable
-fun StillGame(game: DesktopGame, width: Int, height: Int) {
+fun StillGame(game: DesktopGame, width: Int, height: Int, tab: Int = 0) {
     Box(modifier = Modifier.size(width.dp, height.dp)) {
         GameScreen(
             state = game.state,
@@ -73,6 +73,7 @@ fun StillGame(game: DesktopGame, width: Int, height: Int) {
             offlineReport = game.offlineReport,
             actions = game,
             modifier = Modifier.fillMaxSize(),
+            startTab = tab,
         )
     }
 }

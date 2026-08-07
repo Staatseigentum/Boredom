@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.staatseigentum.kollaps.GameViewModel
 import com.staatseigentum.kollaps.core.BuyAmount
+import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.update.UpdateViewModel
 
 /**
@@ -34,6 +35,12 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun collapse() = model.collapse()
             override fun dismissOfflineReport() = model.dismissOfflineReport()
             override fun acknowledgeTier() = model.acknowledgeTier()
+            override fun catchComet(comet: Comet) = model.catchComet(comet)
+            override fun buyPrestigeUpgrade(id: String) = model.buyPrestigeUpgrade(id)
+            override fun setSound(on: Boolean) = model.setSound(on)
+            override fun setHaptics(on: Boolean) = model.setHaptics(on)
+            override fun importSave(block: String): Boolean = model.importSave(block)
+            override fun exportSave(): String = model.exportSave()
         }
     }
 

@@ -1,0 +1,347 @@
+package com.staatseigentum.kollaps.ui
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.unit.dp
+import com.staatseigentum.kollaps.core.Achievements
+import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.Numbers
+import com.staatseigentum.kollaps.core.PrestigeUpgrades
+import com.staatseigentum.kollaps.core.Statistics
+import com.staatseigentum.kollaps.ui.theme.Ember
+import com.staatseigentum.kollaps.ui.theme.Muted
+import com.staatseigentum.kollaps.ui.theme.Nebula
+import com.staatseigentum.kollaps.ui.theme.Outline
+import com.staatseigentum.kollaps.ui.theme.Positive
+import com.staatseigentum.kollaps.ui.theme.SpaceElevated
+import com.staatseigentum.kollaps.ui.theme.Starlight
+
+/** Achievements, and the statistics that explain how they were earned. */
+@Composable
+fun AchievementList(state: GameState, modifier: Modifier = Modifier) {
+    val earned = state.achievements
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        item {
+            PixelPanel(modifier = Modifier.fillMaxWidth(), border = Ember) {
+                PixelLabel("Statistik", color = Ember, size = 15)
+                Spacer(Modifier.height(8.dp))
+                for (line in Statistics.lines(state)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(line.label, style = MaterialTheme.typography.bodySmall, color = Muted)
+                        Text(
+                            line.value,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Starlight,
+                        )
+                    }
+                }
+            }
+        }
+
+        val shares = Statistics.shares(state)
+        if (shares.isNotEmpty()) {
+            item {
+                PixelPanel(modifier = Modifier.fillMaxWidth()) {
+                    PixelLabel("Wer die Arbeit macht", size = 13)
+                    Spacer(Modifier.height(8.dp))
+                    for (share in shares) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                "${share.collector.name} ×${share.owned}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Starlight,
+                            )
+                            Text(
+                                Numbers.formatPercent(share.share.toDouble()),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Ember,
+                            )
+                        }
+                        Spacer(Modifier.height(2.dp))
+                        PixelBar(
+                            progress = share.share,
+                            color = Ember,
+                            cells = 16,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp),
+                        )
+                        Spacer(Modifier.height(6.dp))
+                    }
+                }
+            }
+        }
+
+        item {
+            PixelLabel(
+                text = "Erfolge ${earned.size}/${Achievements.all.size}",
+                color = Positive,
+                size = 15,
+                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
+            )
+        }
+
+        items(Achievements.all, key = { it.id }) { achievement ->
+            val has = achievement.id in earned
+            PixelPanel(
+                modifier = Modifier.fillMaxWidth(),
+                border = if (has) Positive else Outline,
+                padding = 10,
+            ) {
+                Text(
+                    text = achievement.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (has) Starlight else Muted,
+                )
+                Text(
+                    text = achievement.flavor,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Muted,
+                )
+            }
+        }
+    }
+}
+
+/** The prestige shop: what singularities are actually for. */
+@Composable
+fun PrestigeShop(state: GameState, onBuy: (String) -> Unit) {
+    val offered = PrestigeUpgrades.offered(state)
+    PixelPanel(modifier = Modifier.fillMaxWidth(), border = Nebula) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            PixelLabel("Singularitäten ausgeben", color = Nebula, size = 15)
+            PixelLabel(Numbers.format(state.singularities), color = Ember, size = 13)
+        }
+        Spacer(Modifier.height(8.dp))
+
+        if (offered.isEmpty()) {
+            Text(
+                text = if (state.prestigeUpgrades.size == PrestigeUpgrades.all.size) {
+                    "Alles gekauft. Es gibt nichts mehr, was ein Neuanfang billiger machen könnte."
+                } else {
+                    "Weitere Upgrades erscheinen, wenn du öfter kollabiert bist."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = Muted,
+            )
+            return@PixelPanel
+        }
+
+        for (upgrade in offered) {
+            val affordable = state.singularities >= upgrade.cost
+            PixelPanel(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp),
+                border = if (affordable) Positive else Outline,
+                padding = 10,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            upgrade.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Starlight,
+                        )
+                        Text(
+                            upgrade.effectText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Ember,
+                        )
+                        Text(
+                            upgrade.flavor,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Muted,
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    PixelButton(
+                        // Same marker the header uses for singularities; the pixel fonts are
+                        // thin on symbols, so the whole game spends this one.
+                        label = "• ${Numbers.format(upgrade.cost)}",
+                        onClick = { onBuy(upgrade.id) },
+                        enabled = affordable,
+                        accent = Nebula,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Sound, vibration and the save itself.
+ *
+ * The export is the important one: the game is sideloaded and keeps its save in the app's own
+ * directory, so uninstalling takes it with it and there is no other copy anywhere.
+ */
+@Composable
+fun SettingsSection(
+    state: GameState,
+    onSound: (Boolean) -> Unit,
+    onHaptics: (Boolean) -> Unit,
+    onExport: () -> String,
+    onImport: (String) -> Boolean,
+) {
+    val clipboard = LocalClipboardManager.current
+    var importing by remember { mutableStateOf(false) }
+    var note by remember { mutableStateOf<String?>(null) }
+
+    PixelPanel(modifier = Modifier.fillMaxWidth()) {
+        PixelLabel("Einstellungen", size = 15)
+        Spacer(Modifier.height(10.dp))
+
+        Toggle("Klickgeräusch", state.soundOn) { onSound(!state.soundOn) }
+        Spacer(Modifier.height(6.dp))
+        Toggle("Vibration", state.hapticsOn) { onHaptics(!state.hapticsOn) }
+
+        Spacer(Modifier.height(14.dp))
+        PixelLabel("Spielstand", size = 13, color = Muted)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "Der Spielstand liegt nur auf diesem Gerät. Kopier ihn dir irgendwohin, " +
+                "sonst ist er weg, wenn die App es ist.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Muted,
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            PixelButton(
+                label = "Kopieren",
+                onClick = {
+                    clipboard.setText(AnnotatedString(onExport()))
+                    note = "In die Zwischenablage kopiert."
+                },
+                modifier = Modifier.weight(1f),
+            )
+            PixelButton(
+                label = "Einfügen",
+                onClick = { importing = true },
+                modifier = Modifier.weight(1f),
+                accent = Ember,
+            )
+        }
+        note?.let {
+            Spacer(Modifier.height(6.dp))
+            Text(it, style = MaterialTheme.typography.bodySmall, color = Positive)
+        }
+    }
+
+    if (importing) {
+        ImportDialog(
+            onDismiss = { importing = false },
+            onConfirm = { block ->
+                importing = false
+                note = if (onImport(block)) {
+                    "Spielstand geladen."
+                } else {
+                    "Das war kein Kollaps-Spielstand."
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun Toggle(label: String, on: Boolean, onToggle: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = Starlight)
+        PixelButton(
+            label = if (on) "An" else "Aus",
+            onClick = onToggle,
+            accent = if (on) Positive else Outline,
+        )
+    }
+}
+
+@Composable
+private fun ImportDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = SpaceElevated,
+        shape = RectangleShape,
+        title = { PixelLabel("Spielstand einfügen", size = 15) },
+        text = {
+            Column {
+                Text(
+                    text = "Achtung: das ersetzt den laufenden Spielstand vollständig.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Ember,
+                )
+                Spacer(Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                ) {
+                    BasicTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState()),
+                        textStyle = MaterialTheme.typography.bodySmall.copy(color = Starlight),
+                        cursorBrush = SolidColor(Ember),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            PixelButton(
+                label = "Laden",
+                onClick = { onConfirm(text) },
+                enabled = text.isNotBlank(),
+                accent = Ember,
+            )
+        },
+        dismissButton = { PixelButton(label = "Abbrechen", onClick = onDismiss) },
+    )
+}

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -47,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.CelestialTier
+import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Numbers
@@ -71,6 +73,19 @@ interface GameActions {
     fun collapse()
     fun dismissOfflineReport()
     fun acknowledgeTier()
+
+    /** Catches a comet that drifted past and was tapped in time. */
+    fun catchComet(comet: Comet)
+
+    fun buyPrestigeUpgrade(id: String)
+    fun setSound(on: Boolean)
+    fun setHaptics(on: Boolean)
+
+    /** Replaces the running game with an exported one. False when the block was not readable. */
+    fun importSave(block: String): Boolean
+
+    /** The current save as a block the player can copy out. */
+    fun exportSave(): String
 }
 
 /**
@@ -89,58 +104,64 @@ fun GameScreen(
     offlineReport: OfflineReport?,
     actions: GameActions,
     modifier: Modifier = Modifier,
+    /** Which shop tab to open on — the harness uses it to photograph the other ones. */
+    startTab: Int = 0,
     updateSection: @Composable () -> Unit = {},
     updateDialog: @Composable () -> Unit = {},
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Space),
-    ) {
-        Starfield(
-            tint = Color(stats.tier.glowColor),
-            modifier = Modifier.fillMaxSize(),
-        )
-
-        Column(
-            modifier = Modifier
+    // The sound setting is enforced once, here, by taking the player away from every widget
+    // below rather than by teaching each of them to ask whether it is allowed to make a noise.
+    val sfx = LocalSfx.current
+    CompositionLocalProvider(LocalSfx provides sfx.takeIf { state.soundOn }) {
+        Box(
+            modifier = modifier
                 .fillMaxSize()
-                .safeDrawingPadding(),
+                .background(Space),
         ) {
-            Header(state = state, stats = stats)
-
-            TapArea(
-                tier = stats.tier,
-                onTap = actions::tap,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+            Starfield(
+                tint = Color(stats.tier.glowColor),
+                modifier = Modifier.fillMaxSize(),
             )
 
-            ShopPanel(
-                state = state,
-                stats = stats,
-                buyAmount = buyAmount,
-                onBuyAmount = actions::setBuyAmount,
-                onBuyCollector = actions::buyCollector,
-                onBuyUpgrade = actions::buyUpgrade,
-                onCollapse = actions::collapse,
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1.15f),
-                updateSection = updateSection,
-            )
-        }
+                    .fillMaxSize()
+                    .safeDrawingPadding(),
+            ) {
+                Header(state = state, stats = stats)
 
-        offlineReport?.let { report ->
-            OfflineDialog(report = report, onDismiss = actions::dismissOfflineReport)
-        }
+                TapArea(
+                    state = state,
+                    stats = stats,
+                    actions = actions,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                )
 
-        if (GameEngine.hasUncelebratedTier(state)) {
-            TierCelebration(tier = stats.tier, onDismiss = actions::acknowledgeTier)
-        }
+                ShopPanel(
+                    state = state,
+                    stats = stats,
+                    buyAmount = buyAmount,
+                    actions = actions,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1.15f),
+                    startTab = startTab,
+                    updateSection = updateSection,
+                )
+            }
 
-        updateDialog()
+            offlineReport?.let { report ->
+                OfflineDialog(report = report, onDismiss = actions::dismissOfflineReport)
+            }
+
+            if (GameEngine.hasUncelebratedTier(state)) {
+                TierCelebration(tier = stats.tier, onDismiss = actions::acknowledgeTier)
+            }
+
+            updateDialog()
+        }
     }
 }
 
@@ -187,6 +208,32 @@ private fun Header(state: GameState, stats: Stats) {
             color = Muted,
         )
 
+        val buff = stats.buff
+        if (buff != null) {
+            Spacer(Modifier.height(8.dp))
+            PixelPanel(
+                modifier = Modifier.fillMaxWidth(),
+                border = Ember,
+                padding = 8,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    PixelLabel(
+                        text = "${buff.label} ${Numbers.formatMultiplier(buff.factor)}",
+                        color = Ember,
+                        size = 12,
+                    )
+                    Text(
+                        text = "noch ${stats.buffSecondsLeft.toInt()} s",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Muted,
+                    )
+                }
+            }
+        }
+
         Spacer(Modifier.height(12.dp))
 
         val next = stats.nextTier
@@ -227,10 +274,13 @@ private class TapEffect(val id: Long, val position: Offset, val label: String)
 
 @Composable
 private fun TapArea(
-    tier: CelestialTier,
-    onTap: () -> Double,
+    state: GameState,
+    stats: Stats,
+    actions: GameActions,
     modifier: Modifier = Modifier,
 ) {
+    val tier = stats.tier
+    val onTap: () -> Double = actions::tap
     val effects = remember { mutableStateListOf<TapEffect>() }
     var nextId by remember { mutableLongStateOf(0L) }
     val squash = remember { Animatable(1f) }
@@ -244,7 +294,7 @@ private fun TapArea(
                 val gained = onTap()
                 effects += TapEffect(nextId++, position, Numbers.format(gained))
                 sfx?.click()
-                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                if (state.hapticsOn) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 scope.launch {
                     squash.snapTo(0.93f)
                     squash.animateTo(
@@ -269,6 +319,10 @@ private fun TapArea(
                 },
         )
 
+        // Drawn over the body rather than behind it: half of each orbit passes in front, and
+        // sorting per satellite would cost more than the illusion is worth at this size.
+        Satellites(state = state, tier = tier, modifier = Modifier.fillMaxSize())
+
         for (effect in effects) {
             key(effect.id) {
                 TapFeedback(
@@ -278,6 +332,14 @@ private fun TapArea(
                 )
             }
         }
+
+        // Last, so a comet is never covered by the body it drifts past.
+        CometOverlay(
+            state = state,
+            frequency = GameEngine.cometFrequency(state),
+            onCatch = actions::catchComet,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 

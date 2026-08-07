@@ -6,6 +6,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.CollectorOffer
+import com.staatseigentum.kollaps.core.Comet
+import com.staatseigentum.kollaps.core.SaveCodec
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.OfflineReport
@@ -134,6 +136,35 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun dismissOfflineReport() {
         _offlineReport.value = null
     }
+
+    fun catchComet(comet: Comet) {
+        _state.value = GameEngine.catchComet(_state.value, comet)
+    }
+
+    fun buyPrestigeUpgrade(upgradeId: String) {
+        _state.value = GameEngine.buyPrestigeUpgrade(_state.value, upgradeId)
+        persist()
+    }
+
+    fun setSound(on: Boolean) {
+        _state.value = GameEngine.setSound(_state.value, on)
+        persist()
+    }
+
+    fun setHaptics(on: Boolean) {
+        _state.value = GameEngine.setHaptics(_state.value, on)
+        persist()
+    }
+
+    /** Replaces the running game with an imported one. Saved at once, so it cannot be lost. */
+    fun importSave(block: String): Boolean {
+        val loaded = SaveCodec.import(block) ?: return false
+        _state.value = loaded
+        persist()
+        return true
+    }
+
+    fun exportSave(): String = SaveCodec.export(_state.value)
 
     // ------------------------------------------------------------------ derived views
 
