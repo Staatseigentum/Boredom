@@ -85,6 +85,15 @@ class BalanceSimulationTest {
             state = GameEngine.buyUpgrade(state, affordable.upgrade.id)
         }
 
+        // The fleet's arrangement, redone whenever a slot opens up. A naive player sets the
+        // biggest earners to quality and leaves it at that, which is what this does.
+        if (Roles.isUnlocked(state) && Roles.hasFreeSlot(state)) {
+            val best = GameEngine.collectorOffers(state, BuyAmount.ONE)
+                .filter { it.owned > 0 && Roles.roleOf(state, it.collector.id) == null }
+                .maxByOrNull { it.output }
+            if (best != null) state = Roles.set(state, best.collector.id, Role.GUETE)
+        }
+
         // A slot, then a body on it. Both out of surplus, and inner slots first, because the bot
         // has no way to reason about a body that pays off over the next hour.
         while (true) {
@@ -135,6 +144,7 @@ class BalanceSimulationTest {
         println("  Kollektoren: ${run.finalState.collectors.values.sum()}")
         println("  Upgrades: ${run.finalState.upgrades.size} von ${Upgrades.all.size}")
         println("  Fusionsstufen: ${run.finalState.fusers.values.sum()}")
+        println("  Rollen: ${Roles.assignedCount(run.finalState)} von ${Roles.slots(run.finalState)}")
         println(
             "  Bahnen: ${run.finalState.orbits}, davon belegt " +
                 "${Orbits.occupiedCount(run.finalState)} " +

@@ -74,6 +74,14 @@ object SaveCodec {
         // Drop references to content that no longer exists, so a renamed collector or a removed
         // upgrade cannot break the save.
         val knownCollectors = migrated.collectors.filterKeys { Collectors.byId(it) != null }
+        // A role on a collector that no longer exists would hold one of the few slots forever,
+        // with nothing on screen to take it off.
+        val knownRoles = migrated.roles.filter {
+            Collectors.byId(it.key) != null && Role.byId(it.value) != null
+        }
+        if (knownRoles.size != migrated.roles.size) {
+            migrated = migrated.copy(roles = knownRoles)
+        }
         val knownUpgrades = migrated.upgrades.filterTo(mutableSetOf()) { Upgrades.byId(it) != null }
         val knownPrestige = migrated.prestigeUpgrades.filterTo(mutableSetOf()) {
             PrestigeUpgrades.byId(it) != null

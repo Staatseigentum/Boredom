@@ -74,6 +74,9 @@ interface GameActions {
     fun tap(): Double
     fun setBuyAmount(amount: BuyAmount)
     fun buyCollector(id: String)
+
+    /** Walks one collector to its next role, and back to none after the last. */
+    fun cycleRole(id: String)
     fun buyUpgrade(id: String)
 
     /** Buys levels of a fusion stage, in whatever the current buy amount is. */

@@ -141,6 +141,25 @@ object Achievements {
             },
         )
 
+        add(
+            Achievement(
+                "a_roles_all",
+                "Aufgestellt",
+                "Jeder freie Platz mit einer Ausrichtung belegt.",
+            ) { state ->
+                Roles.isUnlocked(state) && Roles.assignedCount(state) >= Roles.slots(state)
+            },
+        )
+        add(
+            Achievement(
+                "a_role_network",
+                "Koordiniert",
+                "Ein Kollektor, der nicht mehr selbst arbeitet, sondern alle anderen antreibt.",
+            ) { state ->
+                Collectors.all.any { Roles.roleOf(state, it.id) == Role.NETZ }
+            },
+        )
+
         // ---- the system
         add(
             Achievement("a_orbit_1", "Erste Bahn", "Etwas kreist um dich.") { state ->

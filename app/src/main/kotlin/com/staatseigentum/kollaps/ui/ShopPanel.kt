@@ -44,6 +44,7 @@ import com.staatseigentum.kollaps.core.Milestones
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.Orbits
 import com.staatseigentum.kollaps.core.ResearchTree
+import com.staatseigentum.kollaps.core.Roles
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.core.UpgradeGroup
@@ -140,6 +141,7 @@ fun ShopPanel(
                 buyAmount = buyAmount,
                 onBuyAmount = actions::setBuyAmount,
                 onBuy = actions::buyCollector,
+                onCycleRole = actions::cycleRole,
             )
 
             ShopTab.UPGRADES -> UpgradeList(
@@ -204,6 +206,7 @@ private fun CollectorList(
     buyAmount: BuyAmount,
     onBuyAmount: (BuyAmount) -> Unit,
     onBuy: (String) -> Unit,
+    onCycleRole: (String) -> Unit,
 ) {
     val offers = remember(state, buyAmount) {
         GameEngine.collectorOffers(state, buyAmount).filter { it.visible }
@@ -226,21 +229,44 @@ private fun CollectorList(
             }
         }
 
+        if (Roles.isUnlocked(state)) {
+            Text(
+                text = "Ausrichtungen: ${Roles.assignedCount(state)} von ${Roles.slots(state)} " +
+                    "belegt — tippe auf die Zahl links, um eine zu vergeben.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Muted,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+            )
+            Spacer(Modifier.height(6.dp))
+        }
+
         LazyColumn(
             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             items(offers, key = { it.collector.id }) { offer ->
-                CollectorRow(offer = offer, onBuy = { onBuy(offer.collector.id) })
+                CollectorRow(
+                    state = state,
+                    offer = offer,
+                    onBuy = { onBuy(offer.collector.id) },
+                    onCycleRole = { onCycleRole(offer.collector.id) },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun CollectorRow(offer: CollectorOffer, onBuy: () -> Unit) {
+private fun CollectorRow(
+    state: GameState,
+    offer: CollectorOffer,
+    onBuy: () -> Unit,
+    onCycleRole: () -> Unit,
+) {
     val enabled = offer.affordable
     val sfx = LocalSfx.current
+    val role = Roles.roleOf(state, offer.collector.id)
+    val roleTappable = Roles.isUnlocked(state) && offer.everBought
     PixelPanel(
         modifier = Modifier
             .fillMaxWidth()
@@ -252,11 +278,18 @@ private fun CollectorRow(offer: CollectorOffer, onBuy: () -> Unit) {
         padding = 10,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // The count badge doubles as the role control. Its own tap target inside a row that
+            // is itself tappable: buying and setting up are different intentions, and a long
+            // press would hide the second one behind a gesture nobody discovers.
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .background(if (offer.everBought) SpaceElevated else SpaceCard)
-                    .border(2.dp, Outline, RectangleShape),
+                    .border(2.dp, if (role != null) Nebula else Outline, RectangleShape)
+                    .clickable(enabled = roleTappable) {
+                        sfx?.click()
+                        onCycleRole()
+                    },
                 contentAlignment = Alignment.Center,
             ) {
                 PixelLabel(
@@ -282,6 +315,13 @@ private fun CollectorRow(offer: CollectorOffer, onBuy: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
+                if (role != null) {
+                    Text(
+                        text = "${role.label}: ${role.text}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Nebula,
+                    )
+                }
                 // What the counter is counting towards. Without this the milestone bonus is a
                 // number that changes on its own and never says why.
                 if (offer.owned > 0) {

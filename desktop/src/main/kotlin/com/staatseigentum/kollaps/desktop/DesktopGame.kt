@@ -9,6 +9,7 @@ import com.staatseigentum.kollaps.core.SaveCodec
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.OfflineReport
+import com.staatseigentum.kollaps.core.Roles
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.ui.GameActions
 
@@ -64,6 +65,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
 
     override fun buyCollector(id: String) {
         state = GameEngine.buyCollector(state, id, currentBuyAmount)
+    }
+
+    override fun cycleRole(id: String) {
+        state = Roles.cycle(state, id)
     }
 
     override fun buyUpgrade(id: String) {

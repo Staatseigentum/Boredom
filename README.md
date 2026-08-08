@@ -15,6 +15,11 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   Neutronenstern, Magnetar
 - **17 Kollektoren** als Idle-Produzenten, vom Staubfänger bis zum Omega-Kollektor, mit
   Cookie-Clicker-typischer Preissteigerung von 15 % pro Stück
+- **Ausrichtungen** für die Flotte: jeder Kollektor kann auf *Menge* (billiger, schlampiger),
+  *Güte* (teurer, besser) oder *Netz* (arbeitet kaum selbst, treibt dafür alle anderen an)
+  gestellt werden. Jede Rolle gibt etwas her, was sie woanders holt — sonst wäre es ein Knopf,
+  den niemand ungedrückt ließe. Wie viele Plätze du gleichzeitig belegen darfst, wächst mit den
+  Kollapsen hinter dir
 - **128 Upgrades**: Tipp-Verstärker, fünf Verdopplungsstufen pro Kollektor, globale
   Multiplikatoren, Offline-Verbesserungen — und **20 Synergien**, bei denen ein Kollektor einen
   anderen verstärkt. Sie sind die einzigen Upgrades, deren Stärke davon abhängt, wie die Flotte

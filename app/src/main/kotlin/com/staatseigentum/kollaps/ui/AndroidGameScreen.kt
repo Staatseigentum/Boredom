@@ -31,6 +31,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun tap(): Double = model.tap()
             override fun setBuyAmount(amount: BuyAmount) = model.setBuyAmount(amount)
             override fun buyCollector(id: String) = model.buyCollector(id)
+            override fun cycleRole(id: String) = model.cycleRole(id)
             override fun buyUpgrade(id: String) = model.buyUpgrade(id)
             override fun buyFuser(id: String) = model.buyFuser(id)
             override fun openOrbit() = model.openOrbit()

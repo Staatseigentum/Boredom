@@ -23,6 +23,13 @@ data class GameState(
     /** Number of copies owned, keyed by collector id. */
     val collectors: Map<String, Int> = emptyMap(),
 
+    /**
+     * Which role each collector is set to, keyed by collector id. See [Roles].
+     *
+     * Part of the run: a collapse takes the fleet, so it takes how the fleet was set up.
+     */
+    val roles: Map<String, String> = emptyMap(),
+
     /** Ids of upgrades bought in the current run. */
     val upgrades: Set<String> = emptySet(),
 

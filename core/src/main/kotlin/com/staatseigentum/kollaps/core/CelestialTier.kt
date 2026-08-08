@@ -365,7 +365,7 @@ object Tiers {
             index = 24,
             name = "Schwarzes Loch",
             flavor = "Das Ende der Leiter. Ab hier kommt nichts mehr zurück.",
-            threshold = 2_200_000_000_000_000_000_000_000.0,
+            threshold = 2_700_000_000_000_000_000_000_000.0,
             productionMultiplier = 1_200.0,
             kind = BodyKind.SINGULARITY,
             primaryColor = 0xFF000000,

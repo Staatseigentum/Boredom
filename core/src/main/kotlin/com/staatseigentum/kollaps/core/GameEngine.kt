@@ -449,14 +449,24 @@ object GameEngine {
     /** How much a single tap would yield right now, for the floating number. */
     fun tapValue(state: GameState): Double = massPerTap(state)
 
+    /**
+     * What a run of copies costs this player, including whatever the collector's role does to it.
+     *
+     * One function, called by both the shop row and the purchase. Two places working out a price
+     * is two places to disagree about it, and the disagreement only ever shows up as a button
+     * that refuses a purchase it just offered.
+     */
+    fun collectorCost(state: GameState, collector: Collector, owned: Int, count: Int): Double =
+        collector.costForBulk(owned, count) * Roles.costFactor(state, collector.id)
+
     /** Buys [amount] copies of a collector, or nothing if they are not affordable. */
     fun buyCollector(state: GameState, collectorId: String, amount: BuyAmount): GameState {
         val collector = Collectors.byId(collectorId) ?: return state
         val owned = state.ownedOf(collectorId)
-        val count = resolveAmount(collector, owned, state.mass, amount)
+        val count = resolveAmount(collector, owned, state.mass, amount, Roles.costFactor(state, collectorId))
         if (count <= 0) return state
 
-        val cost = collector.costForBulk(owned, count)
+        val cost = collectorCost(state, collector, owned, count)
         if (cost > state.mass) return state
 
         return state.copy(
@@ -1017,8 +1027,9 @@ object GameEngine {
 
         return Collectors.all.mapIndexed { position, collector ->
             val owned = state.ownedOf(collector.id)
-            val count = resolveAmount(collector, owned, state.mass, amount)
-            val cost = collector.costForBulk(owned, count)
+            val count =
+                resolveAmount(collector, owned, state.mass, amount, Roles.costFactor(state, collector.id))
+            val cost = collectorCost(state, collector, owned, count)
             // A collector appears once it is roughly within reach, or once one is owned. The
             // very first one is always visible so a fresh save has something to buy.
             val visible = position == 0 ||
@@ -1154,9 +1165,17 @@ object GameEngine {
     }
 
     /** How many copies [amount] resolves to for this collector right now. */
-    fun resolveAmount(collector: Collector, owned: Int, mass: Double, amount: BuyAmount): Int =
+    fun resolveAmount(
+        collector: Collector,
+        owned: Int,
+        mass: Double,
+        amount: BuyAmount,
+        costFactor: Double = 1.0,
+    ): Int =
         if (amount == BuyAmount.MAX) {
-            collector.affordableCount(owned, mass).coerceAtMost(MAX_BULK)
+            // Divided rather than multiplied: a cheaper role means the same mass reaches further,
+            // and asking the collector how far is the same question with a bigger purse.
+            collector.affordableCount(owned, mass / costFactor).coerceAtMost(MAX_BULK)
         } else {
             amount.count
         }
@@ -1304,6 +1323,17 @@ object GameEngine {
 
                 is UpgradeEffect.OfflineCapHours ->
                     mods.offlineCapHours = maxOf(mods.offlineCapHours, effect.hours)
+            }
+        }
+
+        // Roles fold into the same per-collector map the upgrades use, so all three places that
+        // work out an output — the shop row, the statistics and the tick — pick them up without
+        // knowing roles exist. Three separate multiplications would be three chances to forget one.
+        if (Roles.isUnlocked(state)) {
+            for (collector in Collectors.all) {
+                val factor = Roles.outputFactor(state, collector.id) *
+                    Roles.networkFactor(state, collector.id)
+                if (factor != 1.0) mods.collectors.merge(collector.id, factor) { a, b -> a * b }
             }
         }
 

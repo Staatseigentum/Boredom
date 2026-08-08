@@ -12,6 +12,7 @@ import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.OfflineReport
+import com.staatseigentum.kollaps.core.Roles
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.UpgradeOffer
 import com.staatseigentum.kollaps.data.SaveStore
@@ -123,6 +124,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun buyCollector(collectorId: String) {
         _state.value = GameEngine.buyCollector(_state.value, collectorId, buyAmount.value)
+    }
+
+    fun cycleRole(collectorId: String) {
+        _state.value = Roles.cycle(_state.value, collectorId)
     }
 
     fun buyUpgrade(upgradeId: String) {
