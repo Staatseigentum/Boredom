@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.staatseigentum.kollaps.core.Automation
 import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.CollectorOffer
 import com.staatseigentum.kollaps.core.Fusion
@@ -375,6 +376,10 @@ private fun CosmosPanel(
         // wait; a bench standing empty is wasted wall clock.
         if (ResearchTree.isUnlocked(state)) {
             item { ResearchPanel(state = state, actions = actions) }
+        }
+
+        if (Automation.isUnlocked(state)) {
+            item { AutomationPanel(state = state, actions = actions) }
         }
 
         item {

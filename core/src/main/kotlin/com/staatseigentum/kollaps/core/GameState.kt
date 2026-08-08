@@ -149,6 +149,14 @@ data class GameState(
      * something, and nothing runs while the phone is off.
      */
     val researchDoneAt: Long = 0,
+
+    /**
+     * Automation rules that are switched on, and which setting each runs at.
+     *
+     * A rule missing from the map is off. See [Automation], which also explains why the older
+     * [autoBuyOn] flag is still read rather than migrated away.
+     */
+    val automation: Map<String, Int> = emptyMap(),
 ) {
     fun ownedOf(collectorId: String): Int = collectors[collectorId] ?: 0
 

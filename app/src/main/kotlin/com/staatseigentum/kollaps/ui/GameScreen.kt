@@ -79,6 +79,9 @@ interface GameActions {
     /** Puts a project on the lab bench. The mass is taken now, the result arrives later. */
     fun startResearch(id: String)
     fun cancelResearch()
+
+    /** Walks one automation rule to its next setting, and off after the last. */
+    fun cycleAutomation(id: String)
     fun collapse()
     fun dismissOfflineReport()
     fun acknowledgeTier()

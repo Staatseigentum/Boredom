@@ -2,6 +2,7 @@ package com.staatseigentum.kollaps.desktop
 
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
+import com.staatseigentum.kollaps.core.AutomationRule
 import com.staatseigentum.kollaps.core.Collectors
 import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
@@ -127,6 +128,25 @@ fun main(args: Array<String>) {
         }
     }
     shoot("27-labor", researching, tab = 3, note = "(Forschung läuft)")
+
+    // Lab and standing orders in one frame, which only fits on the tablet: on a phone the second
+    // card starts below the fold and a still cannot scroll to it.
+    val automated = DesktopGame().apply {
+        seekToTier(Tiers.indexOf("Saturn"))
+        edit {
+            it.copy(
+                mass = it.mass * 20,
+                collapses = 4,
+                prestigeUpgrades = setOf("p_autobuy"),
+            )
+        }
+        cycleAutomation(AutomationRule.COLLECTORS.id)
+        cycleAutomation(AutomationRule.COLLECTORS.id)
+        cycleAutomation(AutomationRule.UPGRADES.id)
+        cycleAutomation(AutomationRule.COLLAPSE.id)
+        cycleAutomation(AutomationRule.COLLAPSE.id)
+    }
+    shoot("28-automatik", automated, tab = 3, note = "(Tablet, Regeln)", wide = true)
 
     // The tier change is its own bug surface, so it gets walked inside one composition rather
     // than photographed rung by rung — see [COLLAPSE_WALK].

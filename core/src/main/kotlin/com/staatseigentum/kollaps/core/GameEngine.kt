@@ -199,7 +199,7 @@ object GameEngine {
         var ticked = credit(state, gained).copy(playedSeconds = state.playedSeconds + seconds)
         ticked = autoTap(ticked, seconds)
         ticked = Fusion.advance(ticked, seconds)
-        ticked = autoBuy(ticked)
+        ticked = automate(ticked)
         ticked = advanceEvents(ticked, seconds)
         ticked = sample(ticked, seconds)
         if (ticked.activeChallenge != null) {
@@ -309,25 +309,112 @@ object GameEngine {
         if (state.pendingEvent == null) state else state.copy(pendingEvent = null)
 
     /**
-     * Buys one collector, if the buyer is on and the mass is comfortably there.
+     * Carries out the rules that only need to know how much mass is in hand.
+     *
+     * One purchase per rule per tick rather than a loop, so no rule can empty a shop inside a
+     * single frame — and so the three of them stay in a fixed order the player can predict.
+     */
+    private fun automate(state: GameState): GameState {
+        if (!Automation.isUnlocked(state)) return state
+        var next = autoCollectors(state)
+        next = autoUpgrades(next)
+        next = autoFusion(next)
+        return next
+    }
+
+    /**
+     * Buys one collector, if the rule is on and the mass is comfortably there.
      *
      * The reserve is the whole design: an automatic buyer that spends down to the last kilogram
      * is a machine that stops you ever affording an upgrade, and upgrades are worth far more than
-     * one more copy of anything. Requiring four times the price means it buys out of surplus and
-     * quietly stops as prices climb — exactly when the player wants to be saving.
-     *
-     * One per tick rather than a loop, so the shop cannot empty itself in a single frame.
+     * one more copy of anything. Requiring several times the price means it buys out of surplus
+     * and quietly stops as prices climb — exactly when the player wants to be saving.
      */
-    private fun autoBuy(state: GameState): GameState {
-        if (!state.autoBuyOn) return state
-        if (!modifiersOf(state).autoBuy) return state
+    private fun autoCollectors(state: GameState): GameState {
+        if (!Automation.isAvailable(state, AutomationRule.COLLECTORS)) return state
+        val reserve = Automation.valueOf(state, AutomationRule.COLLECTORS) ?: return state
 
         val best = collectorOffers(state, BuyAmount.ONE)
-            .filter { it.visible && it.amount > 0 && it.cost * AUTO_BUY_RESERVE <= state.mass }
+            .filter { it.visible && it.amount > 0 && it.cost * reserve <= state.mass }
             .minByOrNull { it.cost / it.collector.baseRate }
             ?: return state
 
         return buyCollector(state, best.collector.id, BuyAmount.ONE)
+    }
+
+    /**
+     * Buys the cheapest upgrade that is small enough against the pile.
+     *
+     * A share rather than a reserve, because an upgrade is bought once and then owned forever:
+     * what matters is not keeping a multiple of the price in hand afterwards but not spending the
+     * afternoon's savings on something the player was about to outgrow anyway.
+     */
+    private fun autoUpgrades(state: GameState): GameState {
+        if (!Automation.isAvailable(state, AutomationRule.UPGRADES)) return state
+        val share = Automation.valueOf(state, AutomationRule.UPGRADES) ?: return state
+
+        val next = upgradeOffers(state)
+            .firstOrNull { it.affordable && it.upgrade.cost <= state.mass * share }
+            ?: return state
+
+        return buyUpgrade(state, next.upgrade.id)
+    }
+
+    /** Adds a level to the cheapest fusion stage, so no furnace stays starved for long. */
+    private fun autoFusion(state: GameState): GameState {
+        if (!Automation.isAvailable(state, AutomationRule.FUSION)) return state
+        val reserve = Automation.valueOf(state, AutomationRule.FUSION) ?: return state
+
+        val next = fusionOffers(state, BuyAmount.ONE)
+            .filter { it.amount > 0 && it.cost * reserve <= state.mass }
+            .minByOrNull { it.cost }
+            ?: return state
+
+        return buyFuser(state, next.stage.id, BuyAmount.ONE)
+    }
+
+    /**
+     * Everything that has to know what time it actually is: the lab, and the two rules that act
+     * on it.
+     *
+     * Kept apart from [tick] for the same reason [settleResearch] is — the tick counts elapsed
+     * play time and has no business holding a wall clock. The caller has one; it passes it here.
+     */
+    fun onWallClock(state: GameState, nowMillis: Long): GameState {
+        var next = settleResearch(state, nowMillis)
+        next = autoResearch(next, nowMillis)
+        next = autoCollapse(next, nowMillis)
+        return next
+    }
+
+    /** Puts something on the bench whenever it is free. */
+    private fun autoResearch(state: GameState, nowMillis: Long): GameState {
+        if (!Automation.isAvailable(state, AutomationRule.RESEARCH)) return state
+        val mode = Automation.valueOf(state, AutomationRule.RESEARCH) ?: return state
+        if (state.activeResearch != null) return state
+
+        val affordable = ResearchTree.offered(state)
+            .filter { !ResearchTree.isDone(state, it) && it.cost <= state.mass }
+        val pick = if (mode >= 1.0) affordable.maxByOrNull { it.cost } else affordable.minByOrNull { it.cost }
+
+        return startResearch(state, (pick ?: return state).id, nowMillis)
+    }
+
+    /**
+     * Collapses once the payout is worth the reset.
+     *
+     * The threshold is the point of the rule. Collapsing the moment it becomes possible is almost
+     * always wrong — the singularities scale with the square root of the mass overshoot, so
+     * waiting is worth real money — and a rule with no floor would rob the player of that every
+     * single run.
+     */
+    private fun autoCollapse(state: GameState, nowMillis: Long): GameState {
+        if (!Automation.isAvailable(state, AutomationRule.COLLAPSE)) return state
+        val floor = Automation.valueOf(state, AutomationRule.COLLAPSE) ?: return state
+        if (!canCollapse(state)) return state
+        if (pendingSingularities(state) < floor) return state
+
+        return collapse(state, nowMillis)
     }
 
     /** Counts the running buff down. Only the tick does this, so a closed app does not burn it. */
@@ -438,6 +525,7 @@ object GameEngine {
                 soundOn = state.soundOn,
                 hapticsOn = state.hapticsOn,
                 autoBuyOn = state.autoBuyOn,
+                automation = state.automation,
                 remindersOn = state.remindersOn,
                 eventsAnswered = state.eventsAnswered,
                 challengesDone = state.challengesDone,
@@ -481,6 +569,7 @@ object GameEngine {
                 soundOn = state.soundOn,
                 hapticsOn = state.hapticsOn,
                 autoBuyOn = state.autoBuyOn,
+                automation = state.automation,
                 remindersOn = state.remindersOn,
                 eventsAnswered = state.eventsAnswered,
                 // The point of pressing it.
@@ -632,6 +721,7 @@ object GameEngine {
         soundOn = state.soundOn,
         hapticsOn = state.hapticsOn,
         autoBuyOn = state.autoBuyOn,
+        automation = state.automation,
         remindersOn = state.remindersOn,
         eventsAnswered = state.eventsAnswered,
         challengesDone = state.challengesDone,
@@ -707,7 +797,20 @@ object GameEngine {
 
     fun setHaptics(state: GameState, on: Boolean): GameState = state.copy(hapticsOn = on)
 
-    fun setAutoBuy(state: GameState, on: Boolean): GameState = state.copy(autoBuyOn = on)
+    /** The old single switch, kept because the settings screen still offers it as one. */
+    fun setAutoBuy(state: GameState, on: Boolean): GameState =
+        Automation.set(
+            state,
+            Automation.LEGACY_RULE,
+            if (on) Automation.LEGACY_OPTION else null,
+        )
+
+    /** Moves one automation rule to its next setting, and off after the last one. */
+    fun cycleAutomation(state: GameState, ruleId: String): GameState {
+        val rule = AutomationRule.byId(ruleId) ?: return state
+        if (!Automation.isAvailable(state, rule)) return state
+        return Automation.cycle(state, rule)
+    }
 
     fun setReminders(state: GameState, on: Boolean): GameState = state.copy(remindersOn = on)
 

@@ -67,6 +67,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.cancelResearch(state)
     }
 
+    override fun cycleAutomation(id: String) {
+        state = GameEngine.cycleAutomation(state, id)
+    }
+
     override fun collapse() {
         state = GameEngine.collapse(state, NOW)
     }

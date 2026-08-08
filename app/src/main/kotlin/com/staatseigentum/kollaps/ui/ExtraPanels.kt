@@ -285,19 +285,8 @@ fun SettingsSection(
             onReminders(!state.remindersOn)
         }
 
-        // Only once it has been bought — a switch for something you do not own explains nothing.
-        if (stats.autoBuyUnlocked) {
-            Spacer(Modifier.height(6.dp))
-            Toggle("Kollektoren automatisch kaufen", state.autoBuyOn) {
-                onAutoBuy(!state.autoBuyOn)
-            }
-            Text(
-                text = "Kauft nach, sobald du das ${GameEngine.AUTO_BUY_RESERVE.toInt()}-fache " +
-                    "des Preises übrig hast — der Rest bleibt für Upgrades liegen.",
-                style = MaterialTheme.typography.bodySmall,
-                color = Muted,
-            )
-        }
+        // The automatic buyer used to live here as a single switch. It is a rule among five now,
+        // and a second control for the same setting would only be a way to disagree with itself.
 
         Spacer(Modifier.height(14.dp))
         PixelLabel("Spielstand", size = 13, color = Muted)

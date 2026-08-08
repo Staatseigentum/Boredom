@@ -76,9 +76,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 val now = SystemClock.elapsedRealtime()
                 val seconds = (now - previous).coerceAtLeast(0L) / 1_000.0
                 previous = now
-                // The lab runs on the wall clock, not on elapsed play time, so it is settled next
-                // to the tick rather than inside it — see GameEngine.settleResearch.
-                _state.value = GameEngine.settleResearch(
+                // The lab and two of the automation rules run on the wall clock rather than on
+                // elapsed play time, so they are settled next to the tick rather than inside it.
+                _state.value = GameEngine.onWallClock(
                     GameEngine.tick(_state.value, seconds),
                     System.currentTimeMillis(),
                 )
@@ -101,7 +101,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val report = GameEngine.applyOffline(_state.value, now)
         // Settled after the offline credit, not before: a project that finished during the night
         // should not have been multiplying the production it was away for.
-        _state.value = GameEngine.settleResearch(report.state, now)
+        _state.value = GameEngine.onWallClock(report.state, now)
         if (report.worthShowing) _offlineReport.value = report
     }
 
@@ -140,6 +140,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun cancelResearch() {
         _state.value = GameEngine.cancelResearch(_state.value)
+    }
+
+    fun cycleAutomation(ruleId: String) {
+        _state.value = GameEngine.cycleAutomation(_state.value, ruleId)
     }
 
     fun setBuyAmount(amount: BuyAmount) {

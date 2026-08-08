@@ -35,6 +35,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun buyFuser(id: String) = model.buyFuser(id)
             override fun startResearch(id: String) = model.startResearch(id)
             override fun cancelResearch() = model.cancelResearch()
+            override fun cycleAutomation(id: String) = model.cycleAutomation(id)
             override fun collapse() = model.collapse()
             override fun dismissOfflineReport() = model.dismissOfflineReport()
             override fun acknowledgeTier() = model.acknowledgeTier()
