@@ -163,7 +163,9 @@ Neben der Android-Fassung baut jeder Release eine spielbare Windows-Version:
 - **`Kollaps-<version>-setup.msi`** — Installer mit eingebauter Java-Laufzeit. Es muss nichts
   weiter auf dem Rechner sein.
 - **`Kollaps-<version>-windows-portabel.zip`** — dasselbe als Ordner zum Entpacken, für alle, die
-  nichts installieren wollen. `Kollaps.exe` starten.
+  nichts installieren wollen. `Kollaps.exe` starten. Diese Datei liegt jedem Release bei; der
+  Installer braucht Werkzeug auf dem Bau-Rechner, das nicht uns gehört, und kann darum einmal
+  fehlen.
 
 Es ist dieselbe Oberfläche wie auf dem Handy, nur breiter: ab etwa 600 Punkten Fensterbreite
 schaltet das Fenster auf zwei Spalten um, Körper links und Laden rechts. Der Spielstand liegt

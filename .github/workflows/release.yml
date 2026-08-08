@@ -1,8 +1,8 @@
 name: Release
 
-# Tag a commit with v1.1.0 and push the tag — this builds a signed APK, a Windows installer and a
-# portable Windows folder, and publishes all three as a GitHub Release. The in-app updater on the
-# phone reads exactly that release feed and only ever looks at the APK.
+# Tag a commit with v1.1.0 and push the tag — this builds a signed APK, a portable Windows folder
+# and, where the runner can, a Windows installer, and publishes them as a GitHub Release. The
+# in-app updater on the phone reads exactly that release feed and only ever looks at the APK.
 on:
   push:
     tags: ['v*']
@@ -158,24 +158,48 @@ jobs:
 
       # Only the desktop module and what it depends on. Configuring the Android module here would
       # want an SDK this job has no reason to install.
-      - name: Installer und tragbare Fassung bauen
+      #
+      # `.\gradlew.bat` rather than `./gradlew`: this runner's shell is PowerShell, and the
+      # extensionless name only finds the batch file by way of PATHEXT. Naming the file that is
+      # actually meant to run here takes that guess out of the release path.
+      #
+      # The portable folder is built on its own and first, because it needs nothing but the JDK.
+      - name: Tragbare Fassung bauen
+        shell: pwsh
         run: >
-          ./gradlew --configure-on-demand --no-daemon --console=plain
+          .\gradlew.bat --configure-on-demand --no-daemon --console=plain
           -PappVersion=${{ needs.version.outputs.name }}
-          :desktop:packageMsi :desktop:createDistributable
+          :desktop:createDistributable
+
+      # The installer needs the WiX toolset, which is the runner's to provide and not ours. If it
+      # is not there, that costs the installer and nothing else: the portable folder is already
+      # built, the APK is built in a different job, and the release still goes out. A failure that
+      # takes the phone build down with it would be the worse trade by a wide margin.
+      - name: Installer bauen
+        id: installer
+        continue-on-error: true
+        shell: pwsh
+        run: >
+          .\gradlew.bat --configure-on-demand --no-daemon --console=plain
+          -PappVersion=${{ needs.version.outputs.name }}
+          :desktop:packageMsi
 
       - name: Zusammenpacken
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $msi = Get-ChildItem -Recurse -Filter *.msi desktop/build/compose/binaries | Select-Object -First 1
-          if (-not $msi) { Write-Error "Kein Installer gebaut"; exit 1 }
-          Copy-Item $msi.FullName "dist/Kollaps-${{ needs.version.outputs.name }}-setup.msi"
 
           $app = Get-ChildItem -Directory desktop/build/compose/binaries/main/app | Select-Object -First 1
           if (-not $app) { Write-Error "Keine tragbare Fassung gebaut"; exit 1 }
           Compress-Archive -Path "$($app.FullName)\*" `
             -DestinationPath "dist/Kollaps-${{ needs.version.outputs.name }}-windows-portabel.zip"
+
+          $msi = Get-ChildItem -Recurse -Filter *.msi desktop/build/compose/binaries | Select-Object -First 1
+          if ($msi) {
+            Copy-Item $msi.FullName "dist/Kollaps-${{ needs.version.outputs.name }}-setup.msi"
+          } else {
+            Write-Warning "Kein Installer gebaut — es geht nur die tragbare Fassung mit."
+          }
 
           Get-ChildItem dist | Format-Table Name, Length
 
