@@ -1,6 +1,10 @@
 package com.staatseigentum.kollaps.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,16 +21,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.AeonUpgrades
 import com.staatseigentum.kollaps.core.BigBang
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Numbers
+import com.staatseigentum.kollaps.core.Path
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Nebula
 import com.staatseigentum.kollaps.ui.theme.Outline
+import com.staatseigentum.kollaps.ui.theme.SpaceCard
 import com.staatseigentum.kollaps.ui.theme.Positive
 import com.staatseigentum.kollaps.ui.theme.Starlight
 
@@ -40,7 +47,7 @@ import com.staatseigentum.kollaps.ui.theme.Starlight
 fun BigBangPanel(
     state: GameState,
     stats: Stats,
-    onBigBang: () -> Unit,
+    onBigBang: (String) -> Unit,
     onBuy: (String) -> Unit,
 ) {
     var confirming by remember { mutableStateOf(false) }
@@ -84,26 +91,55 @@ fun BigBangPanel(
             style = MaterialTheme.typography.bodyMedium,
             color = if (stats.canBigBang) Positive else Muted,
         )
+        Path.of(state)?.let { running ->
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Dieses Universum: ${running.label}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Ember,
+            )
+        }
+
         Spacer(Modifier.height(12.dp))
 
-        PixelButton(
-            label = when {
-                !stats.canBigBang -> "Noch nicht so weit"
-                confirming -> "Wirklich alles hergeben?"
-                else -> "Urknall auslösen"
-            },
-            onClick = {
-                if (confirming) {
-                    onBigBang()
-                    confirming = false
-                } else {
-                    confirming = true
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = stats.canBigBang,
-            accent = Ember,
-        )
+        if (!confirming) {
+            PixelButton(
+                label = if (stats.canBigBang) "Urknall auslösen" else "Noch nicht so weit",
+                onClick = { confirming = true },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = stats.canBigBang,
+                accent = Ember,
+            )
+        } else {
+            // The confirmation *is* the choice. A separate "really?" followed by a picker would
+            // be two dialogs for one decision, and picking a universe to live in is a better
+            // second thought than a yes-or-no about a button already pressed once.
+            PixelLabel("Was für ein Universum?", color = Ember, size = 13)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Die Ausrichtung gilt, bis du das nächste Mal alles wegwirfst.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Muted,
+            )
+            Spacer(Modifier.height(8.dp))
+
+            for (path in Path.entries) {
+                PathChoice(
+                    path = path,
+                    onChoose = {
+                        onBigBang(path.id)
+                        confirming = false
+                    },
+                )
+                Spacer(Modifier.height(6.dp))
+            }
+
+            PixelButton(
+                label = "Doch nicht",
+                onClick = { confirming = false },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 
     // The shop only means anything once there is something in the purse.
@@ -166,6 +202,44 @@ private fun AeonShop(state: GameState, onBuy: (String) -> Unit) {
                         accent = Nebula,
                     )
                 }
+            }
+        }
+    }
+}
+
+/** One universe on offer: what it is called, what it leans towards, and one tap to live in it. */
+@Composable
+private fun PathChoice(path: Path, onChoose: () -> Unit) {
+    val sfx = LocalSfx.current
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SpaceCard)
+            .border(2.dp, Outline, RectangleShape)
+            .clickable {
+                sfx?.purchase()
+                onChoose()
+            }
+            .padding(10.dp),
+    ) {
+        Column {
+            Text(
+                text = path.label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = Starlight,
+            )
+            Text(
+                text = path.flavor,
+                style = MaterialTheme.typography.bodySmall,
+                color = Muted,
+            )
+            Spacer(Modifier.height(4.dp))
+            for (line in path.effectTexts) {
+                Text(
+                    text = "· $line",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Positive,
+                )
             }
         }
     }

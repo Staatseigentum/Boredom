@@ -45,7 +45,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun catchComet(comet: Comet) = model.catchComet(comet)
             override fun chooseEvent(optionIndex: Int) = model.chooseEvent(optionIndex)
             override fun dismissEvent() = model.dismissEvent()
-            override fun bigBang() = model.bigBang()
+            override fun bigBang(pathId: String) = model.bigBang(pathId)
             override fun buyAeonUpgrade(id: String) = model.buyAeonUpgrade(id)
             override fun startChallenge(id: String) = model.startChallenge(id)
             override fun abortChallenge() = model.abortChallenge()

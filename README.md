@@ -37,7 +37,10 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   die Belohnung für immer
 - **Der Urknall**: ab zehn Kollapsen kannst du alles wegwerfen, was die Kollapse aufgebaut
   haben, und bekommst dafür **Äonen** — eine Währung unter der Singularität, mit acht eigenen
-  Upgrades
+  Upgrades. Dabei wählst du, **was für ein Universum** das nächste wird: die Hand (Tippen), die
+  Maschine (Idle), das Labor (Forschung und Offline) oder der Kern (Fusion). Jede Ausrichtung ist
+  in einer Sache stark und sagt über den Rest nichts — die Wahl ist eine Entscheidung darüber,
+  wie sich die nächsten Stunden anfühlen, keine Rechenaufgabe mit richtiger Antwort
 - **Ereignisse mit Wahl**: alle paar Minuten eine Frage mit zwei Antworten. Masse sofort, oder
   ein Bonus auf Zeit — was besser ist, hängt davon ab, ob du gleich weiterspielst
 - **Das Sternensystem**: ab dem Saturn hält deine Schwerkraft etwas fest. Acht Bahnen zum

@@ -188,8 +188,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _state.value = GameEngine.dismissEvent(_state.value)
     }
 
-    fun bigBang() {
-        _state.value = GameEngine.bigBang(_state.value, System.currentTimeMillis())
+    fun bigBang(pathId: String) {
+        _state.value =
+            GameEngine.bigBang(_state.value, System.currentTimeMillis(), pathId)
         persist()
     }
 

@@ -121,6 +121,10 @@ object SaveCodec {
         if (slots != migrated.orbits || onOpenSlots.size != migrated.satellites.size) {
             migrated = migrated.copy(orbits = slots, satellites = onOpenSlots)
         }
+        // A path that no longer exists leaves the universe unaligned rather than half aligned.
+        if (migrated.path != null && Path.byId(migrated.path) == null) {
+            migrated = migrated.copy(path = null)
+        }
         // A project nobody can finish would hold the single bench for good.
         if (migrated.activeResearch != null && ResearchTree.byId(migrated.activeResearch) == null) {
             migrated = migrated.copy(activeResearch = null, researchDoneAt = 0)

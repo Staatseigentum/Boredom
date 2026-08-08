@@ -546,6 +546,7 @@ object GameEngine {
                 aeons = state.aeons,
                 aeonUpgrades = state.aeonUpgrades,
                 bigBangs = state.bigBangs,
+                path = state.path,
                 // Research is paid for in wall clock, which no reset can hand back.
                 research = state.research,
                 activeResearch = state.activeResearch,
@@ -563,9 +564,12 @@ object GameEngine {
      * beaten, lifetime totals — plus the Äonen this pays out. Refusing while a challenge is
      * running is the same rule the collapse follows: one reset at a time.
      */
-    fun bigBang(state: GameState, nowMillis: Long): GameState {
+    fun bigBang(state: GameState, nowMillis: Long, pathId: String? = null): GameState {
         if (!BigBang.canBang(state)) return state
         val earned = BigBang.pending(state)
+        // An unknown id keeps the universe unaligned rather than refusing the press. Losing a
+        // ten-collapse reset to a typo in a save file is not a trade worth making.
+        val chosen = Path.byId(pathId)?.id
 
         return award(
             GameState(
@@ -592,6 +596,7 @@ object GameEngine {
                 aeons = state.aeons + earned,
                 aeonUpgrades = state.aeonUpgrades,
                 bigBangs = state.bigBangs + 1,
+                path = chosen,
                 research = state.research,
                 activeResearch = state.activeResearch,
                 researchDoneAt = state.researchDoneAt,
@@ -809,6 +814,7 @@ object GameEngine {
         aeons = state.aeons,
         aeonUpgrades = state.aeonUpgrades,
         bigBangs = state.bigBangs,
+        path = state.path,
         research = state.research,
         activeResearch = state.activeResearch,
         researchDoneAt = state.researchDoneAt,
@@ -1232,6 +1238,9 @@ object GameEngine {
         for (id in state.challengesDone) {
             apply(mods, Challenge.byId(id)?.reward)
         }
+
+        // The lean of this universe, before anything bought inside it.
+        Path.of(state)?.effects?.forEach { apply(mods, it) }
 
         // Finished research, likewise. It is the fourth kind of permanent thing and the fourth
         // list to walk, and all four say what they do in the same vocabulary — which is the whole

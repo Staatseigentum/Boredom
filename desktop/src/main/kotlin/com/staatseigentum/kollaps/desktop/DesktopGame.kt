@@ -107,8 +107,8 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.dismissEvent(state)
     }
 
-    override fun bigBang() {
-        state = GameEngine.bigBang(state, NOW)
+    override fun bigBang(pathId: String) {
+        state = GameEngine.bigBang(state, NOW, pathId)
     }
 
     override fun buyAeonUpgrade(id: String) {

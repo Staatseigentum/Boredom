@@ -101,7 +101,8 @@ interface GameActions {
     fun chooseEvent(optionIndex: Int)
     fun dismissEvent()
 
-    fun bigBang()
+    /** Throws the universe away and starts one leaning towards [pathId]. */
+    fun bigBang(pathId: String)
     fun buyAeonUpgrade(id: String)
 
     fun startChallenge(id: String)

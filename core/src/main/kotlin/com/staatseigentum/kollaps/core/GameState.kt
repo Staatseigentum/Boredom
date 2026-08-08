@@ -111,6 +111,9 @@ data class GameState(
     /** How often the player has thrown a whole universe away. */
     val bigBangs: Int = 0,
 
+    /** Which kind of universe this one is, chosen at the big bang. See [Path]. */
+    val path: String? = null,
+
     /** Whether the automatic buyer is switched on. Off by default even once it is unlocked. */
     val autoBuyOn: Boolean = false,
 
