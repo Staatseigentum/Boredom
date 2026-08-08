@@ -93,6 +93,22 @@ data class Upgrade(
             -> UpgradeGroup.OFFLINE
         }
 
+    /**
+     * Whether this upgrade answers to a search.
+     *
+     * Name, effect and flavour all count. A player looking for "offline" is thinking of what the
+     * thing does, and the word appears in the effect line rather than in any of the names; one
+     * looking for "Sonne" remembers a sentence they read once. Searching only the names would
+     * miss both.
+     */
+    fun matches(needle: String): Boolean {
+        val term = Search.fold(needle)
+        if (term.isEmpty()) return true
+        return Search.fold(name).contains(term) ||
+            Search.fold(effectText).contains(term) ||
+            Search.fold(flavor).contains(term)
+    }
+
     /** Human readable summary of what this upgrade does. */
     val effectText: String
         get() = when (effect) {

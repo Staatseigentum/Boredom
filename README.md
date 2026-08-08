@@ -23,7 +23,8 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **128 Upgrades**: Tipp-Verstärker, fünf Verdopplungsstufen pro Kollektor, globale
   Multiplikatoren, Offline-Verbesserungen — und **20 Synergien**, bei denen ein Kollektor einen
   anderen verstärkt. Sie sind die einzigen Upgrades, deren Stärke davon abhängt, wie die Flotte
-  aussieht
+  aussieht. Zu finden über Gruppen-Filter und eine Suche, die Name, Wirkung und Beschreibung
+  liest und Umlaute nicht übelnimmt
 - **Offline-Produktion** — deine Kollektoren arbeiten weiter, während die App zu ist
   (standardmäßig 50 % für bis zu 8 Stunden, per Upgrade auf 100 % und 48 Stunden)
 - **Prestige** über den Kollaps: Singularitäten geben je +10 % auf alles, dauerhaft — und im

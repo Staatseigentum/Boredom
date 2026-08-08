@@ -19,10 +19,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.Automation
@@ -376,14 +379,30 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
     }
 
     // Null is "everything". Not saved across restarts on purpose: a filter the player set
-    // yesterday and forgot is a shop that looks emptier than it is.
+    // yesterday and forgot is a shop that looks emptier than it is. The same goes for the query.
     var filter by remember { mutableStateOf<UpgradeGroup?>(null) }
-    val counts = remember(offers) { offers.groupingBy { it.upgrade.group }.eachCount() }
-    val shown = remember(offers, filter) {
-        if (filter == null) offers else offers.filter { it.upgrade.group == filter }
+    var query by remember { mutableStateOf("") }
+
+    // The search narrows first and the chips count what is left, so the numbers on them describe
+    // the list the player is actually looking at rather than one the search has already ruled out.
+    val found = remember(offers, query) {
+        if (query.isBlank()) offers else offers.filter { it.upgrade.matches(query) }
+    }
+    val counts = remember(found) { found.groupingBy { it.upgrade.group }.eachCount() }
+    val shown = remember(found, filter) {
+        if (filter == null) found else found.filter { it.upgrade.group == filter }
+    }
+
+    // A chip whose group the search has emptied would leave the player staring at nothing with a
+    // filter selected that they can no longer see the reason for. Handled here rather than in the
+    // field's callback, where `counts` would still describe the list from before the keystroke.
+    LaunchedEffect(counts) {
+        if (filter != null && counts[filter] == null) filter = null
     }
 
     Column {
+        SearchField(query = query, onQueryChange = { query = it })
+
         // Scrolls sideways rather than sharing the width five ways: "Kollektoren" needs about a
         // third of a phone at this size, and a label cut in half is worse than a swipe.
         Row(
@@ -394,7 +413,7 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             FilterChip(
-                label = "Alle ${offers.size}",
+                label = "Alle ${found.size}",
                 selected = filter == null,
                 onClick = { filter = null },
             )
@@ -408,6 +427,12 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
                     onClick = { filter = if (filter == group) null else group },
                 )
             }
+        }
+
+        // Only reachable through the search — the group chips never offer an empty shelf.
+        if (shown.isEmpty()) {
+            EmptyHint("Nichts gefunden für „$query“.\nEs wird in Name, Wirkung und Beschreibung gesucht.")
+            return@Column
         }
 
         LazyColumn(
@@ -451,6 +476,59 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
                     )
                 }
             }
+            }
+        }
+    }
+}
+
+/**
+ * The search box over the upgrade list.
+ *
+ * A single line with its own clear button rather than a text field from the material set: the rest
+ * of this screen is drawn in flat rectangles with a two-pixel border, and a rounded outlined field
+ * with a floating label would be the one control that came from somewhere else.
+ *
+ * The list is a hundred and twenty-eight rows deep by the end of a run, which is the point at
+ * which chips alone stop being enough to find the one thing you half remember.
+ */
+@Composable
+private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
+    val sfx = LocalSfx.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 12.dp, end = 12.dp, top = 10.dp)
+            .background(SpaceCard)
+            .border(2.dp, if (query.isBlank()) Outline else Nebula, RectangleShape)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(modifier = Modifier.weight(1f)) {
+            if (query.isEmpty()) {
+                Text(
+                    text = "Upgrade suchen …",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Muted,
+                )
+            }
+            BasicTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = Starlight),
+                cursorBrush = SolidColor(Ember),
+            )
+        }
+        if (query.isNotEmpty()) {
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier.clickable {
+                    sfx?.click()
+                    onQueryChange("")
+                },
+            ) {
+                PixelLabel(text = "×", color = Ember, size = 15)
             }
         }
     }
