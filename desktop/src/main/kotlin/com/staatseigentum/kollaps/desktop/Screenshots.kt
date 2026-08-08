@@ -5,6 +5,7 @@ import androidx.compose.ui.unit.Density
 import com.staatseigentum.kollaps.core.Collectors
 import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
+import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.ui.SpriteCache
 import kotlinx.coroutines.runBlocking
@@ -112,6 +113,20 @@ fun main(args: Array<String>) {
         edit { GameEngine.tick(it, 25 * 60.0) }
     }
     shoot("26-fusion", fusing, tab = 2, note = "(Fusionskette läuft)")
+
+    // The lab, with a project part way through. An idle bench shows the catalogue and nothing
+    // else, and the countdown is the half of it worth looking at.
+    val researching = DesktopGame().apply {
+        seekToTier(Tiers.indexOf("Saturn"))
+        edit { it.copy(mass = it.mass * 40, research = setOf("r_optics", "r_storage")) }
+        startResearch("r_telemetry")
+        // Wound back so the bar sits at roughly a third rather than at nothing.
+        edit {
+            val total = ResearchTree.duration(it, ResearchTree.byId("r_telemetry")!!)
+            it.copy(researchDoneAt = System.currentTimeMillis() + (total * 660).toLong())
+        }
+    }
+    shoot("27-labor", researching, tab = 3, note = "(Forschung läuft)")
 
     // The tier change is its own bug surface, so it gets walked inside one composition rather
     // than photographed rung by rung — see [COLLAPSE_WALK].

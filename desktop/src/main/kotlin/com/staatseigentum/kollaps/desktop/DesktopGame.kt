@@ -59,6 +59,14 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.buyFuser(state, id, currentBuyAmount)
     }
 
+    override fun startResearch(id: String) {
+        state = GameEngine.startResearch(state, id, System.currentTimeMillis())
+    }
+
+    override fun cancelResearch() {
+        state = GameEngine.cancelResearch(state)
+    }
+
     override fun collapse() {
         state = GameEngine.collapse(state, NOW)
     }

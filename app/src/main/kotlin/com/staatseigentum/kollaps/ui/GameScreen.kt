@@ -75,6 +75,10 @@ interface GameActions {
 
     /** Buys levels of a fusion stage, in whatever the current buy amount is. */
     fun buyFuser(id: String)
+
+    /** Puts a project on the lab bench. The mass is taken now, the result arrives later. */
+    fun startResearch(id: String)
+    fun cancelResearch()
     fun collapse()
     fun dismissOfflineReport()
     fun acknowledgeTier()

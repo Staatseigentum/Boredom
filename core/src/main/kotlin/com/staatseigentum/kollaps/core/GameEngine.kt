@@ -444,6 +444,10 @@ object GameEngine {
                 aeons = state.aeons,
                 aeonUpgrades = state.aeonUpgrades,
                 bigBangs = state.bigBangs,
+                // Research is paid for in wall clock, which no reset can hand back.
+                research = state.research,
+                activeResearch = state.activeResearch,
+                researchDoneAt = state.researchDoneAt,
             ),
         )
     }
@@ -483,6 +487,9 @@ object GameEngine {
                 aeons = state.aeons + earned,
                 aeonUpgrades = state.aeonUpgrades,
                 bigBangs = state.bigBangs + 1,
+                research = state.research,
+                activeResearch = state.activeResearch,
+                researchDoneAt = state.researchDoneAt,
             ),
         )
     }
@@ -497,6 +504,68 @@ object GameEngine {
             state.copy(
                 aeons = state.aeons - upgrade.cost,
                 aeonUpgrades = state.aeonUpgrades + upgradeId,
+            ),
+        )
+    }
+
+    // ---------------------------------------------------------------- research
+
+    /** How much faster this player's lab works than the catalogue's stated times. */
+    fun researchSpeed(state: GameState): Double = modifiersOf(state).researchSpeed
+
+    /** How much faster this player's furnaces run than their stated rates. */
+    fun fusionRate(state: GameState): Double = modifiersOf(state).fusionRate
+
+    /**
+     * Starts a project: the mass is taken now, the result arrives on the wall clock.
+     *
+     * One at a time, deliberately. A lab that can run everything at once is a shopping list; a lab
+     * with one bench is a decision about what to have finished by morning.
+     */
+    fun startResearch(state: GameState, projectId: String, nowMillis: Long): GameState {
+        val project = ResearchTree.byId(projectId) ?: return state
+        if (!ResearchTree.isUnlocked(state)) return state
+        if (state.activeResearch != null) return state
+        if (ResearchTree.isDone(state, project)) return state
+        if (!ResearchTree.isOpen(state, project)) return state
+        if (project.cost > state.mass) return state
+
+        val seconds = ResearchTree.duration(state, project)
+        return state.copy(
+            mass = state.mass - project.cost,
+            activeResearch = project.id,
+            researchDoneAt = nowMillis + (seconds * 1_000.0).toLong(),
+        )
+    }
+
+    /**
+     * Calls the running project off. The mass is gone.
+     *
+     * No refund on purpose: a refund would make starting the longest project the correct move
+     * every time, to be cancelled the moment something better came into reach.
+     */
+    fun cancelResearch(state: GameState): GameState =
+        if (state.activeResearch == null) {
+            state
+        } else {
+            state.copy(activeResearch = null, researchDoneAt = 0)
+        }
+
+    /**
+     * Books a project that has come due.
+     *
+     * Separate from [tick] because it is the only rule that reads the wall clock rather than
+     * elapsed play time, and folding it in would mean handing every caller of `tick` a clock it
+     * has no other use for.
+     */
+    fun settleResearch(state: GameState, nowMillis: Long): GameState {
+        if (!ResearchTree.isFinished(state, nowMillis)) return state
+        val finished = state.activeResearch ?: return state
+        return award(
+            state.copy(
+                research = state.research + finished,
+                activeResearch = null,
+                researchDoneAt = 0,
             ),
         )
     }
@@ -569,6 +638,9 @@ object GameEngine {
         aeons = state.aeons,
         aeonUpgrades = state.aeonUpgrades,
         bigBangs = state.bigBangs,
+        research = state.research,
+        activeResearch = state.activeResearch,
+        researchDoneAt = state.researchDoneAt,
     )
 
     /** Mass a fresh run begins with, from prestige. */
@@ -737,6 +809,7 @@ object GameEngine {
      */
     fun fusionOffers(state: GameState, amount: BuyAmount): List<FusionOffer> {
         val perSecond = fusionThroughput(state)
+        val rate = modifiersOf(state).fusionRate
         return Fusion.stages.map { stage ->
             val level = Fusion.levelOf(state, stage)
             val count = if (amount == BuyAmount.MAX) {
@@ -745,7 +818,7 @@ object GameEngine {
                 amount.count.coerceAtMost(Fusion.MAX_LEVEL_STEP)
             }
             val cost = Fusion.costForLevels(stage, level, count)
-            val capacity = level * stage.baseRate
+            val capacity = level * stage.baseRate * rate
             val actual = perSecond[stage.id] ?: 0.0
 
             FusionOffer(
@@ -914,6 +987,13 @@ object GameEngine {
             apply(mods, Challenge.byId(id)?.reward)
         }
 
+        // Finished research, likewise. It is the fourth kind of permanent thing and the fourth
+        // list to walk, and all four say what they do in the same vocabulary — which is the whole
+        // reason [apply] exists rather than four switches that drift apart.
+        for (id in state.research) {
+            apply(mods, ResearchTree.byId(id)?.effect)
+        }
+
         // The running challenge, which is the only modifier that takes something away.
         when (val rule = state.challenge?.rule) {
             is ChallengeRule.NoCollectors -> mods.collectorsWork = false
@@ -1002,6 +1082,8 @@ object GameEngine {
 
             is PrestigeEffect.MilestoneBonus -> mods.milestoneFactor += effect.extra
             is PrestigeEffect.AutoBuy -> mods.autoBuy = true
+            is PrestigeEffect.FusionRate -> mods.fusionRate *= effect.factor
+            is PrestigeEffect.ResearchSpeed -> mods.researchSpeed *= effect.factor
 
             is PrestigeEffect.StartingCollectors -> Unit // only read when a run begins
             is PrestigeEffect.StartingMass -> Unit // only read when a run begins
@@ -1022,6 +1104,8 @@ object GameEngine {
         var singularityBonus = SINGULARITY_BONUS
         var milestoneFactor = Milestones.FACTOR
         var autoBuy = false
+        var fusionRate = 1.0
+        var researchSpeed = 1.0
 
         /** A challenge can switch off a whole source of mass. */
         var collectorsWork = true

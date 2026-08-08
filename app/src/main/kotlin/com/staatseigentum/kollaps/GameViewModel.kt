@@ -76,7 +76,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 val now = SystemClock.elapsedRealtime()
                 val seconds = (now - previous).coerceAtLeast(0L) / 1_000.0
                 previous = now
-                _state.value = GameEngine.tick(_state.value, seconds)
+                // The lab runs on the wall clock, not on elapsed play time, so it is settled next
+                // to the tick rather than inside it — see GameEngine.settleResearch.
+                _state.value = GameEngine.settleResearch(
+                    GameEngine.tick(_state.value, seconds),
+                    System.currentTimeMillis(),
+                )
                 if (now - lastSaveUptime >= AUTOSAVE_MILLIS) {
                     lastSaveUptime = now
                     persist()
@@ -92,8 +97,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun creditOfflineTime() {
-        val report = GameEngine.applyOffline(_state.value, System.currentTimeMillis())
-        _state.value = report.state
+        val now = System.currentTimeMillis()
+        val report = GameEngine.applyOffline(_state.value, now)
+        // Settled after the offline credit, not before: a project that finished during the night
+        // should not have been multiplying the production it was away for.
+        _state.value = GameEngine.settleResearch(report.state, now)
         if (report.worthShowing) _offlineReport.value = report
     }
 
@@ -123,6 +131,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun buyFuser(stageId: String) {
         _state.value = GameEngine.buyFuser(_state.value, stageId, buyAmount.value)
+    }
+
+    fun startResearch(projectId: String) {
+        _state.value =
+            GameEngine.startResearch(_state.value, projectId, System.currentTimeMillis())
+    }
+
+    fun cancelResearch() {
+        _state.value = GameEngine.cancelResearch(_state.value)
     }
 
     fun setBuyAmount(amount: BuyAmount) {

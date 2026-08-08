@@ -236,12 +236,13 @@ object Fusion {
         if (seconds <= 0.0) return state
         if (!isUnlocked(state)) return state
 
+        val rate = GameEngine.fusionRate(state)
         var amounts: MutableMap<String, Double>? = null
         for (stage in stages) {
             val level = levelOf(state, stage)
             if (level <= 0) continue
 
-            val capacity = level * stage.baseRate * seconds
+            val capacity = level * stage.baseRate * seconds * rate
             val current = amounts ?: state.elements.toMutableMap().also { amounts = it }
 
             val produced = if (stage.input == null) {

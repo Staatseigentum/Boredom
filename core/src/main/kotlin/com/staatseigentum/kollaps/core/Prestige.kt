@@ -37,6 +37,12 @@ sealed interface PrestigeEffect {
 
     /** Unlocks the automatic buyer. Whether it actually runs is a setting. */
     data object AutoBuy : PrestigeEffect
+
+    /** Multiplies how fast every fusion stage runs. */
+    data class FusionRate(val factor: Double) : PrestigeEffect
+
+    /** Divides how long a research project takes on the wall clock. */
+    data class ResearchSpeed(val factor: Double) : PrestigeEffect
 }
 
 /**
@@ -84,6 +90,12 @@ val PrestigeEffect.text: String
         is PrestigeEffect.MilestoneBonus ->
             "Jeder Meilenstein gibt ${Numbers.formatPercent(Milestones.FACTOR - 1.0 + extra)} " +
                 "statt ${Numbers.formatPercent(Milestones.FACTOR - 1.0)}"
+
+        is PrestigeEffect.FusionRate ->
+            "Jede Fusionsstufe läuft ${Numbers.formatMultiplier(factor)} so schnell"
+
+        is PrestigeEffect.ResearchSpeed ->
+            "Forschung dauert nur noch ${Numbers.formatPercent(1.0 / factor)} der Zeit"
     }
 
 /**

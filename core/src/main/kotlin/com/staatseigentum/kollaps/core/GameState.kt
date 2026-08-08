@@ -134,6 +134,21 @@ data class GameState(
 
     /** Levels of each fusion stage, keyed by [FusionStage.id]. */
     val fusers: Map<String, Int> = emptyMap(),
+
+    /** Research projects finished. Permanent: neither a collapse nor a big bang touches them. */
+    val research: Set<String> = emptySet(),
+
+    /** Id of the project running in the lab, if any. */
+    val activeResearch: String? = null,
+
+    /**
+     * Wall clock at which the running project comes due.
+     *
+     * An absolute time rather than a countdown, because this is the one clock in the game that
+     * keeps running with the app closed. A remaining-seconds field would have to be topped up by
+     * something, and nothing runs while the phone is off.
+     */
+    val researchDoneAt: Long = 0,
 ) {
     fun ownedOf(collectorId: String): Int = collectors[collectorId] ?: 0
 

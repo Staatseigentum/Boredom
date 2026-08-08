@@ -89,10 +89,22 @@ object SaveCodec {
         }
         val knownElements = migrated.elements.filterKeys { Element.byId(it) != null }
         val knownFusers = migrated.fusers.filterKeys { Fusion.byId(it) != null }
+        val knownResearch = migrated.research.filterTo(mutableSetOf()) {
+            ResearchTree.byId(it) != null
+        }
         if (knownElements.size != migrated.elements.size ||
-            knownFusers.size != migrated.fusers.size
+            knownFusers.size != migrated.fusers.size ||
+            knownResearch.size != migrated.research.size
         ) {
-            migrated = migrated.copy(elements = knownElements, fusers = knownFusers)
+            migrated = migrated.copy(
+                elements = knownElements,
+                fusers = knownFusers,
+                research = knownResearch,
+            )
+        }
+        // A project nobody can finish would hold the single bench for good.
+        if (migrated.activeResearch != null && ResearchTree.byId(migrated.activeResearch) == null) {
+            migrated = migrated.copy(activeResearch = null, researchDoneAt = 0)
         }
         if (knownCollectors.size != migrated.collectors.size ||
             knownUpgrades.size != migrated.upgrades.size ||

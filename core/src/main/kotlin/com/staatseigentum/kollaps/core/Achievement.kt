@@ -152,6 +152,23 @@ object Achievements {
             ) { state -> Fusion.stages.all { Fusion.levelOf(state, it) > 0 } },
         )
 
+        // ---- research
+        add(
+            Achievement("a_research_1", "Erste Erkenntnis", "Ein Projekt zu Ende gewartet.") {
+                it.research.isNotEmpty()
+            },
+        )
+        add(
+            Achievement("a_research_5", "Laborbetrieb", "Fünf Projekte abgeschlossen.") {
+                it.research.size >= 5
+            },
+        )
+        add(
+            Achievement("a_research_all", "Ausgeforscht", "Der ganze Baum steht.") { state ->
+                ResearchTree.all.all { it.id in state.research }
+            },
+        )
+
         // ---- milestones
         add(
             Achievement(

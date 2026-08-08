@@ -35,7 +35,11 @@ class BalanceSimulationTest {
         while (elapsed < limitSeconds) {
             if (elapsed < activeSeconds) repeat(tapsPerSecond) { state = GameEngine.tap(state) }
             state = GameEngine.tick(state, 1.0)
-            state = spend(state)
+            // The bot plays without ever putting the phone down, so one second of play is one
+            // second on the wall clock. That is the worst case for the lab — a real player gets
+            // more research per hour of play by leaving a long project running overnight.
+            state = GameEngine.settleResearch(state, elapsed * 1_000L)
+            state = spend(state, elapsed * 1_000L)
             elapsed++
 
             val tier = GameEngine.tierOf(state).index
@@ -56,9 +60,21 @@ class BalanceSimulationTest {
      */
     private val FUSION_RESERVE = 5.0
 
+    /** The same idea for the lab, where the mass is gone the moment a project starts. */
+    private val RESEARCH_RESERVE = 3.0
+
     /** Buys every upgrade it can afford, then the collector with the fastest payback. */
-    private fun spend(start: GameState): GameState {
+    private fun spend(start: GameState, nowMillis: Long): GameState {
         var state = start
+
+        // The bench first, and the cheapest thing on it: an idle lab earns nothing, and the
+        // reserve keeps a long project from eating the mass the fleet needs.
+        if (state.activeResearch == null) {
+            ResearchTree.offered(state)
+                .filter { !ResearchTree.isDone(state, it) && it.cost * RESEARCH_RESERVE <= state.mass }
+                .minByOrNull { it.cost }
+                ?.let { state = GameEngine.startResearch(state, it.id, nowMillis) }
+        }
 
         while (true) {
             val affordable = GameEngine.upgradeOffers(state).firstOrNull { it.affordable }
@@ -101,6 +117,10 @@ class BalanceSimulationTest {
         println("  Kollektoren: ${run.finalState.collectors.values.sum()}")
         println("  Upgrades: ${run.finalState.upgrades.size} von ${Upgrades.all.size}")
         println("  Fusionsstufen: ${run.finalState.fusers.values.sum()}")
+        println(
+            "  Forschung: ${run.finalState.research.size} von ${ResearchTree.all.size}" +
+                " (${run.finalState.research.sorted().joinToString(", ")})",
+        )
         for (element in Element.entries) {
             val held = Fusion.amountOf(run.finalState, element)
             if (held >= 1.0) {

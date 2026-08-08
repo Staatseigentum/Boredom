@@ -37,6 +37,7 @@ import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Milestones
 import com.staatseigentum.kollaps.core.Numbers
+import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.core.UpgradeOffer
@@ -370,6 +371,12 @@ private fun CosmosPanel(
         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // First, because it is the only card here with something running in it. The collapse can
+        // wait; a bench standing empty is wasted wall clock.
+        if (ResearchTree.isUnlocked(state)) {
+            item { ResearchPanel(state = state, actions = actions) }
+        }
+
         item {
             PixelPanel(modifier = Modifier.fillMaxWidth(), border = Ember) {
                 PixelLabel(text = "Kollaps", color = Ember, size = 16)
