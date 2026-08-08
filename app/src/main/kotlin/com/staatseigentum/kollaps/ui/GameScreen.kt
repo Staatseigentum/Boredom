@@ -28,7 +28,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -139,6 +141,8 @@ fun GameScreen(
     modifier: Modifier = Modifier,
     /** Which shop tab to open on — the harness uses it to photograph the other ones. */
     startTab: Int = 0,
+    /** Which section of the Kosmos tab to open on. Only the harness passes anything else. */
+    startSection: Int = 0,
     updateSection: @Composable () -> Unit = {},
     updateDialog: @Composable () -> Unit = {},
 ) {
@@ -152,6 +156,31 @@ fun GameScreen(
     val music = LocalMusic.current
     LaunchedEffect(music, state.musicOn, stats.tier.kind) {
         if (state.musicOn) music?.play(Mood.of(stats.tier.kind)) else music?.stop()
+    }
+
+    // Read off the counters rather than hung on the buttons, so a collapse the automation rule
+    // carried out while the player was watching the body still goes off on screen. The remembered
+    // starting values are what keeps a freshly loaded save from detonating on the first frame.
+    var blast by remember { mutableStateOf<Pair<Int, BlastKind>?>(null) }
+
+    // Muted here rather than at the call site, because this fires from a state change and the
+    // provider below has not narrowed the sound away yet.
+    val blastSfx = sfx.takeIf { state.soundOn }
+
+    val collapsesAtStart = remember { state.collapses }
+    LaunchedEffect(state.collapses) {
+        if (state.collapses > collapsesAtStart) {
+            blast = state.collapses to BlastKind.KOLLAPS
+            blastSfx?.success()
+        }
+    }
+
+    val bangsAtStart = remember { state.bigBangs }
+    LaunchedEffect(state.bigBangs) {
+        if (state.bigBangs > bangsAtStart) {
+            blast = -state.bigBangs to BlastKind.URKNALL
+            blastSfx?.success()
+        }
     }
 
     CompositionLocalProvider(LocalSfx provides sfx.takeIf { state.soundOn }) {
@@ -182,6 +211,7 @@ fun GameScreen(
                         actions = actions,
                         modifier = modifier,
                         startTab = startTab,
+                        startSection = startSection,
                         updateSection = updateSection,
                     )
                 }
@@ -219,6 +249,16 @@ fun GameScreen(
                     event = event,
                     onChoose = actions::chooseEvent,
                     onDismiss = actions::dismissEvent,
+                )
+            }
+
+            // Over everything, including the dialogs: the blast is the loudest thing that can
+            // happen, and something covering half of it would read as a glitch.
+            blast?.let { (trigger, kind) ->
+                Blast(
+                    trigger = trigger,
+                    kind = kind,
+                    onFinished = { blast = null },
                 )
             }
 
@@ -350,6 +390,15 @@ private fun TapArea(
     val haptics = LocalHapticFeedback.current
     val sfx = LocalSfx.current
 
+    // A ring thrown off the body every time it climbs a rung. Only upwards: a collapse drops the
+    // tier by twenty-four steps at once and already has a blast of its own.
+    val lastTier = remember { mutableIntStateOf(tier.index) }
+    var pulse by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(tier.index) {
+        if (tier.index > lastTier.intValue) pulse = tier.index
+        lastTier.intValue = tier.index
+    }
+
     Box(
         modifier = modifier.pointerInput(Unit) {
             detectTapGestures { position ->
@@ -379,6 +428,12 @@ private fun TapArea(
                     scaleX = squash.value
                     scaleY = squash.value
                 },
+        )
+
+        TierPulse(
+            trigger = pulse,
+            color = Color(tier.glowColor),
+            modifier = Modifier.fillMaxSize(),
         )
 
         // Drawn over the body rather than behind it: half of each orbit passes in front, and

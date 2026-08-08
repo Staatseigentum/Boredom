@@ -107,4 +107,38 @@ class ContentTest {
             assertTrue(count >= 4, "${collector.name} hat nur $count Upgrades")
         }
     }
+
+    /**
+     * The shop filter is only as good as the shelves behind it.
+     *
+     * A group nobody lands in is a chip that never appears; a group holding almost everything is
+     * a filter that does not filter. Both are ways for the list of a hundred and twenty-eight to
+     * go back to being one scroll.
+     */
+    @Test
+    fun `every shelf of the shop has something on it`() {
+        val counts = Upgrades.all.groupingBy { it.group }.eachCount()
+
+        for (group in UpgradeGroup.entries) {
+            val count = counts[group] ?: 0
+            assertTrue(count > 0, "Auf dem Regal ${group.label} steht nichts")
+        }
+        assertTrue(
+            counts.values.max() < Upgrades.all.size * 0.8,
+            "Ein Regal hält fast den ganzen Laden: $counts",
+        )
+        assertEquals(Upgrades.all.size, counts.values.sum())
+    }
+
+    @Test
+    fun `every group says what it is called`() {
+        for (group in UpgradeGroup.entries) {
+            assertTrue(group.label.isNotBlank(), group.name)
+        }
+        assertEquals(
+            UpgradeGroup.entries.size,
+            UpgradeGroup.entries.map { it.label }.toSet().size,
+            "Zwei Regale heißen gleich",
+        )
+    }
 }

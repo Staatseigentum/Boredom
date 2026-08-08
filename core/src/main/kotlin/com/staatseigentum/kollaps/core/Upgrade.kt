@@ -49,7 +49,20 @@ sealed interface UnlockCondition {
     data object Always : UnlockCondition
 }
 
-enum class UpgradeCategory { TAP, COLLECTOR, COSMIC }
+/**
+ * Which shelf of the shop an upgrade sits on.
+ *
+ * Derived from the effect rather than stored on the upgrade. A stored category is a second
+ * opinion about something the effect already answers, and the one this replaced had drifted:
+ * it was filled in on seventeen of a hundred and twenty-eight upgrades and read by nobody.
+ */
+enum class UpgradeGroup(val label: String) {
+    TAP("Tippen"),
+    COLLECTORS("Kollektoren"),
+    SYNERGY("Synergien"),
+    GLOBAL("Global"),
+    OFFLINE("Offline"),
+}
 
 data class Upgrade(
     val id: String,
@@ -58,8 +71,28 @@ data class Upgrade(
     val cost: Double,
     val effect: UpgradeEffect,
     val unlock: UnlockCondition,
-    val category: UpgradeCategory,
 ) {
+    /** Which shelf this belongs on, read straight off the effect. */
+    val group: UpgradeGroup
+        get() = when (effect) {
+            is UpgradeEffect.TapFlat,
+            is UpgradeEffect.TapMultiplier,
+            is UpgradeEffect.TapFromProduction,
+            -> UpgradeGroup.TAP
+
+            is UpgradeEffect.CollectorMultiplier -> UpgradeGroup.COLLECTORS
+
+            is UpgradeEffect.CollectorSynergy,
+            is UpgradeEffect.FleetSynergy,
+            -> UpgradeGroup.SYNERGY
+
+            is UpgradeEffect.GlobalMultiplier -> UpgradeGroup.GLOBAL
+
+            is UpgradeEffect.OfflineEfficiency,
+            is UpgradeEffect.OfflineCapHours,
+            -> UpgradeGroup.OFFLINE
+        }
+
     /** Human readable summary of what this upgrade does. */
     val effectText: String
         get() = when (effect) {
@@ -137,7 +170,6 @@ object Upgrades {
             cost = 50_000.0,
             effect = UpgradeEffect.TapFromProduction(0.01),
             unlock = UnlockCondition.CollectorsOwned("drone", 10),
-            category = UpgradeCategory.TAP,
         ),
         Upgrade(
             id = "synergy_2",
@@ -146,7 +178,6 @@ object Upgrades {
             cost = 10_000_000.0,
             effect = UpgradeEffect.TapFromProduction(0.04),
             unlock = UnlockCondition.CollectorsOwned("driver", 25),
-            category = UpgradeCategory.TAP,
         ),
         Upgrade(
             id = "synergy_3",
@@ -155,7 +186,6 @@ object Upgrades {
             cost = 50_000_000_000.0,
             effect = UpgradeEffect.TapFromProduction(0.10),
             unlock = atTier("Roter Zwerg"),
-            category = UpgradeCategory.TAP,
         ),
         Upgrade(
             id = "synergy_4",
@@ -164,7 +194,6 @@ object Upgrades {
             cost = 1_500_000_000_000_000.0,
             effect = UpgradeEffect.TapFromProduction(0.22),
             unlock = atTier("Hyperriese"),
-            category = UpgradeCategory.TAP,
         ),
     )
 
@@ -176,7 +205,6 @@ object Upgrades {
             cost = 1_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(2.0),
             unlock = atTier("Venus"),
-            category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
             id = "cosmic_2",
@@ -185,7 +213,6 @@ object Upgrades {
             cost = 1_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(2.0),
             unlock = atTier("Saturn"),
-            category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
             id = "cosmic_3",
@@ -194,7 +221,6 @@ object Upgrades {
             cost = 1_000_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(2.0),
             unlock = atTier("Sonne"),
-            category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
             id = "cosmic_4",
@@ -203,7 +229,6 @@ object Upgrades {
             cost = 100_000_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(3.0),
             unlock = atTier("Roter Überriese"),
-            category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
             id = "cosmic_5",
@@ -212,7 +237,6 @@ object Upgrades {
             cost = 4_000_000_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(3.0),
             unlock = atTier("Weißer Zwerg"),
-            category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
             id = "cosmic_6",
@@ -221,7 +245,6 @@ object Upgrades {
             cost = 22_000_000_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(4.0),
             unlock = atTier("Magnetar"),
-            category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
             id = "offline_1",
@@ -230,7 +253,6 @@ object Upgrades {
             cost = 500_000.0,
             effect = UpgradeEffect.OfflineEfficiency(1.0),
             unlock = atTier("Erde"),
-            category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
             id = "offline_2",
@@ -239,7 +261,6 @@ object Upgrades {
             cost = 500_000_000.0,
             effect = UpgradeEffect.OfflineCapHours(24.0),
             unlock = atTier("Jupiter"),
-            category = UpgradeCategory.COSMIC,
         ),
         Upgrade(
             id = "offline_3",
@@ -248,7 +269,6 @@ object Upgrades {
             cost = 8_000_000_000_000.0,
             effect = UpgradeEffect.OfflineCapHours(48.0),
             unlock = atTier("Blauer Riese"),
-            category = UpgradeCategory.COSMIC,
         ),
     )
 
@@ -300,7 +320,6 @@ object Upgrades {
                     synergy.perUnit,
                 ),
                 unlock = UnlockCondition.CollectorsOwned(synergy.targetId, 10),
-                category = UpgradeCategory.COLLECTOR,
             )
         } + fleetSynergies.map { (sourceId, perUnit, words) ->
             val source = Collectors.byId(sourceId)!!
@@ -311,7 +330,6 @@ object Upgrades {
                 cost = source.baseCost * 900.0,
                 effect = UpgradeEffect.FleetSynergy(sourceId, perUnit),
                 unlock = UnlockCondition.CollectorsOwned(sourceId, 20),
-                category = UpgradeCategory.COLLECTOR,
             )
         }
 
@@ -332,7 +350,6 @@ object Upgrades {
                 cost = collector.baseCost * priceFactor,
                 effect = UpgradeEffect.CollectorMultiplier(collector.id, 2.0),
                 unlock = UnlockCondition.CollectorsOwned(collector.id, required),
-                category = UpgradeCategory.COLLECTOR,
             )
         }
     }
@@ -362,6 +379,5 @@ object Upgrades {
         cost = cost,
         effect = UpgradeEffect.TapMultiplier(2.0),
         unlock = UnlockCondition.MassCollected(unlockMass),
-        category = UpgradeCategory.TAP,
     )
 }

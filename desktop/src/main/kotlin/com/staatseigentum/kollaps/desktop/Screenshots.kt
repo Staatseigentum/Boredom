@@ -34,6 +34,8 @@ fun main(args: Array<String>) {
         name: String,
         game: DesktopGame,
         tab: Int = 0,
+        /** Which section of the Kosmos tab, for the four it was split into. */
+        section: Int = 0,
         note: String = "",
         wide: Boolean = false,
     ) {
@@ -46,7 +48,7 @@ fun main(args: Array<String>) {
             height = (h * density.density).toInt(),
             density = density,
         ) {
-            DesktopPlatform { StillGame(game, w, h, tab) }
+            DesktopPlatform { StillGame(game, w, h, tab, section) }
         }.let { scene ->
             try {
                 // A couple of frames so layout settles and the spin animation has a value.
@@ -100,7 +102,7 @@ fun main(args: Array<String>) {
         startChallenge("c_hand")
         edit { GameEngine.tick(it, 11 * 60.0) }
     }
-    shoot("23-herausforderung", challenging, tab = 3, note = "(Herausforderung läuft)")
+    shoot("23-herausforderung", challenging, tab = 3, section = 2, note = "(Herausforderung läuft)")
     shoot("24-querformat", veteran, tab = 0, note = "(Tablet, zweispaltig)", wide = true)
     shoot("25-querformat-kosmos", veteran, tab = 3, note = "(Tablet, Kosmos)", wide = true)
 
@@ -127,7 +129,7 @@ fun main(args: Array<String>) {
             it.copy(researchDoneAt = System.currentTimeMillis() + (total * 660).toLong())
         }
     }
-    shoot("27-labor", researching, tab = 3, note = "(Forschung läuft)")
+    shoot("27-labor", researching, tab = 3, section = 1, note = "(Forschung läuft)")
 
     // Lab and standing orders in one frame, which only fits on the tablet: on a phone the second
     // card starts below the fold and a still cannot scroll to it.
@@ -146,7 +148,9 @@ fun main(args: Array<String>) {
         cycleAutomation(AutomationRule.COLLAPSE.id)
         cycleAutomation(AutomationRule.COLLAPSE.id)
     }
-    shoot("28-automatik", automated, tab = 3, note = "(Tablet, Regeln)", wide = true)
+    shoot("28-automatik", automated, tab = 3, section = 2, note = "(Tablet, Regeln)", wide = true)
+
+    shoot("29-system", veteran, tab = 3, section = 3, note = "(Statistik und Einstellungen)")
 
     // The tier change is its own bug surface, so it gets walked inside one composition rather
     // than photographed rung by rung — see [COLLAPSE_WALK].
