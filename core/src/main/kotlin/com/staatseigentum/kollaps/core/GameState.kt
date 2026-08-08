@@ -144,6 +144,12 @@ data class GameState(
     /** Levels of each fusion stage, keyed by [FusionStage.id]. */
     val fusers: Map<String, Int> = emptyMap(),
 
+    /** How many orbit slots are open. Part of the run — a collapse scatters the system. */
+    val orbits: Int = 0,
+
+    /** Mass of the body on each occupied slot, keyed by orbit index. See [Orbits]. */
+    val satellites: Map<Int, Double> = emptyMap(),
+
     /** Research projects finished. Permanent: neither a collapse nor a big bang touches them. */
     val research: Set<String> = emptySet(),
 

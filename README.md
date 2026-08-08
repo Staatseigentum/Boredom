@@ -28,7 +28,7 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   nicht — sonst hätte eine Währung, die der Kollaps endlos nachliefert, irgendwann kein Ziel mehr
 - **Kometen**, die alle paar Minuten durchs Bild ziehen und nur zahlen, wenn man sie trifft:
   geschenkte Produktion, ein Schub, oder eine Minute mit hundertfachem Tippwert
-- **54 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
+- **57 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
   gerade wie viel liefert
 - **Meilensteine**: alle 25 Stück einer Sorte liefert dieser Kollektor 15 % mehr, dauerhaft und
   ohne Zusatzkosten — der Zähler in der Shop-Zeile zählt jetzt auf etwas zu
@@ -40,6 +40,13 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   Upgrades
 - **Ereignisse mit Wahl**: alle paar Minuten eine Frage mit zwei Antworten. Masse sofort, oder
   ein Bonus auf Zeit — was besser ist, hängt davon ab, ob du gleich weiterspielst
+- **Das Sternensystem**: ab dem Saturn hält deine Schwerkraft etwas fest. Acht Bahnen zum
+  Öffnen, auf jede kommt ein eigener Körper mit eigener Stufe. Innen wird schnell gefüttert und
+  von den Gezeiten genauso schnell wieder zerrissen — ein Körper dort pendelt sich ein und bleibt.
+  Außen wird langsam gefüttert und nichts nimmt etwas weg, also wächst er, solange der Durchlauf
+  dauert. Bahnen in kleinen ganzzahligen Verhältnissen (1:2, 2:3, …) stehen in **Resonanz** und
+  verstärken sich gegenseitig, und ein äußerer Körper lässt sich auf einen inneren fallen. Die
+  Umlaufzeiten folgen Kepler, also rasen die inneren sichtbar und die äußeren kriechen
 - **Die Fusionskette**: ab dem Braunen Zwerg brennt der Kern. Wasserstoff wird angezapft und über
   fünf Öfen zu Helium, Kohlenstoff, Sauerstoff, Silizium und schließlich Eisen verschmolzen — die
   Reihenfolge, die ein echter Stern durchläuft. Jedes Element zieht an einem eigenen Hebel:

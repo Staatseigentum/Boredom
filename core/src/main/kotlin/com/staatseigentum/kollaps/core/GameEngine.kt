@@ -35,6 +35,9 @@ data class Stats(
     val bigBangUnlocked: Boolean = false,
     val pendingAeons: Double = 0.0,
     val canBigBang: Boolean = false,
+    /** Whether the body can hold satellites yet, and what the ones up there are worth. */
+    val orbitsUnlocked: Boolean = false,
+    val orbitMultiplier: Double = 1.0,
     /** Whether the body is hot enough to fuse, and what the elements are worth together. */
     val fusionUnlocked: Boolean = false,
     val fusionMultiplier: Double = 1.0,
@@ -165,6 +168,8 @@ object GameEngine {
             bigBangUnlocked = BigBang.isUnlocked(state),
             pendingAeons = BigBang.pending(state),
             canBigBang = BigBang.canBang(state),
+            orbitsUnlocked = Orbits.isUnlocked(state),
+            orbitMultiplier = Orbits.multiplier(state),
             fusionUnlocked = Fusion.isUnlocked(state),
             // Only the two production levers, because that is the number the header claims to be.
             // Offline yield and comet frequency are worth having and are shown where they apply.
@@ -199,6 +204,9 @@ object GameEngine {
         var ticked = credit(state, gained).copy(playedSeconds = state.playedSeconds + seconds)
         ticked = autoTap(ticked, seconds)
         ticked = Fusion.advance(ticked, seconds)
+        // Fed and eroded by what the body itself makes, so the system scales with the run rather
+        // than mattering enormously the hour it unlocks and never again.
+        ticked = Orbits.advance(ticked, seconds, gained / seconds)
         ticked = automate(ticked)
         ticked = advanceEvents(ticked, seconds)
         ticked = sample(ticked, seconds)
@@ -599,6 +607,68 @@ object GameEngine {
             ),
         )
     }
+
+    // ---------------------------------------------------------------- the system
+
+    /** Opens the next orbit slot, if the body is big enough and the mass is there. */
+    fun openOrbit(state: GameState): GameState {
+        if (!Orbits.isUnlocked(state)) return state
+        val next = Orbits.next(state) ?: return state
+        if (next.cost > state.mass) return state
+
+        return award(state.copy(mass = state.mass - next.cost, orbits = state.orbits + 1))
+    }
+
+    /**
+     * Puts a body on an open, empty slot.
+     *
+     * Seeded with a minute of the run's own production rather than a fixed lump. A fixed seed
+     * would be everything at the moment the first slot opens and a rounding error two collapses
+     * later, and either way the number would be about the catalogue rather than about the run.
+     *
+     * The floor of one kilogram only exists so that a body placed by somebody with no collectors
+     * at all is still a body. The feed brings it up to a minute of production inside twenty
+     * seconds anyway.
+     */
+    fun seedSatellite(state: GameState, orbitIndex: Int): GameState {
+        val orbit = Orbits.at(orbitIndex) ?: return state
+        if (orbitIndex >= state.orbits) return state
+        if (Orbits.isOccupied(state, orbit)) return state
+        if (orbit.seedCost > state.mass) return state
+
+        val seed = (massPerSecond(state) * SEED_SECONDS).coerceAtLeast(1.0)
+        return award(
+            state.copy(
+                mass = state.mass - orbit.seedCost,
+                satellites = state.satellites + (orbitIndex to seed),
+            ),
+        )
+    }
+
+    /**
+     * Drops one body onto another. The inner slot keeps the pair, the outer one comes free.
+     *
+     * Inwards because that is the direction things fall, and because it hands the player a way to
+     * move mass from a stable outer orbit to a productive inner one — which is the only reason to
+     * ever build on the outside when the inside pays better.
+     */
+    fun mergeSatellites(state: GameState, first: Int, second: Int): GameState {
+        if (first == second) return state
+        val inner = Orbits.at(minOf(first, second)) ?: return state
+        val outer = Orbits.at(maxOf(first, second)) ?: return state
+        if (!Orbits.isOccupied(state, inner) || !Orbits.isOccupied(state, outer)) return state
+
+        val combined =
+            (Orbits.massOn(state, inner) + Orbits.massOn(state, outer)) * Orbits.MERGE_BONUS
+        return award(
+            state.copy(
+                satellites = state.satellites - outer.index + (inner.index to combined),
+            ),
+        )
+    }
+
+    /** Seconds of production a freshly placed body starts with. */
+    private const val SEED_SECONDS = 60.0
 
     // ---------------------------------------------------------------- research
 
@@ -1219,6 +1289,9 @@ object GameEngine {
         // furnace, not a purchase, so they scale whatever the player has already earned. Capped at
         // one because crediting more than full production for time not spent playing would make
         // being away the better move.
+        // The bodies in orbit, before fusion so that the two read in the order they unlock.
+        mods.global *= Orbits.multiplier(state)
+
         if (Fusion.isUnlocked(state)) {
             mods.global *= Fusion.factorFor(state, FusionBonus.GLOBAL)
             mods.tapMultiplier *= Fusion.factorFor(state, FusionBonus.TAP)

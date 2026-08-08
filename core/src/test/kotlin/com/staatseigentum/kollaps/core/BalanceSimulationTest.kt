@@ -63,6 +63,9 @@ class BalanceSimulationTest {
     /** The same idea for the lab, where the mass is gone the moment a project starts. */
     private val RESEARCH_RESERVE = 3.0
 
+    /** And for the orbits, which pay back slowest of all — a body has to grow before it counts. */
+    private val ORBIT_RESERVE = 6.0
+
     /** Buys every upgrade it can afford, then the collector with the fastest payback. */
     private fun spend(start: GameState, nowMillis: Long): GameState {
         var state = start
@@ -80,6 +83,21 @@ class BalanceSimulationTest {
             val affordable = GameEngine.upgradeOffers(state).firstOrNull { it.affordable }
                 ?: break
             state = GameEngine.buyUpgrade(state, affordable.upgrade.id)
+        }
+
+        // A slot, then a body on it. Both out of surplus, and inner slots first, because the bot
+        // has no way to reason about a body that pays off over the next hour.
+        while (true) {
+            val slot = Orbits.next(state) ?: break
+            if (slot.cost * ORBIT_RESERVE > state.mass) break
+            val after = GameEngine.openOrbit(state)
+            if (after == state) break
+            state = after
+        }
+        for (orbit in Orbits.opened(state)) {
+            if (Orbits.isOccupied(state, orbit)) continue
+            if (orbit.seedCost * ORBIT_RESERVE > state.mass) continue
+            state = GameEngine.seedSatellite(state, orbit.index)
         }
 
         // Fusion before collectors: a furnace multiplies what the fleet already makes, so the
@@ -117,6 +135,11 @@ class BalanceSimulationTest {
         println("  Kollektoren: ${run.finalState.collectors.values.sum()}")
         println("  Upgrades: ${run.finalState.upgrades.size} von ${Upgrades.all.size}")
         println("  Fusionsstufen: ${run.finalState.fusers.values.sum()}")
+        println(
+            "  Bahnen: ${run.finalState.orbits}, davon belegt " +
+                "${Orbits.occupiedCount(run.finalState)} " +
+                "(${Numbers.formatMultiplier(Orbits.multiplier(run.finalState))})",
+        )
         println(
             "  Forschung: ${run.finalState.research.size} von ${ResearchTree.all.size}" +
                 " (${run.finalState.research.sorted().joinToString(", ")})",

@@ -79,6 +79,11 @@ interface GameActions {
     /** Buys levels of a fusion stage, in whatever the current buy amount is. */
     fun buyFuser(id: String)
 
+    /** Opens the next orbit slot, puts a body on one, or drops one body onto another. */
+    fun openOrbit()
+    fun seedSatellite(orbitIndex: Int)
+    fun mergeSatellites(from: Int, to: Int)
+
     /** Puts a project on the lab bench. The mass is taken now, the result arrives later. */
     fun startResearch(id: String)
     fun cancelResearch()
@@ -435,6 +440,10 @@ private fun TapArea(
             color = Color(tier.glowColor),
             modifier = Modifier.fillMaxSize(),
         )
+
+        // The real system, under the collector rings: these are bodies with mass and a tier,
+        // the rings above them are a picture of how many machines are in the shop.
+        OrbitingBodies(state = state, modifier = Modifier.fillMaxSize())
 
         // Drawn over the body rather than behind it: half of each orbit passes in front, and
         // sorting per satellite would cost more than the illusion is worth at this size.

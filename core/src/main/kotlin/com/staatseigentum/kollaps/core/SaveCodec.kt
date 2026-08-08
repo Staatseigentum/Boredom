@@ -110,6 +110,13 @@ object SaveCodec {
         if (knownInvestments.size != migrated.investments.size) {
             migrated = migrated.copy(investments = knownInvestments)
         }
+        // A body on a slot that was never opened, or on one that no longer exists, would count
+        // towards production without appearing anywhere the player could reach it.
+        val slots = migrated.orbits.coerceIn(0, Orbits.MAX)
+        val onOpenSlots = migrated.satellites.filterKeys { it in 0 until slots }
+        if (slots != migrated.orbits || onOpenSlots.size != migrated.satellites.size) {
+            migrated = migrated.copy(orbits = slots, satellites = onOpenSlots)
+        }
         // A project nobody can finish would hold the single bench for good.
         if (migrated.activeResearch != null && ResearchTree.byId(migrated.activeResearch) == null) {
             migrated = migrated.copy(activeResearch = null, researchDoneAt = 0)

@@ -40,6 +40,7 @@ import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Milestones
 import com.staatseigentum.kollaps.core.Numbers
+import com.staatseigentum.kollaps.core.Orbits
 import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
@@ -66,6 +67,7 @@ import com.staatseigentum.kollaps.ui.theme.Starlight
 private enum class ShopTab(val title: String) {
     COLLECTORS("Kollektoren"),
     UPGRADES("Upgrades"),
+    ORBITS("Bahnen"),
     FUSION("Fusion"),
     ACHIEVEMENTS("Erfolge"),
     COSMOS("Kosmos"),
@@ -73,7 +75,13 @@ private enum class ShopTab(val title: String) {
 
 /** The tabs worth showing for this state, in strip order. */
 private fun tabsFor(state: GameState): List<ShopTab> =
-    ShopTab.entries.filter { it != ShopTab.FUSION || Fusion.isUnlocked(state) }
+    ShopTab.entries.filter {
+        when (it) {
+            ShopTab.ORBITS -> Orbits.isUnlocked(state)
+            ShopTab.FUSION -> Fusion.isUnlocked(state)
+            else -> true
+        }
+    }
 
 @Composable
 fun ShopPanel(
@@ -108,13 +116,18 @@ fun ShopPanel(
                 .background(Outline),
         )
 
-        Row(modifier = Modifier.fillMaxWidth()) {
+        // Scrolls rather than sharing the width six ways. Sharing was already tight at four —
+        // "Kollektoren" is eleven characters — and a sixth tab would have cut two labels in half.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+        ) {
             tabs.forEach { entry ->
                 PixelTab(
                     title = entry.title,
                     selected = tab == entry,
                     onClick = { openTab = entry.name },
-                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -131,6 +144,8 @@ fun ShopPanel(
                 offers = GameEngine.upgradeOffers(state),
                 onBuy = actions::buyUpgrade,
             )
+
+            ShopTab.ORBITS -> OrbitPanel(state = state, actions = actions)
 
             ShopTab.FUSION -> FusionPanel(
                 state = state,
@@ -166,11 +181,11 @@ private fun PixelTab(
                 sfx?.click()
                 onClick()
             }
-            .padding(vertical = 12.dp),
+            .padding(horizontal = 14.dp, vertical = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
-        // Four tabs on a phone leave "Kollektoren" about sixty pixels of width, so the tab
-        // strip runs a size smaller than the labels inside the panels.
+        // A size smaller than the labels inside the panels: even scrolling, six of these want to
+        // be readable at a glance rather than filling the strip.
         PixelLabel(
             text = title,
             color = if (selected) Starlight else Muted,

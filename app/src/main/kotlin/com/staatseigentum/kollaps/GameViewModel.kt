@@ -133,6 +133,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _state.value = GameEngine.buyFuser(_state.value, stageId, buyAmount.value)
     }
 
+    fun openOrbit() {
+        _state.value = GameEngine.openOrbit(_state.value)
+    }
+
+    fun seedSatellite(orbitIndex: Int) {
+        _state.value = GameEngine.seedSatellite(_state.value, orbitIndex)
+    }
+
+    fun mergeSatellites(from: Int, to: Int) {
+        _state.value = GameEngine.mergeSatellites(_state.value, from, to)
+    }
+
     fun startResearch(projectId: String) {
         _state.value =
             GameEngine.startResearch(_state.value, projectId, System.currentTimeMillis())

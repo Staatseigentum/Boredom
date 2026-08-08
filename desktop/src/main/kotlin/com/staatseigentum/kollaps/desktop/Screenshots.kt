@@ -152,6 +152,18 @@ fun main(args: Array<String>) {
 
     shoot("29-system", veteran, tab = 3, section = 3, note = "(Statistik und Einstellungen)")
 
+    // The star system, with bodies on most slots and two of them in resonance. Grown by ticking
+    // rather than by setting masses directly, so the picture is one the game can actually reach.
+    val orbiting = DesktopGame().apply {
+        seekToTier(Tiers.indexOf("Roter Zwerg"))
+        edit { it.copy(mass = it.mass * 3_000) }
+        repeat(6) { openOrbit() }
+        listOf(0, 1, 2, 4, 5).forEach { seedSatellite(it) }
+        edit { GameEngine.tick(it, 45 * 60.0) }
+    }
+    shoot("30-bahnen", orbiting, tab = 2, note = "(Bahnen und Trabanten)")
+    shoot("31-system-koerper", orbiting, tab = 0, note = "(Trabanten um den Körper)")
+
     // The tier change is its own bug surface, so it gets walked inside one composition rather
     // than photographed rung by rung — see [COLLAPSE_WALK].
     println("Stufenwechsel in einer laufenden Komposition:")

@@ -59,6 +59,18 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.buyFuser(state, id, currentBuyAmount)
     }
 
+    override fun openOrbit() {
+        state = GameEngine.openOrbit(state)
+    }
+
+    override fun seedSatellite(orbitIndex: Int) {
+        state = GameEngine.seedSatellite(state, orbitIndex)
+    }
+
+    override fun mergeSatellites(from: Int, to: Int) {
+        state = GameEngine.mergeSatellites(state, from, to)
+    }
+
     override fun startResearch(id: String) {
         state = GameEngine.startResearch(state, id, System.currentTimeMillis())
     }

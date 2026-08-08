@@ -141,6 +141,27 @@ object Achievements {
             },
         )
 
+        // ---- the system
+        add(
+            Achievement("a_orbit_1", "Erste Bahn", "Etwas kreist um dich.") { state ->
+                Orbits.occupiedCount(state) >= 1
+            },
+        )
+        add(
+            Achievement("a_orbit_full", "Vollbesetzt", "Auf jeder Bahn steht ein Körper.") { state ->
+                state.orbits >= Orbits.MAX && Orbits.occupiedCount(state) >= Orbits.MAX
+            },
+        )
+        add(
+            Achievement(
+                "a_orbit_resonance",
+                "Im Gleichschritt",
+                "Zwei Trabanten in Resonanz — dieselbe Kraft an derselben Stelle, jedes Mal.",
+            ) { state ->
+                Orbits.opened(state).any { Orbits.resonantWith(state, it).isNotEmpty() }
+            },
+        )
+
         // ---- fusion
         add(
             Achievement("a_fusion_1", "Gezündet", "Die erste Protonenkette läuft.") { state ->
