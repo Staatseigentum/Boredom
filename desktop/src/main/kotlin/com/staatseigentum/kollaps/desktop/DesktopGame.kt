@@ -127,6 +127,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.setHaptics(state, on)
     }
 
+    override fun setMusic(on: Boolean) {
+        state = GameEngine.setMusic(state, on)
+    }
+
     override fun setAutoBuy(on: Boolean) {
         state = GameEngine.setAutoBuy(state, on)
     }

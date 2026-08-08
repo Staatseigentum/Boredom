@@ -216,6 +216,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun setMusic(on: Boolean) {
+        _state.value = GameEngine.setMusic(_state.value, on)
+        persist()
+    }
+
     fun setAutoBuy(on: Boolean) {
         _state.value = GameEngine.setAutoBuy(_state.value, on)
         persist()

@@ -1,6 +1,7 @@
 package com.staatseigentum.kollaps.ui
 
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.staatseigentum.kollaps.core.audio.Mood
 
 /**
  * Everything the game makes a noise about.
@@ -34,3 +35,21 @@ interface Sounds {
  * nothing provides it, so previews, tests and the harness stay silent instead of needing audio.
  */
 val LocalSfx = staticCompositionLocalOf<Sounds?> { null }
+
+/**
+ * The background loop.
+ *
+ * Its own seam rather than another method on [Sounds] because it is a different kind of thing:
+ * a cue is fired and forgotten, while this one holds a stream open, has to be told to stop, and
+ * has to survive the screen recomposing around it.
+ */
+interface Music {
+    /** Starts, or crossfades to, the loop for this mood. Repeated calls with the same mood do nothing. */
+    fun play(mood: Mood)
+
+    /** Stops and frees whatever is playing. */
+    fun stop()
+}
+
+/** Null wherever nobody can play anything — the harness, previews, tests. */
+val LocalMusic = staticCompositionLocalOf<Music?> { null }

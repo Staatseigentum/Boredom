@@ -264,6 +264,7 @@ fun SettingsSection(
     stats: Stats,
     onSound: (Boolean) -> Unit,
     onHaptics: (Boolean) -> Unit,
+    onMusic: (Boolean) -> Unit,
     onAutoBuy: (Boolean) -> Unit,
     onReminders: (Boolean) -> Unit,
     onExport: () -> String,
@@ -280,6 +281,14 @@ fun SettingsSection(
         Toggle("Klickgeräusch", state.soundOn) { onSound(!state.soundOn) }
         Spacer(Modifier.height(6.dp))
         Toggle("Vibration", state.hapticsOn) { onHaptics(!state.hapticsOn) }
+        Spacer(Modifier.height(6.dp))
+        Toggle("Musik", state.musicOn) { onMusic(!state.musicOn) }
+        Text(
+            text = "Ein Klangteppich, der sich ändert, sobald aus dem Gestein eine Welt, aus der " +
+                "Welt ein Gasriese und aus dem Gasriesen ein Stern wird.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Muted,
+        )
         Spacer(Modifier.height(6.dp))
         Toggle("Erinnerung, wenn der Speicher voll ist", state.remindersOn) {
             onReminders(!state.remindersOn)

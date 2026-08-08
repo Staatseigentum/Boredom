@@ -524,6 +524,7 @@ object GameEngine {
                 cometsCaught = state.cometsCaught,
                 soundOn = state.soundOn,
                 hapticsOn = state.hapticsOn,
+                musicOn = state.musicOn,
                 autoBuyOn = state.autoBuyOn,
                 automation = state.automation,
                 remindersOn = state.remindersOn,
@@ -568,6 +569,7 @@ object GameEngine {
                 cometsCaught = state.cometsCaught,
                 soundOn = state.soundOn,
                 hapticsOn = state.hapticsOn,
+                musicOn = state.musicOn,
                 autoBuyOn = state.autoBuyOn,
                 automation = state.automation,
                 remindersOn = state.remindersOn,
@@ -720,6 +722,7 @@ object GameEngine {
         cometsCaught = state.cometsCaught,
         soundOn = state.soundOn,
         hapticsOn = state.hapticsOn,
+        musicOn = state.musicOn,
         autoBuyOn = state.autoBuyOn,
         automation = state.automation,
         remindersOn = state.remindersOn,
@@ -796,6 +799,8 @@ object GameEngine {
     fun setSound(state: GameState, on: Boolean): GameState = state.copy(soundOn = on)
 
     fun setHaptics(state: GameState, on: Boolean): GameState = state.copy(hapticsOn = on)
+
+    fun setMusic(state: GameState, on: Boolean): GameState = state.copy(musicOn = on)
 
     /** The old single switch, kept because the settings screen still offers it as one. */
     fun setAutoBuy(state: GameState, on: Boolean): GameState =

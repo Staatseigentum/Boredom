@@ -75,6 +75,9 @@ data class GameState(
     /** Whether tapping vibrates. */
     val hapticsOn: Boolean = true,
 
+    /** Whether the background loop plays. */
+    val musicOn: Boolean = true,
+
     /** Id of the challenge being run, if any. */
     val activeChallenge: String? = null,
 

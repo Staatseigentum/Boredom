@@ -50,6 +50,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun buyPrestigeUpgrade(id: String) = model.buyPrestigeUpgrade(id)
             override fun setSound(on: Boolean) = model.setSound(on)
             override fun setHaptics(on: Boolean) = model.setHaptics(on)
+            override fun setMusic(on: Boolean) = model.setMusic(on)
             override fun setAutoBuy(on: Boolean) = model.setAutoBuy(on)
             override fun setReminders(on: Boolean) = model.setReminders(on)
             override fun importSave(block: String): Boolean = model.importSave(block)

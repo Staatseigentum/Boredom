@@ -57,6 +57,7 @@ import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
+import com.staatseigentum.kollaps.core.audio.Mood
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Space
@@ -103,6 +104,7 @@ interface GameActions {
     fun buyPrestigeUpgrade(id: String)
     fun setSound(on: Boolean)
     fun setHaptics(on: Boolean)
+    fun setMusic(on: Boolean)
     fun setAutoBuy(on: Boolean)
     fun setReminders(on: Boolean)
 
@@ -137,6 +139,15 @@ fun GameScreen(
     // The sound setting is enforced once, here, by taking the player away from every widget
     // below rather than by teaching each of them to ask whether it is allowed to make a noise.
     val sfx = LocalSfx.current
+
+    // The loop follows the kind of body rather than the tier, so it changes on the seven moments
+    // that mean something instead of on all twenty-four. Driven from here because this is the one
+    // place that knows both which body is on screen and whether the player wants to hear it.
+    val music = LocalMusic.current
+    LaunchedEffect(music, state.musicOn, stats.tier.kind) {
+        if (state.musicOn) music?.play(Mood.of(stats.tier.kind)) else music?.stop()
+    }
+
     CompositionLocalProvider(LocalSfx provides sfx.takeIf { state.soundOn }) {
         Box(
             modifier = modifier

@@ -85,7 +85,7 @@ object Chiptune {
     }
 
     /** The cue as a playable WAV file. */
-    fun wav(cue: Cue): ByteArray = riff(render(cue))
+    fun wav(cue: Cue): ByteArray = Wav.riff(render(cue), SAMPLE_RATE)
 
     /** Raw samples, exposed so a test can look at the waveform without parsing a header. */
     fun render(cue: Cue): ShortArray {
@@ -114,7 +114,7 @@ object Chiptune {
                 out[index] += voice * note.gain * envelope(i, length)
             }
         }
-        return normalise(out)
+        return Wav.normalise(out, PEAK)
     }
 
     /**
@@ -132,57 +132,9 @@ object Chiptune {
         return attack * exp(-DECAY * sample.toDouble() / length)
     }
 
-    /** Scales to just under full range, so no cue is quietly louder than the others. */
-    private fun normalise(samples: DoubleArray): ShortArray {
-        val peak = samples.maxOfOrNull { kotlin.math.abs(it) } ?: 0.0
-        val scale = if (peak <= 0.0) 0.0 else PEAK / peak
-        return ShortArray(samples.size) { (samples[it] * scale).toInt().toShort() }
-    }
-
-    /** Wraps PCM samples in the smallest RIFF header that is still a valid WAV file. */
-    private fun riff(samples: ShortArray): ByteArray {
-        val dataBytes = samples.size * 2
-        val out = ByteArray(HEADER_BYTES + dataBytes)
-        var at = 0
-
-        fun ascii(text: String) {
-            for (c in text) out[at++] = c.code.toByte()
-        }
-
-        fun int32(value: Int) {
-            out[at++] = (value and 0xFF).toByte()
-            out[at++] = ((value shr 8) and 0xFF).toByte()
-            out[at++] = ((value shr 16) and 0xFF).toByte()
-            out[at++] = ((value shr 24) and 0xFF).toByte()
-        }
-
-        fun int16(value: Int) {
-            out[at++] = (value and 0xFF).toByte()
-            out[at++] = ((value shr 8) and 0xFF).toByte()
-        }
-
-        ascii("RIFF")
-        int32(HEADER_BYTES - 8 + dataBytes)
-        ascii("WAVE")
-        ascii("fmt ")
-        int32(16) // size of this chunk
-        int16(1) // uncompressed PCM
-        int16(1) // mono
-        int32(SAMPLE_RATE)
-        int32(SAMPLE_RATE * 2) // bytes per second
-        int16(2) // bytes per frame
-        int16(16) // bits per sample
-        ascii("data")
-        int32(dataBytes)
-
-        for (sample in samples) int16(sample.toInt())
-        return out
-    }
-
     /** Silence after the last note, so nothing is cut off mid-decay. */
     private const val TAIL_SECONDS = 0.05
     private const val ATTACK_SECONDS = 0.006
     private const val DECAY = 4.5
     private const val PEAK = 26_000.0
-    private const val HEADER_BYTES = 44
 }
