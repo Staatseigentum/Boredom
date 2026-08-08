@@ -106,6 +106,10 @@ object SaveCodec {
         if (knownRules.size != migrated.automation.size) {
             migrated = migrated.copy(automation = knownRules)
         }
+        val knownInvestments = migrated.investments.filterKeys { Investments.byId(it) != null }
+        if (knownInvestments.size != migrated.investments.size) {
+            migrated = migrated.copy(investments = knownInvestments)
+        }
         // A project nobody can finish would hold the single bench for good.
         if (migrated.activeResearch != null && ResearchTree.byId(migrated.activeResearch) == null) {
             migrated = migrated.copy(activeResearch = null, researchDoneAt = 0)

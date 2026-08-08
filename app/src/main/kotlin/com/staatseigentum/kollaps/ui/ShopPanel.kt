@@ -425,6 +425,7 @@ private fun CosmosPanel(
         // Only worth showing once there is something to spend, and something to spend it on.
         if (state.collapses > 0 || state.singularities > 0.0) {
             item { PrestigeShop(state = state, onBuy = actions::buyPrestigeUpgrade) }
+            item { InvestmentPanel(state = state, actions = actions) }
         }
 
         if (stats.bigBangUnlocked) {
@@ -475,6 +476,7 @@ private fun CosmosPanel(
                 onReminders = actions::setReminders,
                 onExport = actions::exportSave,
                 onImport = actions::importSave,
+                onErase = actions::eraseSave,
             )
         }
 

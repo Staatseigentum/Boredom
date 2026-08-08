@@ -53,6 +53,12 @@ data class GameState(
     /** Prestige upgrades bought. Unlike [upgrades], these survive a collapse. */
     val prestigeUpgrades: Set<String> = emptySet(),
 
+    /**
+     * Levels of each repeatable singularity investment. Survive a collapse, not a big bang —
+     * they are bought with singularities, and the big bang takes those. See [Investments].
+     */
+    val investments: Map<String, Int> = emptyMap(),
+
     /** Achievements earned, across all runs. */
     val achievements: Set<String> = emptySet(),
 

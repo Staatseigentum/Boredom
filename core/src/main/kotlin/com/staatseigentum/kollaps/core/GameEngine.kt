@@ -519,6 +519,7 @@ object GameEngine {
                 startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
                 // Everything below is the point of collapsing: it is what carries over.
                 prestigeUpgrades = state.prestigeUpgrades,
+                investments = state.investments,
                 achievements = state.achievements,
                 playedSeconds = state.playedSeconds,
                 cometsCaught = state.cometsCaught,
@@ -717,6 +718,7 @@ object GameEngine {
         lastSeenAt = nowMillis,
         startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
         prestigeUpgrades = state.prestigeUpgrades,
+        investments = state.investments,
         achievements = state.achievements,
         playedSeconds = state.playedSeconds,
         cometsCaught = state.cometsCaught,
@@ -736,19 +738,70 @@ object GameEngine {
         researchDoneAt = state.researchDoneAt,
     )
 
-    /** Mass a fresh run begins with, from prestige. */
-    private fun startingMass(state: GameState): Double =
-        state.prestigeUpgrades.sumOf {
-            (PrestigeUpgrades.byId(it)?.effect as? PrestigeEffect.StartingMass)?.mass ?: 0.0
+    /**
+     * Every permanent effect the player owns, from all five sources.
+     *
+     * The two effects a run *begins* with are never read by [modifiersOf] — they are settled once,
+     * here, when a run starts. Walking one sequence rather than five lists means a starting bonus
+     * added to a challenge reward or an Äonen upgrade later works without anybody remembering to
+     * come back to this function.
+     */
+    private fun permanentEffects(state: GameState): Sequence<PrestigeEffect> = sequence {
+        for (id in state.prestigeUpgrades) PrestigeUpgrades.byId(id)?.effect?.let { yield(it) }
+        for ((id, level) in state.investments) {
+            val investment = Investments.byId(id) ?: continue
+            val owned = level.coerceIn(0, investment.maxLevel)
+            if (owned > 0) yield(investment.effectAt(owned))
         }
+        for (id in state.challengesDone) Challenge.byId(id)?.reward?.let { yield(it) }
+        for (id in state.research) ResearchTree.byId(id)?.effect?.let { yield(it) }
+        for (id in state.aeonUpgrades) AeonUpgrades.byId(id)?.effect?.let { yield(it) }
+    }
 
-    /** Collectors a fresh run begins with, from prestige. The best upgrade wins, they do not add. */
+    /** Mass a fresh run begins with. These add up. */
+    private fun startingMass(state: GameState): Double =
+        permanentEffects(state)
+            .filterIsInstance<PrestigeEffect.StartingMass>()
+            .sumOf { it.mass }
+
+    /** Collectors a fresh run begins with. The best one wins, they do not add. */
     private fun startingCollectors(state: GameState): Map<String, Int> {
-        val count = state.prestigeUpgrades.maxOfOrNull {
-            (PrestigeUpgrades.byId(it)?.effect as? PrestigeEffect.StartingCollectors)?.count ?: 0
-        } ?: 0
+        val count = permanentEffects(state)
+            .filterIsInstance<PrestigeEffect.StartingCollectors>()
+            .maxOfOrNull { it.count } ?: 0
         if (count <= 0) return emptyMap()
         return Collectors.all.associate { it.id to count }
+    }
+
+    /**
+     * Buys levels of a repeatable investment.
+     *
+     * Bulk is walked one level at a time rather than solved, because the closed form for the
+     * price of a run of levels is one rounding error away from charging for a level the player
+     * cannot afford — and here that error would be paid in the currency a whole evening of play
+     * produces about thirty of.
+     */
+    fun buyInvestment(state: GameState, investmentId: String, amount: Int = 1): GameState {
+        val investment = Investments.byId(investmentId) ?: return state
+        if (state.collapses < investment.requiredCollapses) return state
+
+        val level = Investments.levelOf(state, investment)
+        val wanted = if (amount <= 0) {
+            investment.affordableLevels(level, state.singularities)
+        } else {
+            amount.coerceAtMost(investment.maxLevel - level)
+        }
+        if (wanted <= 0) return state
+
+        val cost = investment.costForLevels(level, wanted)
+        if (cost > state.singularities) return state
+
+        return award(
+            state.copy(
+                singularities = state.singularities - cost,
+                investments = state.investments + (investment.id to (level + wanted)),
+            ),
+        )
     }
 
     /** Buys a prestige upgrade if it is offered and the singularities are there. */
@@ -1087,6 +1140,15 @@ object GameEngine {
         }
         for (id in state.prestigeUpgrades) {
             apply(mods, PrestigeUpgrades.byId(id)?.effect)
+        }
+
+        // Investments speak the same vocabulary and go through the same fold. Each one hands over
+        // the total effect of the levels owned rather than the effect of one level, which is what
+        // keeps a repeatable purchase linear instead of turning it into a power.
+        for ((id, level) in state.investments) {
+            val investment = Investments.byId(id) ?: continue
+            val owned = level.coerceIn(0, investment.maxLevel)
+            if (owned > 0) apply(mods, investment.effectAt(owned))
         }
 
         // Challenge rewards are permanent in the same way prestige is, and are the same kind of

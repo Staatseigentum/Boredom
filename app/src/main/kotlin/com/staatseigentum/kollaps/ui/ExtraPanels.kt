@@ -269,9 +269,11 @@ fun SettingsSection(
     onReminders: (Boolean) -> Unit,
     onExport: () -> String,
     onImport: (String) -> Boolean,
+    onErase: () -> Unit,
 ) {
     val clipboard = LocalClipboardManager.current
     var importing by remember { mutableStateOf(false) }
+    var erasing by remember { mutableStateOf(false) }
     var note by remember { mutableStateOf<String?>(null) }
 
     PixelPanel(modifier = Modifier.fillMaxWidth()) {
@@ -326,6 +328,41 @@ fun SettingsSection(
         note?.let {
             Spacer(Modifier.height(6.dp))
             Text(it, style = MaterialTheme.typography.bodySmall, color = Positive)
+        }
+
+        Spacer(Modifier.height(14.dp))
+        PixelLabel("Von vorn anfangen", size = 13, color = Muted)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "Löscht alles: Masse, Kollektoren, Erfolge, Singularitäten, Äonen, Forschung. " +
+                "Es gibt kein Zurück — kopier dir vorher den Spielstand, falls du unsicher bist.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Muted,
+        )
+        Spacer(Modifier.height(8.dp))
+        // Two taps, and the first one is undone by leaving the panel. A single button here would
+        // be the one control in the game that destroys hours of play by being brushed against.
+        PixelButton(
+            label = if (erasing) "Wirklich? Alles wird gelöscht" else "Spielstand löschen",
+            onClick = {
+                if (erasing) {
+                    onErase()
+                    erasing = false
+                    note = "Alles gelöscht. Neuer Anfang."
+                } else {
+                    erasing = true
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            accent = if (erasing) Ember else Outline,
+        )
+        if (erasing) {
+            Spacer(Modifier.height(6.dp))
+            PixelButton(
+                label = "Doch nicht",
+                onClick = { erasing = false },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 

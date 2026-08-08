@@ -102,6 +102,12 @@ interface GameActions {
     fun finishChallenge()
 
     fun buyPrestigeUpgrade(id: String)
+
+    /** Buys levels of a repeatable investment. Zero or less means as many as are affordable. */
+    fun buyInvestment(id: String, amount: Int)
+
+    /** Throws the whole save away and starts over. There is no way back from this. */
+    fun eraseSave()
     fun setSound(on: Boolean)
     fun setHaptics(on: Boolean)
     fun setMusic(on: Boolean)

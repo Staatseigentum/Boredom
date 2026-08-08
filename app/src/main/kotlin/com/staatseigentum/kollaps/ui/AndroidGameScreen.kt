@@ -48,6 +48,8 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun abortChallenge() = model.abortChallenge()
             override fun finishChallenge() = model.finishChallenge()
             override fun buyPrestigeUpgrade(id: String) = model.buyPrestigeUpgrade(id)
+            override fun buyInvestment(id: String, amount: Int) = model.buyInvestment(id, amount)
+            override fun eraseSave() = model.eraseSave()
             override fun setSound(on: Boolean) = model.setSound(on)
             override fun setHaptics(on: Boolean) = model.setHaptics(on)
             override fun setMusic(on: Boolean) = model.setMusic(on)

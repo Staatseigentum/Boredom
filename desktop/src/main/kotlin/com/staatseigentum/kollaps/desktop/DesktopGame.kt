@@ -119,6 +119,14 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.buyPrestigeUpgrade(state, id)
     }
 
+    override fun buyInvestment(id: String, amount: Int) {
+        state = GameEngine.buyInvestment(state, id, amount)
+    }
+
+    override fun eraseSave() {
+        state = GameState.new(NOW)
+    }
+
     override fun setSound(on: Boolean) {
         state = GameEngine.setSound(state, on)
     }

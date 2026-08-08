@@ -99,6 +99,19 @@ object Achievements {
             },
         )
 
+        add(
+            Achievement("a_invest_10", "Angelegt", "Zehn Stufen in Investitionen gesteckt.") {
+                Investments.totalLevels(it) >= 10
+            },
+        )
+        add(
+            Achievement(
+                "a_invest_50",
+                "Vermögensverwaltung",
+                "Fünfzig Stufen. Die Singularitäten arbeiten für dich.",
+            ) { Investments.totalLevels(it) >= 50 },
+        )
+
         // ---- challenges
         add(
             Achievement("a_challenge_1", "Freiwillig schwerer", "Eine Herausforderung bestanden.") {

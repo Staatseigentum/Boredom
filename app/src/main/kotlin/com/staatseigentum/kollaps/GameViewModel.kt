@@ -201,6 +201,28 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun buyInvestment(investmentId: String, amount: Int) {
+        _state.value = GameEngine.buyInvestment(_state.value, investmentId, amount)
+        persist()
+    }
+
+    /**
+     * Throws the save away, on disk and in memory, and starts a brand new game.
+     *
+     * The file is cleared before the fresh state is written, so a crash between the two leaves
+     * nothing rather than half of the old game. There is no undo, which is why the button that
+     * calls this asks twice.
+     */
+    fun eraseSave() {
+        viewModelScope.launch {
+            store.clear()
+            val fresh = GameState.new(System.currentTimeMillis())
+            _state.value = fresh
+            _offlineReport.value = null
+            store.save(fresh)
+        }
+    }
+
     fun buyPrestigeUpgrade(upgradeId: String) {
         _state.value = GameEngine.buyPrestigeUpgrade(_state.value, upgradeId)
         persist()

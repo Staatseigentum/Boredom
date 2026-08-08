@@ -23,9 +23,12 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   (standardmäßig 50 % für bis zu 8 Stunden, per Upgrade auf 100 % und 48 Stunden)
 - **Prestige** über den Kollaps: Singularitäten geben je +10 % auf alles, dauerhaft — und im
   Kosmos-Tab **13 Prestige-Upgrades**, die sie dauerhaft ausgeben
+- **Zwölf Investitionen** daneben, die man immer wieder kaufen kann: jede Stufe kostet mehr als
+  die davor, jede wirkt linear statt exponentiell. Die Upgrade-Liste geht irgendwann aus, diese
+  nicht — sonst hätte eine Währung, die der Kollaps endlos nachliefert, irgendwann kein Ziel mehr
 - **Kometen**, die alle paar Minuten durchs Bild ziehen und nur zahlen, wenn man sie trifft:
   geschenkte Produktion, ein Schub, oder eine Minute mit hundertfachem Tippwert
-- **52 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
+- **54 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
   gerade wie viel liefert
 - **Meilensteine**: alle 25 Stück einer Sorte liefert dieser Kollektor 15 % mehr, dauerhaft und
   ohne Zusatzkosten — der Zähler in der Shop-Zeile zählt jetzt auf etwas zu
@@ -65,6 +68,8 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   der Leiter, desto dichter der Nebel
 - **Spielstand exportieren und einlesen** — die App ist sideloaded, also liegt der Stand nur auf
   dem Gerät und geht mit einer Deinstallation verloren
+- **Alles löschen** in den Einstellungen, mit zweitem Tipp zur Bestätigung: der einzige Weg,
+  freiwillig bei null anzufangen
 - **Kaufmengen** ×1 / ×10 / ×100 / Max
 - Durchgehend **Pixel Art**: jeder Himmelskörper ist ein Sprite mit 24 Rotationsframes, gerendert
   aus einer Kugelprojektion über eine Oberflächentextur, auf eine Handvoll Palettenstufen
