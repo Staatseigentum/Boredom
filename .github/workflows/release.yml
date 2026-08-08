@@ -1,7 +1,8 @@
 name: Release
 
-# Tag a commit with v1.1.0 and push the tag — this builds a signed APK and publishes it as a
-# GitHub Release. The in-app updater reads exactly that release feed.
+# Tag a commit with v1.1.0 and push the tag — this builds a signed APK, a Windows installer and a
+# portable Windows folder, and publishes all three as a GitHub Release. The in-app updater on the
+# phone reads exactly that release feed and only ever looks at the APK.
 on:
   push:
     tags: ['v*']
@@ -15,14 +16,16 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    name: Signiertes APK veröffentlichen
+  # Worked out once and handed to everything below. Two jobs deriving the same string from the
+  # same ref is two places for it to disagree, and they run on different operating systems.
+  version:
+    name: Version bestimmen
     runs-on: ubuntu-latest
-
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      name: ${{ steps.version.outputs.name }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Version bestimmen
+      - name: Aus Tag oder Eingabe ableiten
         id: version
         env:
           REQUESTED_VERSION: ${{ github.event.inputs.version }}
@@ -35,6 +38,14 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "name=${TAG#v}" >> "$GITHUB_OUTPUT"
           echo "Version: $TAG"
+
+  android:
+    name: Signiertes APK
+    needs: version
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Signaturschlüssel prüfen
         env:
@@ -81,7 +92,7 @@ jobs:
 
       - name: Signiertes APK bauen
         env:
-          KOLLAPS_VERSION_NAME: ${{ steps.version.outputs.name }}
+          KOLLAPS_VERSION_NAME: ${{ needs.version.outputs.name }}
           KOLLAPS_KEYSTORE: ${{ runner.temp }}/kollaps.jks
           KOLLAPS_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KOLLAPS_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -104,25 +115,99 @@ jobs:
             echo "::error::Kein APK gebaut"
             exit 1
           fi
-          TARGET="kollaps-${{ steps.version.outputs.name }}.apk"
+          mkdir -p dist
+          TARGET="dist/kollaps-${{ needs.version.outputs.name }}.apk"
           cp "$SOURCE" "$TARGET"
-          echo "path=$TARGET" >> "$GITHUB_OUTPUT"
           ls -lh "$TARGET"
 
       - name: Signatur bestätigen
         run: |
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort | tail -n 1)
-          "$APKSIGNER" verify --print-certs "${{ steps.apk.outputs.path }}"
+          "$APKSIGNER" verify --print-certs dist/*.apk
 
       - name: Schlüssel wieder entfernen
         if: always()
         run: rm -f "$RUNNER_TEMP/kollaps.jks"
 
-      - name: Release veröffentlichen
+      - name: APK weiterreichen
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: dist/*.apk
+          if-no-files-found: error
+
+  windows:
+    name: Windows-Fassung
+    needs: version
+    runs-on: windows-latest
+
+    # jpackage only ever builds for the machine it runs on, so a Windows installer needs a
+    # Windows runner. It bundles a Java runtime, which is why the result is worth the detour:
+    # whoever installs it needs nothing else on their machine.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+
+      # Only the desktop module and what it depends on. Configuring the Android module here would
+      # want an SDK this job has no reason to install.
+      - name: Installer und tragbare Fassung bauen
+        run: >
+          ./gradlew --configure-on-demand --no-daemon --console=plain
+          -PappVersion=${{ needs.version.outputs.name }}
+          :desktop:packageMsi :desktop:createDistributable
+
+      - name: Zusammenpacken
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          $msi = Get-ChildItem -Recurse -Filter *.msi desktop/build/compose/binaries | Select-Object -First 1
+          if (-not $msi) { Write-Error "Kein Installer gebaut"; exit 1 }
+          Copy-Item $msi.FullName "dist/Kollaps-${{ needs.version.outputs.name }}-setup.msi"
+
+          $app = Get-ChildItem -Directory desktop/build/compose/binaries/main/app | Select-Object -First 1
+          if (-not $app) { Write-Error "Keine tragbare Fassung gebaut"; exit 1 }
+          Compress-Archive -Path "$($app.FullName)\*" `
+            -DestinationPath "dist/Kollaps-${{ needs.version.outputs.name }}-windows-portabel.zip"
+
+          Get-ChildItem dist | Format-Table Name, Length
+
+      - name: Windows-Dateien weiterreichen
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Release veröffentlichen
+    needs: [version, android, windows]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dateien einsammeln
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Nachsehen, was da ist
+        run: ls -lh dist
+
+      - name: Veröffentlichen
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ steps.version.outputs.tag }}" \
-            "${{ steps.apk.outputs.path }}" \
-            --title "Kollaps ${{ steps.version.outputs.tag }}" \
+          gh release create "${{ needs.version.outputs.tag }}" \
+            dist/* \
+            --title "Kollaps ${{ needs.version.outputs.tag }}" \
             --generate-notes

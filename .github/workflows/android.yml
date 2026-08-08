@@ -119,3 +119,17 @@ jobs:
           name: kollaps-bildschirme
           path: build/screenshots/*.png
           if-no-files-found: error
+
+      # The playable desktop build, checked here rather than only at release time. Packaging
+      # breaks on things compilation never sees — a main class that moved, a version string
+      # jpackage refuses — and finding that out an hour into a release is the wrong moment.
+      - name: Tragbare Fassung bauen
+        run: |
+          set +e
+          ./gradlew --configure-on-demand --no-daemon --console=plain \
+            :desktop:createDistributable > build.log 2>&1
+          code=$?
+          grep -E "^e: |^\\* What went wrong|^Caused by|FAILURE:" build.log | head -n 40
+          echo "--- letzte Zeilen ---"
+          tail -n 20 build.log
+          exit $code

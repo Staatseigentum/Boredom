@@ -146,6 +146,27 @@ einzige automatische Blick auf die Oberfläche, den das Projekt hat — sonst ze
 Gefunden hat der Harness unter anderem den Fehler, bei dem nach einem Stufenwechsel das Sprite
 der *vorherigen* Stufe angezeigt und dabei auf die Kantenlänge der neuen zugeschnitten wurde.
 
+## Am PC spielen
+
+Neben der Android-Fassung baut jeder Release eine spielbare Windows-Version:
+
+- **`Kollaps-<version>-setup.msi`** — Installer mit eingebauter Java-Laufzeit. Es muss nichts
+  weiter auf dem Rechner sein.
+- **`Kollaps-<version>-windows-portabel.zip`** — dasselbe als Ordner zum Entpacken, für alle, die
+  nichts installieren wollen. `Kollaps.exe` starten.
+
+Es ist dieselbe Oberfläche wie auf dem Handy, nur breiter: ab etwa 600 Punkten Fensterbreite
+schaltet das Fenster auf zwei Spalten um, Körper links und Laden rechts. Der Spielstand liegt
+unter `~/.kollaps/spielstand.txt` beziehungsweise `C:\Users\<name>\.kollaps\spielstand.txt` und
+ist dasselbe Format, das der Kopieren-Knopf im Spiel ausgibt — ein Stand vom Handy lässt sich
+darüber am PC weiterspielen und umgekehrt.
+
+Zwei Unterschiede zur App: es gibt keinen Updater (neue Fassungen kommen von der
+Releases-Seite) und keine Erinnerungs-Benachrichtigung.
+
+Startparameter: `--frisch` ignoriert den vorhandenen Spielstand, `--tier 17` beginnt auf einer
+bestimmten Stufe.
+
 ## Bauen
 
 ```bash

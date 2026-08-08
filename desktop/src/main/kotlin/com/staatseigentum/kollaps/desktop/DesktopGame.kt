@@ -15,9 +15,9 @@ import com.staatseigentum.kollaps.ui.GameActions
 /**
  * The game, driven from plain Compose state instead of a view model.
  *
- * Deliberately without persistence: the harness is for looking at the game, and a save file that
- * survives between runs would make every experiment depend on the last one. Jumping straight to
- * an interesting state is what [seekToTier] is for.
+ * Holds no save file of its own. The window in `Main.kt` loads one and writes it back; the
+ * screenshot harness hands in a state directly and never persists anything, which is what keeps
+ * every rendered picture independent of the last run.
  */
 class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
 
@@ -35,6 +35,21 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
 
     fun tick(seconds: Double) {
         state = GameEngine.tick(state, seconds)
+    }
+
+    /**
+     * Settles everything that reads the wall clock rather than elapsed play time: the lab, and
+     * the two automation rules that act on it.
+     */
+    fun settleWallClock() {
+        state = GameEngine.onWallClock(state, System.currentTimeMillis())
+    }
+
+    /** Credits the production earned while the game was closed, and shows the report. */
+    fun creditTimeAway() {
+        val report = GameEngine.applyOffline(state, System.currentTimeMillis())
+        state = report.state
+        if (report.worthShowing) offlineReport = report
     }
 
     override fun tap(): Double {

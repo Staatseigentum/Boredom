@@ -13,25 +13,47 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.ui.GameScreen
 
 /**
- * Plays the game in a window, at phone proportions.
+ * The game, in a window, as a thing somebody can actually play.
  *
- * Pass a tier number to start there, e.g. `--tier 17` for the neutron star, which is otherwise
- * four hours away.
+ * The same screen the phone runs, driven by the same rules, with a save file next to the user's
+ * own — and it reads the same exported block the phone writes, because the format was text from
+ * the start. What is deliberately missing is the updater: nothing here installs anything over
+ * itself, so the window says which version it is and leaves it at that.
+ *
+ * Arguments: `--tier 17` starts on a given rung, which is otherwise hours away, and `--frisch`
+ * ignores whatever is in the save file.
  */
 fun main(args: Array<String>) = application {
     val startTier = args.indexOf("--tier").takeIf { it >= 0 }
         ?.let { args.getOrNull(it + 1)?.toIntOrNull() }
         ?.minus(1)
+    val ignoreSave = "--frisch" in args
 
-    val game = remember { DesktopGame().also { startTier?.let { tier -> it.seekToTier(tier) } } }
+    val game = remember {
+        val loaded = if (ignoreSave) null else DesktopSave.load()
+        DesktopGame(loaded ?: GameState.new(System.currentTimeMillis())).also { fresh ->
+            startTier?.let { fresh.seekToTier(it) }
+            // Credited before the first frame, so the report is on screen when the window opens
+            // rather than a second later.
+            if (loaded != null) fresh.creditTimeAway()
+        }
+    }
+
+    if (!ignoreSave) println("Spielstand: ${DesktopSave.location()}")
 
     Window(
-        onCloseRequest = ::exitApplication,
-        title = "Kollaps — Testfenster",
-        state = rememberWindowState(size = DpSize(411.dp, 891.dp)),
+        onCloseRequest = {
+            DesktopSave.save(game.state)
+            exitApplication()
+        },
+        title = "Kollaps",
+        // Wide enough for the two-column layout, and resizable down to a phone shape if that is
+        // what somebody wants. Both are the same screen; only the width decides.
+        state = rememberWindowState(size = DpSize(1_100.dp, 760.dp)),
     ) {
         DesktopPlatform {
             RunningGame(game)
@@ -39,14 +61,31 @@ fun main(args: Array<String>) = application {
     }
 }
 
-/** Drives the simulation off the frame clock, which is the desktop stand-in for the app's loop. */
+/**
+ * Drives the simulation off the frame clock, which is the desktop stand-in for the app's loop.
+ *
+ * Three clocks meet here, exactly as they do on the phone: the frame clock advances production,
+ * the wall clock settles the lab and the two automation rules that read it, and a slower loop
+ * writes the save. Autosaving on a timer rather than on every frame, because a save is a file
+ * write and a frame is sixteen milliseconds.
+ */
 @Composable
 fun RunningGame(game: DesktopGame, modifier: Modifier = Modifier) {
     LaunchedEffect(game) {
         var previous = 0L
+        var sinceSave = 0.0
         while (true) {
             withFrameNanos { now ->
-                if (previous != 0L) game.tick((now - previous) / 1_000_000_000.0)
+                if (previous != 0L) {
+                    val seconds = (now - previous) / 1_000_000_000.0
+                    game.tick(seconds)
+                    game.settleWallClock()
+                    sinceSave += seconds
+                    if (sinceSave >= AUTOSAVE_SECONDS) {
+                        sinceSave = 0.0
+                        DesktopSave.save(game.state)
+                    }
+                }
                 previous = now
             }
         }
@@ -61,6 +100,8 @@ fun RunningGame(game: DesktopGame, modifier: Modifier = Modifier) {
         modifier = modifier,
     )
 }
+
+private const val AUTOSAVE_SECONDS = 12.0
 
 /** The game at a fixed size and a fixed moment, for rendering to an image. */
 @Composable

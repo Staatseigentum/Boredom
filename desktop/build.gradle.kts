@@ -2,7 +2,6 @@ plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.compose")
-    application
 }
 
 /**
@@ -55,13 +54,58 @@ dependencies {
  * Run from the repository root, not from this module's directory. The harness reads the app's
  * font files by relative path and writes its screenshots where the CI job looks for them; both
  * assume the root, and both fail quietly if the process starts a directory deeper.
+ *
+ * Applied to every `JavaExec` rather than to `run` by name: the run task comes from the Compose
+ * plugin now — the plain `application` plugin used to provide it, and having both meant two tasks
+ * called `run`, which Gradle refuses outright.
  */
-tasks.named<JavaExec>("run") {
+tasks.withType<JavaExec>().configureEach {
     workingDir = rootProject.projectDir
 }
 
-application {
-    mainClass.set(
-        providers.gradleProperty("mainClass").orElse("com.staatseigentum.kollaps.desktop.MainKt"),
-    )
+/**
+ * The entry point, named once and read by both plugins.
+ *
+ * The screenshot job in CI overrides it with `-PmainClass=...ScreenshotsKt` to render pictures
+ * instead of opening a window, so the property has to be what both the `run` task and the
+ * installer read — otherwise the two would start different programs.
+ */
+private val entryPoint = providers.gradleProperty("mainClass")
+    .orElse("com.staatseigentum.kollaps.desktop.MainKt")
+
+/**
+ * The playable build.
+ *
+ * `packageDistributionForCurrentOS` produces an installer for whatever machine is running it —
+ * an MSI on Windows, a DEB on Linux — with a Java runtime bundled in, so the person installing
+ * it needs nothing beyond the file. `createDistributable` produces the same thing as a folder,
+ * which is what goes into the portable archive for people who would rather not install anything.
+ *
+ * The version has to be a plain three-part number: jpackage rejects anything else, and a `v`
+ * prefix is exactly the kind of thing that fails an hour into a release build.
+ */
+compose.desktop {
+    application {
+        mainClass = entryPoint.get()
+
+        nativeDistributions {
+            targetFormats(
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb,
+            )
+            packageName = "Kollaps"
+            packageVersion = providers.gradleProperty("appVersion").orElse("1.0.0").get()
+            description = "Ein Idle-Clicker vom Meteoriten bis zum Schwarzen Loch"
+            vendor = "Staatseigentum"
+
+            windows {
+                menuGroup = "Kollaps"
+                // A stable UUID, so an installer upgrades the previous version in place instead
+                // of leaving two entries in the list of installed programs.
+                upgradeUuid = "6E2B1C64-5B7E-4C0E-9F3D-2A9C6B1F8D41"
+                dirChooser = true
+                shortcut = true
+            }
+        }
+    }
 }
