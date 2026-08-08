@@ -156,6 +156,7 @@ fun GameScreen(
         ) {
             Starfield(
                 tint = Color(stats.tier.glowColor),
+                depth = stats.tier.index / (Tiers.all.size - 1f).coerceAtLeast(1f),
                 modifier = Modifier.fillMaxSize(),
             )
 

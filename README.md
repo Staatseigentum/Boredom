@@ -25,7 +25,7 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   Kosmos-Tab **13 Prestige-Upgrades**, die sie dauerhaft ausgeben
 - **Kometen**, die alle paar Minuten durchs Bild ziehen und nur zahlen, wenn man sie trifft:
   geschenkte Produktion, ein Schub, oder eine Minute mit hundertfachem Tippwert
-- **45 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
+- **52 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
   gerade wie viel liefert
 - **Meilensteine**: alle 25 Stück einer Sorte liefert dieser Kollektor 15 % mehr, dauerhaft und
   ohne Zusatzkosten — der Zähler in der Shop-Zeile zählt jetzt auf etwas zu
@@ -37,17 +37,32 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   Upgrades
 - **Ereignisse mit Wahl**: alle paar Minuten eine Frage mit zwei Antworten. Masse sofort, oder
   ein Bonus auf Zeit — was besser ist, hängt davon ab, ob du gleich weiterspielst
+- **Die Fusionskette**: ab dem Braunen Zwerg brennt der Kern. Wasserstoff wird angezapft und über
+  fünf Öfen zu Helium, Kohlenstoff, Sauerstoff, Silizium und schließlich Eisen verschmolzen — die
+  Reihenfolge, die ein echter Stern durchläuft. Jedes Element zieht an einem eigenen Hebel:
+  Produktion, Tippwert, Offline-Ausbeute, Kometen, Singularitäten
+- **Ein Labor mit vierzehn Projekten**, die mit Masse bezahlt und auf der *echten* Uhr abgewartet
+  werden — von drei Minuten bis zu acht Stunden. Ein Projekt läuft weiter, während das Handy in
+  der Tasche steckt, und es gibt nur eine Bank. Was fertig wird, überlebt Kollaps und Urknall
+- **Fünf Automatisierungs-Regeln** mit je einem Wert: Kollektoren nachkaufen, Upgrades mitnehmen,
+  die Fusionskette ausbauen, die Laborbank füllen, kollabieren. Eine Zeile, ein Tipp — der dreht
+  weiter und nach der letzten Stufe wieder aus
 - **Klang** für Stufenaufstieg, gefangenen Kometen, Kauf und bestandene Herausforderung, alles
   im Code aus Rechteckwellen synthetisiert statt als Audiodatei mitgeliefert
+- **Musik**, ebenfalls gerechnet: sieben sechzehnsekündige Schleifen, eine je Art von Körper, aus
+  Bordunstimme und einer Melodie aus sechzehn Schritten. Der Bordun ist auf ganze Schwingungen
+  pro Schleife gerundet und Noten laufen über den Anfang weiter, damit die Naht nicht knackt
 - **Produktionsverlauf** als Kurve über die letzte halbe Stunde, logarithmisch, weil eine lineare
   Achse in einem Idle-Spiel neunundzwanzig Minuten flach und dann senkrecht wäre
 - **Zweispaltig im Querformat** und auf Tablets: Körper links, Shop rechts
 - **Erinnerung**, wenn der Offline-Speicher voll gelaufen ist — genau dann, wenn die Kollektoren
   aufhören zu verdienen
 - **Automatischer Tipper** aus dem Prestige-Shop: drei bzw. zehn Tipps pro Sekunde, die zählen
-  wie deine eigenen — und ein **automatischer Kauf**, der erst zuschlägt, wenn du das Vierfache
-  des Preises übrig hast, damit er dir nicht das Geld für Upgrades wegnimmt
+  wie deine eigenen
 - Deine Kollektoren **kreisen sichtbar** um den Körper, eine Bahn pro Sorte
+- **Ein Himmel mit Tiefe**: drei Sternenebenen, die unterschiedlich schnell ziehen, Nebel aus
+  überlagerten Lappen statt aus Kreisen, und eine Staubbahn quer durchs Bild. Je weiter oben auf
+  der Leiter, desto dichter der Nebel
 - **Spielstand exportieren und einlesen** — die App ist sideloaded, also liegt der Stand nur auf
   dem Gerät und geht mit einer Deinstallation verloren
 - **Kaufmengen** ×1 / ×10 / ×100 / Max

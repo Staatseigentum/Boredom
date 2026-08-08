@@ -13,111 +13,119 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.staatseigentum.kollaps.core.pixel.Sky
 import kotlin.math.floor
-import kotlin.random.Random
-
-private class Star(
-    val x: Float,
-    val y: Float,
-    /** 1 for a single block, 2 for a fatter one. */
-    val blocks: Int,
-    val offset: Float,
-    val speed: Float,
-    val warm: Boolean,
-)
 
 /**
- * The background: stars as square blocks snapped to a pixel grid, blinking between a handful of
- * fixed brightnesses instead of fading smoothly, plus two dithered nebula clouds tinted in the
- * colour of the body the player is currently on.
+ * The background: a sky with depth in it.
+ *
+ * Three layers of stars drifting at three speeds, nebulae built from overlapping lobes rather than
+ * circles, and a dust lane cutting across the whole thing. Everything is snapped to the same pixel
+ * grid the sprites use and drawn as flat blocks — a smooth gradient here would be the one soft
+ * thing on a screen made entirely of hard edges.
+ *
+ * What each block *is* comes from [Sky], which is arithmetic and can be tested; what is left here
+ * is where it lands and what colour it takes, which is a loop over rectangles. The fields are
+ * worked out once and kept, because deciding whether a block belongs to a cloud costs far more
+ * than drawing it and none of it changes between frames. What changes is only where the whole
+ * field sits, which is one addition per block.
  */
 @Composable
 fun Starfield(
     tint: Color,
     modifier: Modifier = Modifier,
+    /** How far up the ladder the player is, in `0f..1f`. Deeper skies for later bodies. */
+    depth: Float = 0f,
 ) {
-    val stars = remember {
-        val random = Random(0x5EED)
-        List(STAR_COUNT) {
-            Star(
-                x = random.nextFloat(),
-                y = random.nextFloat(),
-                blocks = if (random.nextFloat() < 0.22f) 2 else 1,
-                offset = random.nextFloat(),
-                speed = 0.5f + random.nextFloat() * 1.5f,
-                warm = random.nextFloat() < 0.25f,
-            )
-        }
-    }
-    val clouds = remember {
-        val random = Random(0xC10D)
-        List(CLOUD_BLOCKS) {
-            Offset(random.nextFloat(), random.nextFloat()) to random.nextFloat()
-        }
-    }
+    val stars = remember { Sky.stars() }
+    // Rebuilt when the body changes rung, which is a few times an hour.
+    val clouds = remember(depth) { Sky.clouds(depth) }
+    val dust = remember { Sky.dust() }
 
     val transition = rememberInfiniteTransition(label = "starfield")
-    val time by transition.animateFloat(
+    val twinkle by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(tween(9_000, easing = LinearEasing)),
         label = "twinkle",
     )
+    // Four minutes for one pass. Slow enough that nobody catches it moving, fast enough that
+    // looking up after a while shows a different sky.
+    val drift by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(240_000, easing = LinearEasing)),
+        label = "drift",
+    )
+
+    val accent = lerp(tint, NebulaAccent, 0.65f)
 
     Canvas(modifier = modifier) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
         val block = PIXEL.toPx()
 
-        // Two soft clouds, drawn as scattered blocks so they stay part of the pixel grid.
-        for ((position, weight) in clouds) {
-            val nearFirst = 1f - ((position.x - 0.2f) * (position.x - 0.2f) +
-                (position.y - 0.22f) * (position.y - 0.22f)) * 3.2f
-            val nearSecond = 1f - ((position.x - 0.85f) * (position.x - 0.85f) +
-                (position.y - 0.74f) * (position.y - 0.74f)) * 3.6f
-            val density = maxOf(nearFirst, nearSecond)
-            if (density <= weight) continue
+        // Furthest first, so a near star is never hidden behind something that is behind it.
+        for (cloud in clouds) {
             drawBlock(
-                position.x * size.width,
-                position.y * size.height,
-                block * 2f,
-                tint.copy(alpha = 0.12f + 0.10f * density),
+                x = Sky.wrap(cloud.x + drift * CLOUD_DRIFT) * size.width,
+                y = cloud.y * size.height,
+                size = block * if (cloud.wide) 3f else 2f,
+                color = lerp(tint, accent, cloud.warmth).copy(alpha = cloud.alpha),
+            )
+        }
+
+        for (grain in dust) {
+            drawBlock(
+                x = Sky.wrap(grain.x + drift * DUST_DRIFT) * size.width,
+                y = grain.y * size.height,
+                size = block,
+                color = DustColor.copy(alpha = grain.alpha),
             )
         }
 
         for (star in stars) {
-            // Four brightness steps, switched rather than faded.
-            val wave = ((time * star.speed + star.offset) * 4f) % 1f
-            val step = floor(wave * 4f).toInt()
-            val alpha = when (step) {
-                0 -> 0.35f
-                1 -> 0.7f
-                2 -> 1f
-                else -> 0.55f
-            }
+            val layer = star.layer
+            val alpha = if (layer.twinkles) {
+                // Four brightness steps, switched rather than faded.
+                val wave = ((twinkle * star.speed + star.offset) * 4f) % 1f
+                when (floor(wave * 4f).toInt()) {
+                    0 -> 0.35f
+                    1 -> 0.7f
+                    2 -> 1f
+                    else -> 0.55f
+                }
+            } else {
+                // Still varied, but fixed per star: a hundred and fifty blinking specks is noise.
+                0.55f + star.offset * 0.45f
+            } * layer.brightness
+
             drawBlock(
-                star.x * size.width,
-                star.y * size.height,
-                block * star.blocks,
-                (if (star.warm) WarmStar else Color.White).copy(alpha = alpha),
+                x = Sky.wrap(star.x + drift * layer.drift) * size.width,
+                y = star.y * size.height,
+                size = block * layer.blocks,
+                color = (if (star.warm) WarmStar else Color.White).copy(alpha = alpha),
             )
         }
     }
 }
 
-/** Snaps to the pixel grid so every star sits on a whole block. */
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBlock(
-    x: Float,
-    y: Float,
-    size: Float,
-    color: Color,
-) {
+/** Snaps to the pixel grid so every block sits whole. */
+private fun DrawScope.drawBlock(x: Float, y: Float, size: Float, color: Color) {
     val snappedX = floor(x / size) * size
     val snappedY = floor(y / size) * size
     drawRect(color = color, topLeft = Offset(snappedX, snappedY), size = Size(size, size))
 }
 
-private const val STAR_COUNT = 130
-private const val CLOUD_BLOCKS = 320
-private val PIXEL = 3.dp
+private const val CLOUD_DRIFT = 0.05f
+private const val DUST_DRIFT = 0.08f
+
+private val PIXEL: Dp = 3.dp
 private val WarmStar = Color(0xFFFFD7A8)
+
+/** What the tint is mixed towards, so a nebula has two colours in it rather than one. */
+private val NebulaAccent = Color(0xFF7A4ACF)
+private val DustColor = Color(0xFFBFA9E0)
