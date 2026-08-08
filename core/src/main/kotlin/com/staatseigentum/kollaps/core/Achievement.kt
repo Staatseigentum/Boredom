@@ -128,6 +128,30 @@ object Achievements {
             },
         )
 
+        // ---- fusion
+        add(
+            Achievement("a_fusion_1", "Gezündet", "Die erste Protonenkette läuft.") { state ->
+                Fusion.amountOf(state, Element.HELIUM) >= 1.0
+            },
+        )
+        add(
+            Achievement("a_fusion_carbon", "Aus Sternen gemacht", "Kohlenstoff im Kern. Wie du.") { state ->
+                Fusion.amountOf(state, Element.KOHLENSTOFF) >= 1.0
+            },
+        )
+        add(
+            Achievement("a_fusion_iron", "Eisenkern", "Weiter geht es nicht. Genau darum geht es.") { state ->
+                Fusion.amountOf(state, Element.EISEN) >= 1.0
+            },
+        )
+        add(
+            Achievement(
+                "a_fusion_full",
+                "Ganze Kette",
+                "Jede Stufe der Fusion läuft gleichzeitig.",
+            ) { state -> Fusion.stages.all { Fusion.levelOf(state, it) > 0 } },
+        )
+
         // ---- milestones
         add(
             Achievement(

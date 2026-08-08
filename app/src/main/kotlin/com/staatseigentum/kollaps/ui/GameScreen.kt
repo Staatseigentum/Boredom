@@ -72,6 +72,9 @@ interface GameActions {
     fun setBuyAmount(amount: BuyAmount)
     fun buyCollector(id: String)
     fun buyUpgrade(id: String)
+
+    /** Buys levels of a fusion stage, in whatever the current buy amount is. */
+    fun buyFuser(id: String)
     fun collapse()
     fun dismissOfflineReport()
     fun acknowledgeTier()

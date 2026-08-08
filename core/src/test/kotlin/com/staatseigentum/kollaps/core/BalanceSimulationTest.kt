@@ -47,6 +47,15 @@ class BalanceSimulationTest {
         return Run(state, tierTimes, elapsed)
     }
 
+    /**
+     * How much more than the price the bot wants in hand before it improves a furnace.
+     *
+     * Fusion competes with collectors for the same mass, and a bot that spent every kilogram on
+     * the chain the moment it unlocked would stall its own production to buy a multiplier of it.
+     * The reserve makes it build out of surplus, which is what a player does.
+     */
+    private val FUSION_RESERVE = 5.0
+
     /** Buys every upgrade it can afford, then the collector with the fastest payback. */
     private fun spend(start: GameState): GameState {
         var state = start
@@ -55,6 +64,18 @@ class BalanceSimulationTest {
             val affordable = GameEngine.upgradeOffers(state).firstOrNull { it.affordable }
                 ?: break
             state = GameEngine.buyUpgrade(state, affordable.upgrade.id)
+        }
+
+        // Fusion before collectors: a furnace multiplies what the fleet already makes, so the
+        // same mass is worth more here — as long as the reserve keeps the fleet growing too.
+        while (true) {
+            val next = GameEngine.fusionOffers(state, BuyAmount.ONE)
+                .filter { it.amount > 0 && it.cost * FUSION_RESERVE <= state.mass }
+                .minByOrNull { it.cost }
+                ?: break
+            val after = GameEngine.buyFuser(state, next.stage.id, BuyAmount.ONE)
+            if (after == state) break
+            state = after
         }
 
         while (true) {
@@ -79,6 +100,16 @@ class BalanceSimulationTest {
         println("  Produktion am Ende: ${Numbers.formatRate(GameEngine.massPerSecond(run.finalState))}")
         println("  Kollektoren: ${run.finalState.collectors.values.sum()}")
         println("  Upgrades: ${run.finalState.upgrades.size} von ${Upgrades.all.size}")
+        println("  Fusionsstufen: ${run.finalState.fusers.values.sum()}")
+        for (element in Element.entries) {
+            val held = Fusion.amountOf(run.finalState, element)
+            if (held >= 1.0) {
+                println(
+                    "    ${element.symbol.padEnd(3)} ${Numbers.format(held).padStart(10)}" +
+                        "  ${Numbers.formatMultiplier(Fusion.factor(run.finalState, element))}",
+                )
+            }
+        }
     }
 
     @Test

@@ -35,6 +35,9 @@ data class Stats(
     val bigBangUnlocked: Boolean = false,
     val pendingAeons: Double = 0.0,
     val canBigBang: Boolean = false,
+    /** Whether the body is hot enough to fuse, and what the elements are worth together. */
+    val fusionUnlocked: Boolean = false,
+    val fusionMultiplier: Double = 1.0,
 )
 
 /** A collector row in the shop. */
@@ -58,6 +61,19 @@ data class CollectorOffer(
 data class UpgradeOffer(
     val upgrade: Upgrade,
     val affordable: Boolean,
+)
+
+/** A fusion machine row. */
+data class FusionOffer(
+    val stage: FusionStage,
+    val level: Int,
+    val amount: Int,
+    val cost: Double,
+    val affordable: Boolean,
+    /** Units of [FusionStage.output] this stage actually makes per second right now. */
+    val outputPerSecond: Double,
+    /** True when the stage has levels but not enough input to use them. */
+    val starving: Boolean,
 )
 
 /** Result of crediting time that passed while the app was closed. */
@@ -149,6 +165,10 @@ object GameEngine {
             bigBangUnlocked = BigBang.isUnlocked(state),
             pendingAeons = BigBang.pending(state),
             canBigBang = BigBang.canBang(state),
+            fusionUnlocked = Fusion.isUnlocked(state),
+            // Only the two production levers, because that is the number the header claims to be.
+            // Offline yield and comet frequency are worth having and are shown where they apply.
+            fusionMultiplier = Fusion.factorFor(state, FusionBonus.GLOBAL),
         )
     }
 
@@ -178,6 +198,7 @@ object GameEngine {
         val gained = massPerSecond(state) * seconds
         var ticked = credit(state, gained).copy(playedSeconds = state.playedSeconds + seconds)
         ticked = autoTap(ticked, seconds)
+        ticked = Fusion.advance(ticked, seconds)
         ticked = autoBuy(ticked)
         ticked = advanceEvents(ticked, seconds)
         ticked = sample(ticked, seconds)
@@ -704,6 +725,94 @@ object GameEngine {
         }
     }
 
+    // ---------------------------------------------------------------- fusion
+
+    /**
+     * One row of the fusion panel: the machine, what it costs to improve, and whether it is
+     * actually running.
+     *
+     * Starving is its own flag rather than something the panel infers from a rate of zero. A
+     * furnace with no fuel and a furnace with no levels look identical in the numbers and mean
+     * completely different things: one needs mass, the other needs the stage below it.
+     */
+    fun fusionOffers(state: GameState, amount: BuyAmount): List<FusionOffer> {
+        val perSecond = fusionThroughput(state)
+        return Fusion.stages.map { stage ->
+            val level = Fusion.levelOf(state, stage)
+            val count = if (amount == BuyAmount.MAX) {
+                Fusion.affordableLevels(stage, level, state.mass)
+            } else {
+                amount.count.coerceAtMost(Fusion.MAX_LEVEL_STEP)
+            }
+            val cost = Fusion.costForLevels(stage, level, count)
+            val capacity = level * stage.baseRate
+            val actual = perSecond[stage.id] ?: 0.0
+
+            FusionOffer(
+                stage = stage,
+                level = level,
+                amount = count,
+                cost = cost,
+                affordable = count > 0 && cost <= state.mass,
+                outputPerSecond = actual,
+                starving = level > 0 && actual < capacity * STARVING_BELOW,
+            )
+        }
+    }
+
+    /** Below this share of its capacity a furnace counts as starved rather than merely slow. */
+    private const val STARVING_BELOW = 0.99
+
+    /**
+     * What each stage would actually manage over one second, given what is in the tanks.
+     *
+     * Runs the same walk [Fusion.advance] does, on a copy, rather than re-deriving it: two
+     * implementations of the chain would drift, and the panel showing a rate the simulation does
+     * not deliver is exactly the kind of lie that costs an evening to track down.
+     */
+    private fun fusionThroughput(state: GameState): Map<String, Double> {
+        val after = Fusion.advance(state, 1.0)
+        return Fusion.stages.associate { stage ->
+            val produced = (after.elements[stage.output.id] ?: 0.0) -
+                (state.elements[stage.output.id] ?: 0.0)
+            // The stage above already ate some of this output in the same walk, so what is left in
+            // the tank understates what was made. Adding back what the consumer took recovers it.
+            val consumer = Fusion.stages.firstOrNull { it.input == stage.output }
+            val eaten = if (consumer == null) {
+                0.0
+            } else {
+                val madeAbove = (after.elements[consumer.output.id] ?: 0.0) -
+                    (state.elements[consumer.output.id] ?: 0.0)
+                madeAbove * consumer.ratio
+            }
+            stage.id to (produced + eaten).coerceAtLeast(0.0)
+        }
+    }
+
+    /** Buys levels of a fusion stage, or nothing if they are unaffordable or still locked. */
+    fun buyFuser(state: GameState, stageId: String, amount: BuyAmount): GameState {
+        val stage = Fusion.byId(stageId) ?: return state
+        if (!Fusion.isUnlocked(state)) return state
+
+        val level = Fusion.levelOf(state, stage)
+        val count = if (amount == BuyAmount.MAX) {
+            Fusion.affordableLevels(stage, level, state.mass)
+        } else {
+            amount.count.coerceAtMost(Fusion.MAX_LEVEL_STEP)
+        }
+        if (count <= 0) return state
+
+        val cost = Fusion.costForLevels(stage, level, count)
+        if (cost > state.mass) return state
+
+        return award(
+            state.copy(
+                mass = state.mass - cost,
+                fusers = state.fusers + (stage.id to (level + count)),
+            ),
+        )
+    }
+
     fun upgradeOffers(state: GameState): List<UpgradeOffer> =
         Upgrades.all
             .asSequence()
@@ -853,6 +962,21 @@ object GameEngine {
                 is UpgradeEffect.OfflineCapHours ->
                     mods.offlineCapHours = maxOf(mods.offlineCapHours, effect.hours)
             }
+        }
+
+        // Fusion last, and multiplying rather than raising a floor. Every other source of offline
+        // efficiency is a `maxOf` — one upgrade replaces another — but the elements are a running
+        // furnace, not a purchase, so they scale whatever the player has already earned. Capped at
+        // one because crediting more than full production for time not spent playing would make
+        // being away the better move.
+        if (Fusion.isUnlocked(state)) {
+            mods.global *= Fusion.factorFor(state, FusionBonus.GLOBAL)
+            mods.tapMultiplier *= Fusion.factorFor(state, FusionBonus.TAP)
+            mods.cometFrequency *= Fusion.factorFor(state, FusionBonus.COMETS)
+            mods.singularityGain *= Fusion.factorFor(state, FusionBonus.SINGULARITY)
+            mods.offlineEfficiency =
+                (mods.offlineEfficiency * Fusion.factorFor(state, FusionBonus.OFFLINE))
+                    .coerceAtMost(1.0)
         }
         return mods
     }

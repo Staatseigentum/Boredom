@@ -128,6 +128,12 @@ data class GameState(
 
     /** Seconds of play since the last sample was taken. */
     val historySeconds: Double = 0.0,
+
+    /** Elements held, keyed by [Element.id]. Part of the run, so a collapse takes them along. */
+    val elements: Map<String, Double> = emptyMap(),
+
+    /** Levels of each fusion stage, keyed by [FusionStage.id]. */
+    val fusers: Map<String, Int> = emptyMap(),
 ) {
     fun ownedOf(collectorId: String): Int = collectors[collectorId] ?: 0
 
@@ -148,11 +154,12 @@ data class GameState(
 
     companion object {
         /**
-         * Two: the first version had no prestige upgrades, achievements or buffs. Every field
-         * added since has a default, so an old save still reads — it simply arrives with none of
-         * them, which is exactly right for a player who has not earned any yet.
+         * Four. Every field added since version one has a default, so an old save still reads —
+         * it simply arrives with none of them, which is exactly right for a player who has not
+         * earned any yet. The number itself only matters where a value means something different
+         * than it used to; see the tier remap in [SaveCodec].
          */
-        const val SAVE_VERSION = 3
+        const val SAVE_VERSION = 4
 
         fun new(nowMillis: Long): GameState = GameState(
             lastSeenAt = nowMillis,

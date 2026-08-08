@@ -3,6 +3,7 @@ package com.staatseigentum.kollaps.desktop
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
 import com.staatseigentum.kollaps.core.Collectors
+import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.ui.SpriteCache
@@ -100,6 +101,17 @@ fun main(args: Array<String>) {
     shoot("23-herausforderung", challenging, tab = 3, note = "(Herausforderung läuft)")
     shoot("24-querformat", veteran, tab = 0, note = "(Tablet, zweispaltig)", wide = true)
     shoot("25-querformat-kosmos", veteran, tab = 3, note = "(Tablet, Kosmos)", wide = true)
+
+    // A star with the whole chain lit. The tab only exists once the body has ignited, which is
+    // why this needs its own state rather than another photograph of the veteran above.
+    val fusing = DesktopGame().apply {
+        seekToTier(Tiers.indexOf("Roter Zwerg"))
+        edit { it.copy(mass = it.mass * 400) }
+        Fusion.stages.forEach { stage -> repeat(3) { buyFuser(stage.id) } }
+        // Long enough for every tank to have something in it, so no chip reads as a dash.
+        edit { GameEngine.tick(it, 25 * 60.0) }
+    }
+    shoot("26-fusion", fusing, tab = 2, note = "(Fusionskette läuft)")
 
     // The tier change is its own bug surface, so it gets walked inside one composition rather
     // than photographed rung by rung — see [COLLAPSE_WALK].

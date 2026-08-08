@@ -21,7 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -33,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.CollectorOffer
+import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Milestones
@@ -50,7 +50,25 @@ import com.staatseigentum.kollaps.ui.theme.SpaceCard
 import com.staatseigentum.kollaps.ui.theme.SpaceElevated
 import com.staatseigentum.kollaps.ui.theme.Starlight
 
-private val TABS = listOf("Kollektoren", "Upgrades", "Erfolge", "Kosmos")
+/**
+ * The shop's tabs, as things rather than as positions.
+ *
+ * Fusion only appears once the body has ignited, so the strip has to be able to change length —
+ * and the moment it can, an integer index stops meaning the same tab from one state to the next.
+ * Naming them lets [ShopPanel] hold on to which tab is open across an unlock instead of quietly
+ * sliding the player one panel to the left.
+ */
+private enum class ShopTab(val title: String) {
+    COLLECTORS("Kollektoren"),
+    UPGRADES("Upgrades"),
+    FUSION("Fusion"),
+    ACHIEVEMENTS("Erfolge"),
+    COSMOS("Kosmos"),
+}
+
+/** The tabs worth showing for this state, in strip order. */
+private fun tabsFor(state: GameState): List<ShopTab> =
+    ShopTab.entries.filter { it != ShopTab.FUSION || Fusion.isUnlocked(state) }
 
 @Composable
 fun ShopPanel(
@@ -64,7 +82,15 @@ fun ShopPanel(
     /** The update section, handed in so the shop stays free of any networking concern. */
     updateSection: @Composable () -> Unit = {},
 ) {
-    var tab by rememberSaveable { mutableIntStateOf(startTab.coerceIn(TABS.indices)) }
+    val tabs = tabsFor(state)
+    // Saved by name so that reopening the app, or unlocking fusion mid-session, still lands on
+    // the panel the player was actually looking at.
+    var openTab by rememberSaveable {
+        mutableStateOf(tabs.getOrElse(startTab) { ShopTab.COLLECTORS }.name)
+    }
+    val tab = ShopTab.entries.firstOrNull { it.name == openTab }
+        ?.takeIf { it in tabs }
+        ?: ShopTab.COLLECTORS
 
     Column(modifier = modifier.background(SpaceElevated)) {
         // A hard rule instead of an elevation shadow.
@@ -76,32 +102,38 @@ fun ShopPanel(
         )
 
         Row(modifier = Modifier.fillMaxWidth()) {
-            TABS.forEachIndexed { index, title ->
+            tabs.forEach { entry ->
                 PixelTab(
-                    title = title,
-                    selected = tab == index,
-                    onClick = { tab = index },
+                    title = entry.title,
+                    selected = tab == entry,
+                    onClick = { openTab = entry.name },
                     modifier = Modifier.weight(1f),
                 )
             }
         }
 
         when (tab) {
-            0 -> CollectorList(
+            ShopTab.COLLECTORS -> CollectorList(
                 state = state,
                 buyAmount = buyAmount,
                 onBuyAmount = actions::setBuyAmount,
                 onBuy = actions::buyCollector,
             )
 
-            1 -> UpgradeList(
+            ShopTab.UPGRADES -> UpgradeList(
                 offers = GameEngine.upgradeOffers(state),
                 onBuy = actions::buyUpgrade,
             )
 
-            2 -> AchievementList(state = state)
+            ShopTab.FUSION -> FusionPanel(
+                state = state,
+                buyAmount = buyAmount,
+                actions = actions,
+            )
 
-            else -> CosmosPanel(
+            ShopTab.ACHIEVEMENTS -> AchievementList(state = state)
+
+            ShopTab.COSMOS -> CosmosPanel(
                 state = state,
                 stats = stats,
                 actions = actions,

@@ -121,6 +121,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _state.value = GameEngine.buyUpgrade(_state.value, upgradeId)
     }
 
+    fun buyFuser(stageId: String) {
+        _state.value = GameEngine.buyFuser(_state.value, stageId, buyAmount.value)
+    }
+
     fun setBuyAmount(amount: BuyAmount) {
         buyAmount.value = amount
     }

@@ -32,6 +32,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun setBuyAmount(amount: BuyAmount) = model.setBuyAmount(amount)
             override fun buyCollector(id: String) = model.buyCollector(id)
             override fun buyUpgrade(id: String) = model.buyUpgrade(id)
+            override fun buyFuser(id: String) = model.buyFuser(id)
             override fun collapse() = model.collapse()
             override fun dismissOfflineReport() = model.dismissOfflineReport()
             override fun acknowledgeTier() = model.acknowledgeTier()

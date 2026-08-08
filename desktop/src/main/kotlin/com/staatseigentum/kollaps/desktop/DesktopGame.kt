@@ -55,6 +55,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.buyUpgrade(state, id)
     }
 
+    override fun buyFuser(id: String) {
+        state = GameEngine.buyFuser(state, id, currentBuyAmount)
+    }
+
     override fun collapse() {
         state = GameEngine.collapse(state, NOW)
     }
