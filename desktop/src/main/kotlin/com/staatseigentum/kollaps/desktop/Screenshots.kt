@@ -6,6 +6,7 @@ import com.staatseigentum.kollaps.core.AutomationRule
 import com.staatseigentum.kollaps.core.Collectors
 import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
+import com.staatseigentum.kollaps.core.Heavy
 import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.ui.SpriteCache
@@ -114,6 +115,10 @@ fun main(args: Array<String>) {
         Fusion.stages.forEach { stage -> repeat(3) { buyFuser(stage.id) } }
         // Long enough for every tank to have something in it, so no chip reads as a dash.
         edit { GameEngine.tick(it, 25 * 60.0) }
+        // And a few collapses' worth of heavy elements, which is the strip underneath.
+        edit {
+            it.copy(heavy = Heavy.forge(Heavy.forge(emptyMap(), 40_000.0), 90_000.0))
+        }
     }
     shoot("26-fusion", fusing, tab = 2, note = "(Fusionskette läuft)")
 

@@ -144,6 +144,13 @@ data class GameState(
     /** Levels of each fusion stage, keyed by [FusionStage.id]. */
     val fusers: Map<String, Int> = emptyMap(),
 
+    /**
+     * Heavy elements forged in past collapses, keyed by [HeavyElement.id].
+     *
+     * The one holding that survives everything, big bang included — see [Heavy].
+     */
+    val heavy: Map<String, Double> = emptyMap(),
+
     /** How many orbit slots are open. Part of the run — a collapse scatters the system. */
     val orbits: Int = 0,
 

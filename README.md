@@ -28,7 +28,7 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   nicht — sonst hätte eine Währung, die der Kollaps endlos nachliefert, irgendwann kein Ziel mehr
 - **Kometen**, die alle paar Minuten durchs Bild ziehen und nur zahlen, wenn man sie trifft:
   geschenkte Produktion, ein Schub, oder eine Minute mit hundertfachem Tippwert
-- **57 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
+- **60 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
   gerade wie viel liefert
 - **Meilensteine**: alle 25 Stück einer Sorte liefert dieser Kollektor 15 % mehr, dauerhaft und
   ohne Zusatzkosten — der Zähler in der Shop-Zeile zählt jetzt auf etwas zu
@@ -51,6 +51,11 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   fünf Öfen zu Helium, Kohlenstoff, Sauerstoff, Silizium und schließlich Eisen verschmolzen — die
   Reihenfolge, die ein echter Stern durchläuft. Jedes Element zieht an einem eigenen Hebel:
   Produktion, Tippwert, Offline-Ausbeute, Kometen, Singularitäten
+- **Jenseits von Eisen**: höher als Eisen kommt keine Fusion, und höher als Eisen entsteht in der
+  Wirklichkeit auch nichts — außer in den Sekunden, in denen ein Stern stirbt. Genau dann macht
+  es das Spiel jetzt auch: beim Kollaps wird aus dem Eisen im Kern **Gold, Platin und Uran**. Die
+  drei überleben als Einzige *alles*, Urknall eingeschlossen. Was du in der Hand hältst, wurde in
+  einem Stern gemacht, der tot war, bevor die Sonne anfing
 - **Ein Labor mit vierzehn Projekten**, die mit Masse bezahlt und auf der *echten* Uhr abgewartet
   werden — von drei Minuten bis zu acht Stunden. Ein Projekt läuft weiter, während das Handy in
   der Tasche steckt, und es gibt nur eine Bank. Was fertig wird, überlebt Kollaps und Urknall

@@ -513,6 +513,9 @@ object GameEngine {
     fun collapse(state: GameState, nowMillis: Long): GameState {
         if (!canCollapse(state)) return state
         val earned = pendingSingularities(state)
+        // Neutron capture: the iron in the core soaks up what the collapse throws at it, and
+        // what falls out is the only thing in the game that survives every reset there is.
+        val forged = Heavy.forge(state.heavy, Fusion.amountOf(state, Element.EISEN))
         return award(
             GameState(
                 mass = startingMass(state),
@@ -526,6 +529,7 @@ object GameEngine {
                 lastSeenAt = nowMillis,
                 startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
                 // Everything below is the point of collapsing: it is what carries over.
+                heavy = forged,
                 prestigeUpgrades = state.prestigeUpgrades,
                 investments = state.investments,
                 achievements = state.achievements,
@@ -574,6 +578,7 @@ object GameEngine {
                 bestRunMass = maxOf(state.bestRunMass, state.runMass),
                 achievements = state.achievements,
                 challengesDone = state.challengesDone,
+                heavy = state.heavy,
                 playedSeconds = state.playedSeconds,
                 cometsCaught = state.cometsCaught,
                 soundOn = state.soundOn,
@@ -789,6 +794,7 @@ object GameEngine {
         startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
         prestigeUpgrades = state.prestigeUpgrades,
         investments = state.investments,
+        heavy = state.heavy,
         achievements = state.achievements,
         playedSeconds = state.playedSeconds,
         cometsCaught = state.cometsCaught,
@@ -1291,6 +1297,12 @@ object GameEngine {
         // being away the better move.
         // The bodies in orbit, before fusion so that the two read in the order they unlock.
         mods.global *= Orbits.multiplier(state)
+
+        // What past collapses forged. Unconditional, unlike the fusion chain below: these are
+        // held rather than running, and an empty holding is a factor of one anyway.
+        mods.global *= Heavy.factorFor(state, FusionBonus.GLOBAL)
+        mods.tapMultiplier *= Heavy.factorFor(state, FusionBonus.TAP)
+        mods.singularityGain *= Heavy.factorFor(state, FusionBonus.SINGULARITY)
 
         if (Fusion.isUnlocked(state)) {
             mods.global *= Fusion.factorFor(state, FusionBonus.GLOBAL)

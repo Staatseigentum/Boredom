@@ -34,6 +34,8 @@ import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.FusionOffer
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.Heavy
+import com.staatseigentum.kollaps.core.HeavyElement
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.ui.theme.Ember
@@ -67,6 +69,7 @@ fun FusionPanel(
 
     Column(modifier = modifier) {
         ElementStrip(state = state)
+        HeavyStrip(state = state)
 
         Row(
             modifier = Modifier
@@ -151,6 +154,55 @@ private fun ElementStrip(state: GameState) {
                 )
             }
             ElementChip(state = state, element = element)
+        }
+    }
+}
+
+/**
+ * What is left over from past collapses.
+ *
+ * Its own strip below the chain rather than another few chips on the end of it, because these are
+ * a different kind of thing: nothing here is produced by a furnace, none of it is lost to a reset,
+ * and no amount of running the chain longer makes any of it appear. Only pressing the button does.
+ */
+@Composable
+private fun HeavyStrip(state: GameState) {
+    if (!Heavy.isUnlocked(state)) return
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp)
+            .padding(bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PixelLabel(text = "Danach", color = Muted, size = 10)
+        Spacer(Modifier.width(8.dp))
+
+        HeavyElement.entries.forEach { element ->
+            val held = Heavy.amountOf(state, element)
+            if (held < 1.0) return@forEach
+            Column(
+                modifier = Modifier
+                    .padding(end = 6.dp)
+                    .background(SpaceCard)
+                    .border(2.dp, Positive, RectangleShape)
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                PixelLabel(text = element.symbol, color = Starlight, size = 14)
+                Text(
+                    text = Numbers.format(held),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Starlight,
+                )
+                Text(
+                    text = "${Numbers.formatMultiplier(Heavy.factor(state, element))} " +
+                        element.bonus.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Positive,
+                )
+            }
         }
     }
 }

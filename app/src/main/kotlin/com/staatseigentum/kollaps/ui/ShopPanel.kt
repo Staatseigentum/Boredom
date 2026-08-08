@@ -38,6 +38,8 @@ import com.staatseigentum.kollaps.core.CollectorOffer
 import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.Heavy
+import com.staatseigentum.kollaps.core.HeavyElement
 import com.staatseigentum.kollaps.core.Milestones
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.Orbits
@@ -509,7 +511,13 @@ private fun CosmosPanel(
         ) {
             when (section) {
                 CosmosSection.COLLAPSE -> {
-                    item { CollapseCard(stats = stats, onCollapse = actions::collapse) }
+                    item {
+                        CollapseCard(
+                            state = state,
+                            stats = stats,
+                            onCollapse = actions::collapse,
+                        )
+                    }
 
                     // Only worth showing once there is something to spend, and something to
                     // spend it on.
@@ -628,8 +636,9 @@ private fun CosmosChip(
 }
 
 @Composable
-private fun CollapseCard(stats: Stats, onCollapse: () -> Unit) {
+private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit) {
     var confirming by remember { mutableStateOf(false) }
+    val forged = remember(state) { Heavy.pending(state) }
 
     PixelPanel(modifier = Modifier.fillMaxWidth(), border = Ember) {
         PixelLabel(text = "Kollaps", color = Ember, size = 16)
@@ -652,6 +661,21 @@ private fun CollapseCard(stats: Stats, onCollapse: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium,
             color = if (stats.canCollapse) Positive else Muted,
         )
+        // Only once there is iron in the core. Before that the line would be an empty promise
+        // about a system the player has not switched on yet.
+        if (forged.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "Im Zusammenbruch entsteht: " + HeavyElement.entries
+                    .mapNotNull { element ->
+                        forged[element.id]?.let { "${Numbers.format(it)} ${element.label}" }
+                    }
+                    .joinToString(", "),
+                style = MaterialTheme.typography.bodySmall,
+                color = Ember,
+            )
+        }
+
         Spacer(Modifier.height(12.dp))
         PixelButton(
             label = if (confirming) "Wirklich kollabieren?" else "Kollabieren",

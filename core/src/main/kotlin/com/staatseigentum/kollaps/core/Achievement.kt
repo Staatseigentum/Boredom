@@ -186,6 +186,29 @@ object Achievements {
             ) { state -> Fusion.stages.all { Fusion.levelOf(state, it) > 0 } },
         )
 
+        // ---- what the collapse forges
+        add(
+            Achievement(
+                "a_heavy_1",
+                "Sternenstaub",
+                "Das erste Gold, aus dem Eisen eines gestorbenen Kerns.",
+            ) { Heavy.amountOf(it, HeavyElement.GOLD) >= 1.0 },
+        )
+        add(
+            Achievement(
+                "a_heavy_uranium",
+                "Das schwerste von selbst",
+                "Uran. Schwerer geht es ohne fremde Hilfe nicht.",
+            ) { Heavy.amountOf(it, HeavyElement.URAN) >= 1.0 },
+        )
+        add(
+            Achievement(
+                "a_heavy_1000",
+                "Schatzkammer",
+                "Tausend Einheiten schwerer Elemente, über alle Universen hinweg.",
+            ) { Heavy.total(it) >= 1_000.0 },
+        )
+
         // ---- research
         add(
             Achievement("a_research_1", "Erste Erkenntnis", "Ein Projekt zu Ende gewartet.") {

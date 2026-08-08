@@ -87,6 +87,10 @@ object SaveCodec {
         val knownAeons = migrated.aeonUpgrades.filterTo(mutableSetOf()) {
             AeonUpgrades.byId(it) != null
         }
+        val knownHeavy = migrated.heavy.filterKeys { HeavyElement.byId(it) != null }
+        if (knownHeavy.size != migrated.heavy.size) {
+            migrated = migrated.copy(heavy = knownHeavy)
+        }
         val knownElements = migrated.elements.filterKeys { Element.byId(it) != null }
         val knownFusers = migrated.fusers.filterKeys { Fusion.byId(it) != null }
         val knownResearch = migrated.research.filterTo(mutableSetOf()) {
