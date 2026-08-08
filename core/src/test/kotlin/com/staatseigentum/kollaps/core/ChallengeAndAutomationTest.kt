@@ -116,7 +116,18 @@ class ChallengeAndAutomationTest {
         assertTrue(Challenge.offered(fresh).isEmpty())
         assertEquals(fresh, GameEngine.startChallenge(fresh, "c_hand", NOW))
 
-        assertEquals(Challenge.entries.size, Challenge.offered(veteran()).size)
+        // Everything the four collapses behind this player unlock, and nothing beyond them —
+        // counting entries instead would break every time the catalogue grows a deeper one.
+        val player = veteran()
+        assertEquals(
+            Challenge.entries.filter { it.requiredCollapses <= player.collapses },
+            Challenge.offered(player),
+        )
+        assertTrue(Challenge.offered(player).isNotEmpty())
+        assertTrue(
+            Challenge.entries.any { it.requiredCollapses > player.collapses },
+            "Alles ist schon nach vier Kollapsen offen — es fehlt eine tiefe Herausforderung",
+        )
     }
 
     @Test

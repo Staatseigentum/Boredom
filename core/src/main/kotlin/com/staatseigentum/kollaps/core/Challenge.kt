@@ -10,6 +10,12 @@ sealed interface ChallengeRule {
 
     /** Everything is multiplied by [factor], which is below one. */
     data class Handicap(val factor: Double) : ChallengeRule
+
+    /** The upgrade shop is shut. Only more of the same, never better. */
+    data object NoUpgrades : ChallengeRule
+
+    /** Nothing stays in orbit, so the system contributes nothing. */
+    data object NoOrbits : ChallengeRule
 }
 
 /** What finishes a challenge. */
@@ -71,6 +77,42 @@ enum class Challenge(
         reward = PrestigeEffect.GlobalMultiplier(2.5),
         requiredCollapses = 3,
     ),
+    ROHBAU(
+        id = "c_raw",
+        title = "Rohbau",
+        flavor = "Der Upgrade-Laden ist zu. Mehr Maschinen ja, bessere nein.",
+        rule = ChallengeRule.NoUpgrades,
+        goal = ChallengeGoal.ReachTier("Jupiter"),
+        reward = PrestigeEffect.MilestoneBonus(0.03),
+        requiredCollapses = 2,
+    ),
+    ALLEIN(
+        id = "c_alone",
+        title = "Allein",
+        flavor = "Nichts bleibt auf einer Bahn. Was du schaffst, schaffst du ohne Trabanten.",
+        rule = ChallengeRule.NoOrbits,
+        goal = ChallengeGoal.ReachTier("Roter Überriese"),
+        reward = PrestigeEffect.FusionRate(1.5),
+        requiredCollapses = 3,
+    ),
+    EILE(
+        id = "c_rush",
+        title = "Eile",
+        flavor = "Bis zur Sonne, in neunzig Minuten. Die Uhr läuft nur, wenn du spielst.",
+        rule = ChallengeRule.Handicap(1.0),
+        goal = ChallengeGoal.ReachTierWithin("Sonne", 90 * 60.0),
+        reward = PrestigeEffect.ResearchSpeed(1.5),
+        requiredCollapses = 4,
+    ),
+    ASKESE(
+        id = "c_ascetic",
+        title = "Askese",
+        flavor = "Kein einziges Upgrade, den ganzen Weg bis zur Sonne. Nur Maschinen und Geduld.",
+        rule = ChallengeRule.NoUpgrades,
+        goal = ChallengeGoal.ReachTier("Sonne"),
+        reward = PrestigeEffect.GlobalMultiplier(3.0),
+        requiredCollapses = 5,
+    ),
     ;
 
     /** What the goal asks for, as a line the player can read. */
@@ -88,6 +130,9 @@ enum class Challenge(
             is ChallengeRule.Handicap ->
                 if (rule.factor >= 1.0) "Keine Einschränkung"
                 else "Alles bringt nur ${Numbers.formatPercent(rule.factor)}"
+
+            is ChallengeRule.NoUpgrades -> "Der Upgrade-Laden bleibt zu"
+            is ChallengeRule.NoOrbits -> "Nichts hält sich auf einer Bahn"
         }
 
     companion object {

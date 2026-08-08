@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -75,6 +76,9 @@ fun CometOverlay(
     val current = flight ?: return
     val progress = travel.value
 
+    // Reset for every flight, so a core that got away half broken arrives whole next time.
+    var struck by remember(current) { mutableIntStateOf(0) }
+
     Box(modifier = modifier.fillMaxSize()) {
         // The catcher is a small box that follows the head, not a sheet over the whole screen.
         // A full-size tap catcher swallowed every tap that missed, so for the eleven seconds a
@@ -103,9 +107,16 @@ fun CometOverlay(
                     // Anywhere in the box counts: it is moving, it is small, and missing a comet
                     // the player did see is worse than catching one they nearly missed.
                     detectTapGestures {
-                        sfx?.comet()
-                        onCatch(current.comet)
-                        flight = null
+                        // A hard core needs hitting again while it is still moving, which is a
+                        // different skill from spotting it in the first place.
+                        if (struck + 1 >= current.comet.hits) {
+                            sfx?.comet()
+                            onCatch(current.comet)
+                            flight = null
+                        } else {
+                            struck++
+                            sfx?.click()
+                        }
                     }
                 },
         )
@@ -117,12 +128,13 @@ fun CometOverlay(
 
             // A tail of blocks trailing behind, thinning out — drawn on the grid so it stays
             // part of the same picture as the planets.
+            val accent = current.comet.accent
             val backwards = if (current.leftToRight) -1f else 1f
             for (step in TAIL_BLOCKS downTo 1) {
                 val distance = step * block * 1.6f
                 val fade = 1f - step.toFloat() / TAIL_BLOCKS
                 drawRect(
-                    color = Ember.copy(alpha = 0.10f + 0.5f * fade * fade),
+                    color = accent.copy(alpha = 0.10f + 0.5f * fade * fade),
                     topLeft = Offset(
                         snap(head.x + backwards * distance, block),
                         snap(head.y - distance * 0.22f, block),
@@ -131,11 +143,16 @@ fun CometOverlay(
                 )
             }
 
-            // The head: a two by two block with a lighter core, so it reads as solid.
+            // The head, in the colour of what it is carrying: three comets that all looked the
+            // same was three comets the player could not tell apart until after catching one.
+            // A hard core is drawn wider and loses a ring with every hit, so the crust visibly
+            // comes off rather than the count living only in the tap handler.
+            val crust = current.comet.hits - struck
+            val side = block * (1 + crust)
             drawRect(
-                color = Ember,
-                topLeft = Offset(snap(head.x - block, block), snap(head.y - block, block)),
-                size = Size(block * 2, block * 2),
+                color = accent,
+                topLeft = Offset(snap(head.x - side / 2f, block), snap(head.y - side / 2f, block)),
+                size = Size(side, side),
             )
             drawRect(
                 color = Starlight,
@@ -177,4 +194,6 @@ val Comet.accent: Color
         Comet.WINDFALL -> Ember
         Comet.SURGE -> Color(0xFF5CE1A6)
         Comet.FRENZY -> Color(0xFF7C5CFF)
+        Comet.ICE_CORE -> Color(0xFF9FD8FF)
+        Comet.EMBER_CORE -> Color(0xFFFF7A3D)
     }

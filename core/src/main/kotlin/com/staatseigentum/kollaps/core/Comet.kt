@@ -21,6 +21,9 @@ enum class Buff(
 
     /** Makes tapping matter again, briefly, however far into the run you are. */
     FRENZY("frenzy", "Klickrausch", 60.0, 100.0),
+
+    /** The one worth breaking a hard core open for: longer than a surge and twice as strong. */
+    INFERNO("inferno", "Feuersturm", 90.0, 15.0),
     ;
 
     companion object {
@@ -49,6 +52,14 @@ enum class Comet(
     val flavor: String,
     val weight: Int,
     val reward: CometReward,
+    /**
+     * How many taps it takes to break open.
+     *
+     * One for the three that always existed. More is the only thing here that asks for anything
+     * beyond noticing: a hard core has to be hit again while it is still moving, which is a
+     * different skill from spotting it, and pays accordingly.
+     */
+    val hits: Int = 1,
 ) {
     WINDFALL(
         id = "windfall",
@@ -70,6 +81,22 @@ enum class Comet(
         flavor = "Eine Minute lang zählt jeder Tipp hundertfach.",
         weight = 2,
         reward = CometReward.Timed(Buff.FRENZY),
+    ),
+    ICE_CORE(
+        id = "ice",
+        title = "Eiskern",
+        flavor = "Drei Treffer, bis die Kruste bricht. Darunter eine dreiviertel Stunde Arbeit.",
+        weight = 2,
+        reward = CometReward.Windfall(45 * 60.0),
+        hits = 3,
+    ),
+    EMBER_CORE(
+        id = "ember",
+        title = "Glutkern",
+        flavor = "Zwei Treffer, und danach brennt anderthalb Minuten lang alles fünfzehnfach.",
+        weight = 1,
+        reward = CometReward.Timed(Buff.INFERNO),
+        hits = 2,
     ),
     ;
 

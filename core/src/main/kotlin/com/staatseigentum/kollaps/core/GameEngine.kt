@@ -468,6 +468,9 @@ object GameEngine {
     /** Buys an upgrade if it is unlocked, unowned and affordable. */
     fun buyUpgrade(state: GameState, upgradeId: String): GameState {
         val upgrade = Upgrades.byId(upgradeId) ?: return state
+        // Under the rule that shuts the shop, buying has to be refused rather than merely made
+        // pointless: an upgrade that takes the mass and then does nothing is a bug, not a rule.
+        if (!modifiersOf(state).upgradesWork) return state
         if (state.owns(upgradeId)) return state
         if (!isUnlocked(state, upgrade)) return state
         if (upgrade.cost > state.mass) return state
@@ -623,6 +626,7 @@ object GameEngine {
     /** Opens the next orbit slot, if the body is big enough and the mass is there. */
     fun openOrbit(state: GameState): GameState {
         if (!Orbits.isUnlocked(state)) return state
+        if (!modifiersOf(state).orbitsWork) return state
         val next = Orbits.next(state) ?: return state
         if (next.cost > state.mass) return state
 
@@ -642,6 +646,7 @@ object GameEngine {
      */
     fun seedSatellite(state: GameState, orbitIndex: Int): GameState {
         val orbit = Orbits.at(orbitIndex) ?: return state
+        if (!modifiersOf(state).orbitsWork) return state
         if (orbitIndex >= state.orbits) return state
         if (Orbits.isOccupied(state, orbit)) return state
         if (orbit.seedCost > state.mass) return state
@@ -1130,7 +1135,7 @@ object GameEngine {
     }
 
     fun upgradeOffers(state: GameState): List<UpgradeOffer> =
-        Upgrades.all
+        if (!modifiersOf(state).upgradesWork) emptyList() else Upgrades.all
             .asSequence()
             .filter { !state.owns(it.id) && isUnlocked(state, it) }
             .map { UpgradeOffer(it, it.cost <= state.mass) }
@@ -1254,6 +1259,8 @@ object GameEngine {
             is ChallengeRule.NoCollectors -> mods.collectorsWork = false
             is ChallengeRule.NoTaps -> mods.tapsWork = false
             is ChallengeRule.Handicap -> mods.global *= rule.factor
+            is ChallengeRule.NoUpgrades -> mods.upgradesWork = false
+            is ChallengeRule.NoOrbits -> mods.orbitsWork = false
             null -> Unit
         }
 
@@ -1263,11 +1270,12 @@ object GameEngine {
         // A buff is the only modifier with a clock on it.
         when (state.buff) {
             Buff.SURGE -> mods.global *= Buff.SURGE.factor
+            Buff.INFERNO -> mods.global *= Buff.INFERNO.factor
             Buff.FRENZY -> mods.tapMultiplier *= Buff.FRENZY.factor
             null -> Unit
         }
 
-        for (id in state.upgrades) {
+        for (id in if (mods.upgradesWork) state.upgrades else emptySet()) {
             val upgrade = Upgrades.byId(id) ?: continue
             when (val effect = upgrade.effect) {
                 is UpgradeEffect.TapFlat -> mods.tapFlat += effect.amount
@@ -1305,7 +1313,7 @@ object GameEngine {
         // one because crediting more than full production for time not spent playing would make
         // being away the better move.
         // The bodies in orbit, before fusion so that the two read in the order they unlock.
-        mods.global *= Orbits.multiplier(state)
+        if (mods.orbitsWork) mods.global *= Orbits.multiplier(state)
 
         // What past collapses forged. Unconditional, unlike the fusion chain below: these are
         // held rather than running, and an empty holding is a factor of one anyway.
@@ -1374,6 +1382,8 @@ object GameEngine {
         /** A challenge can switch off a whole source of mass. */
         var collectorsWork = true
         var tapsWork = true
+        var upgradesWork = true
+        var orbitsWork = true
 
         val collectors = HashMap<String, Double>()
 
