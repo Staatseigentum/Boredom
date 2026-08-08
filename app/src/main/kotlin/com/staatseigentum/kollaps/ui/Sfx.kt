@@ -23,6 +23,9 @@ interface Sounds {
     /** A comet caught in time. */
     fun comet() = Unit
 
+    /** A comet gone by uncaught. */
+    fun missed() = Unit
+
     /** Something bought. */
     fun purchase() = Unit
 

@@ -164,12 +164,18 @@ jobs:
       # actually meant to run here takes that guess out of the release path.
       #
       # The portable folder is built on its own and first, because it needs nothing but the JDK.
+      #
+      # The version goes in as an environment variable, not as `-PappVersion=`. The command line
+      # was tried and the release died on it: the runner logged `-PappVersion=2.2.0` and Gradle
+      # read `2`, somewhere between PowerShell, cmd and the batch wrapper. An environment variable
+      # is handed over as one value and never re-parsed.
       - name: Tragbare Fassung bauen
         shell: pwsh
-        run: >
-          .\gradlew.bat --configure-on-demand --no-daemon --console=plain
-          -PappVersion=${{ needs.version.outputs.name }}
-          :desktop:createDistributable
+        env:
+          KOLLAPS_APP_VERSION: ${{ needs.version.outputs.name }}
+        run: |
+          Write-Host "Version fuer die Pakete: $env:KOLLAPS_APP_VERSION"
+          .\gradlew.bat --configure-on-demand --no-daemon --console=plain :desktop:createDistributable
 
       # The installer needs the WiX toolset, which is the runner's to provide and not ours. If it
       # is not there, that costs the installer and nothing else: the portable folder is already
@@ -179,10 +185,10 @@ jobs:
         id: installer
         continue-on-error: true
         shell: pwsh
+        env:
+          KOLLAPS_APP_VERSION: ${{ needs.version.outputs.name }}
         run: >
-          .\gradlew.bat --configure-on-demand --no-daemon --console=plain
-          -PappVersion=${{ needs.version.outputs.name }}
-          :desktop:packageMsi
+          .\gradlew.bat --configure-on-demand --no-daemon --console=plain :desktop:packageMsi
 
       - name: Zusammenpacken
         shell: pwsh

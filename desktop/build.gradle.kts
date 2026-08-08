@@ -74,15 +74,57 @@ private val entryPoint = providers.gradleProperty("mainClass")
     .orElse("com.staatseigentum.kollaps.desktop.MainKt")
 
 /**
+ * The version, forced into the only shape jpackage accepts: MAJOR.MINOR.BUILD.
+ *
+ * This is a safety net with a real scar behind it. The release build passed `-PappVersion=2.2.0`
+ * on the command line, the runner's log showed exactly that string, and Gradle still saw `2` —
+ * somewhere between PowerShell, cmd and the batch wrapper the rest was lost, and the release died
+ * at configuration time with "Illegal version for 'Msi'". The version now arrives by environment
+ * variable, which no shell splits, and whatever arrives is reshaped here rather than trusted.
+ *
+ * Missing parts are filled with zero and each part is clamped to what the installer formats allow,
+ * so a mangled or unusual version costs the exact number it names and never the whole release.
+ */
+fun packageVersionOf(raw: String): String {
+    val numbers = raw.trim().removePrefix("v")
+        .split('.')
+        .map { part -> part.takeWhile(Char::isDigit) }
+        .filter { it.isNotEmpty() }
+        .map { it.toLong() }
+
+    // MSI refuses a leading zero outright, so one is worth more than an accurate but unbuildable
+    // number: shipping 1.x beats shipping nothing.
+    val major = (numbers.getOrNull(0) ?: 1L).coerceIn(1L, 255L)
+    val minor = (numbers.getOrNull(1) ?: 0L).coerceIn(0L, 255L)
+    val build = (numbers.getOrNull(2) ?: 0L).coerceIn(0L, 65_535L)
+    return "$major.$minor.$build"
+}
+
+/**
+ * Environment first, Gradle property second.
+ *
+ * The property is kept because it is what a person building this by hand would reach for; the
+ * environment variable is what CI uses, because it is the one path that does not run through a
+ * shell's idea of where an argument ends.
+ */
+val appVersion: String = packageVersionOf(
+    providers.environmentVariable("KOLLAPS_APP_VERSION")
+        .orElse(providers.gradleProperty("appVersion"))
+        .orElse("1.0.0")
+        .get(),
+)
+
+// At info level rather than lifecycle: it is noise on every ordinary build and the one thing
+// worth knowing when a release build produces a file with a surprising number in its name.
+logger.info("Paketversion: $appVersion")
+
+/**
  * The playable build.
  *
  * `packageDistributionForCurrentOS` produces an installer for whatever machine is running it —
  * an MSI on Windows, a DEB on Linux — with a Java runtime bundled in, so the person installing
  * it needs nothing beyond the file. `createDistributable` produces the same thing as a folder,
  * which is what goes into the portable archive for people who would rather not install anything.
- *
- * The version has to be a plain three-part number: jpackage rejects anything else, and a `v`
- * prefix is exactly the kind of thing that fails an hour into a release build.
  */
 compose.desktop {
     application {
@@ -94,7 +136,7 @@ compose.desktop {
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb,
             )
             packageName = "Kollaps"
-            packageVersion = providers.gradleProperty("appVersion").orElse("1.0.0").get()
+            packageVersion = appVersion
             description = "Ein Idle-Clicker vom Meteoriten bis zum Schwarzen Loch"
             vendor = "Staatseigentum"
 

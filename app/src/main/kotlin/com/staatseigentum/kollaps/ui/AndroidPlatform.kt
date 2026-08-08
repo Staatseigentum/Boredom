@@ -106,6 +106,10 @@ private class AndroidSounds(context: Context) : Sounds {
 
     override fun comet() = play(cueSamples[Cue.COMET], CUE_VOLUME)
 
+    // Under everything else on purpose. The cues are all normalised to the same peak, so a sound
+    // that should stay in the background can only get there here.
+    override fun missed() = play(cueSamples[Cue.MISSED], CUE_VOLUME * 0.45f)
+
     override fun purchase() = play(cueSamples[Cue.PURCHASE], CUE_VOLUME * 0.7f)
 
     override fun success() = play(cueSamples[Cue.SUCCESS], CUE_VOLUME)

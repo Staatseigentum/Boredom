@@ -51,6 +51,7 @@ fun CometOverlay(
     var flight by remember { mutableStateOf<Flight?>(null) }
     val travel = remember { Animatable(0f) }
     val appears = Comets.appearsAt(state)
+    val sfx = LocalSfx.current
 
     LaunchedEffect(appears, frequency) {
         if (!appears) return@LaunchedEffect
@@ -68,11 +69,16 @@ fun CometOverlay(
                 durationMillis = (Comets.VISIBLE_SECONDS * 1000).toInt(),
                 easing = androidx.compose.animation.core.LinearEasing,
             ))
-            flight = null
+            // Still there at the far edge means it was never caught — catching clears it from
+            // the tap handler. That is the only place a miss can be told from a catch, because
+            // the animation runs to the end either way.
+            if (flight != null) {
+                sfx?.missed()
+                flight = null
+            }
         }
     }
 
-    val sfx = LocalSfx.current
     val current = flight ?: return
     val progress = travel.value
 

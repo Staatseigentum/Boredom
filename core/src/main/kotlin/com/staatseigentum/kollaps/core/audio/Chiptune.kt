@@ -23,6 +23,9 @@ enum class Cue {
 
     /** The core catching light for the first time in a run. */
     IGNITION,
+
+    /** A comet that drifted off the screen uncaught. */
+    MISSED,
 }
 
 /**
@@ -57,6 +60,7 @@ object Chiptune {
     private const val C6 = 1046.50
     private const val E6 = 1318.51
     private const val G4 = 392.00
+    private const val C4 = 261.63
 
     private fun notesOf(cue: Cue): List<Note> = when (cue) {
         // Four steps up, the last one held: the ladder, in one second.
@@ -91,6 +95,17 @@ object Chiptune {
             Note(hertz = G4, startSeconds = 0.00, seconds = 0.30, toHertz = C5),
             Note(hertz = C5, startSeconds = 0.14, seconds = 0.34, gain = 0.6, toHertz = G5),
             Note(hertz = E5, startSeconds = 0.28, seconds = 0.30, gain = 0.4),
+        )
+
+        // Two steps down and done, low and short.
+        //
+        // Deliberately the least interesting sound in the game. A miss is the player's own doing
+        // and it happens every few minutes; anything with a shape to it would turn a small "oh"
+        // into a telling-off, and the one thing this cue must not become is a reason to stop
+        // leaving the screen alone.
+        Cue.MISSED -> listOf(
+            Note(G4, 0.00, 0.09, gain = 0.6),
+            Note(C4, 0.07, 0.13, gain = 0.45),
         )
 
         // A triad that lands on the octave and holds.
