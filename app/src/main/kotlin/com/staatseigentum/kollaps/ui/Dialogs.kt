@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.CelestialTier
+import com.staatseigentum.kollaps.core.Lore
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.Tiers
@@ -188,6 +189,18 @@ fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
                 color = Muted,
                 textAlign = TextAlign.Center,
             )
+
+            // The one line of story this rung carries. Shown here and nowhere else at the moment
+            // it is earned; the whole set is kept in the chronicle in the achievements tab.
+            Lore.forTier(tier.index)?.let { fragment ->
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = fragment.text,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Starlight,
+                    textAlign = TextAlign.Center,
+                )
+            }
             Spacer(Modifier.height(12.dp))
             Text(
                 text = "Produktion jetzt ${Numbers.formatMultiplier(tier.productionMultiplier)}",

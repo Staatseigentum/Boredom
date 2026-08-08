@@ -23,8 +23,58 @@ object Statistics {
 
     fun lines(state: GameState): List<StatLine> {
         val stats = GameEngine.stats(state)
+        return buildList {
+            add(StatLine("Spielzeit", Numbers.formatDuration(state.playedSeconds.toLong())))
+            add(StatLine("Dieser Lauf", Numbers.formatDuration(state.runSeconds.toLong())))
+
+            // Only after a collapse: before that there is no previous run to compare against,
+            // and a line reading "0 s" would look like a bug rather than like a beginning.
+            if (state.lastRunSeconds > 0.0) {
+                add(
+                    StatLine(
+                        "Letzter Lauf",
+                        "${Numbers.formatDuration(state.lastRunSeconds.toLong())} · " +
+                            Numbers.formatMass(state.lastRunMass),
+                    ),
+                )
+                add(
+                    StatLine(
+                        "Gegenüber davor",
+                        comparison(state.runSeconds, state.runMass, state.lastRunSeconds, state.lastRunMass),
+                    ),
+                )
+            }
+            addAll(rest(state, stats))
+        }
+    }
+
+    /**
+     * How this run is doing against the last one, in one line.
+     *
+     * Mass per second of play rather than either number on its own: a run that is further along
+     * only because it has been going longer has not beaten anything, and a run that is faster on
+     * a shorter clock has.
+     */
+    private fun comparison(
+        seconds: Double,
+        mass: Double,
+        lastSeconds: Double,
+        lastMass: Double,
+    ): String {
+        if (seconds < 60.0) return "noch zu früh"
+        val now = mass / seconds
+        val before = lastMass / lastSeconds.coerceAtLeast(1.0)
+        if (before <= 0.0) return "kein Vergleich möglich"
+        val ratio = now / before
+        return when {
+            ratio >= 1.05 -> "${Numbers.formatMultiplier(ratio)} so schnell"
+            ratio <= 0.95 -> "${Numbers.formatPercent(ratio)} des letzten Tempos"
+            else -> "etwa gleich schnell"
+        }
+    }
+
+    private fun rest(state: GameState, stats: Stats): List<StatLine> {
         return listOf(
-            StatLine("Spielzeit", Numbers.formatDuration(state.playedSeconds.toLong())),
             StatLine("Tipps", Numbers.format(state.taps.toDouble())),
             StatLine("Masse insgesamt", Numbers.formatMass(state.totalMass)),
             StatLine("Bester Lauf", Numbers.formatMass(state.bestRunMass)),

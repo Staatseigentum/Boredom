@@ -31,15 +31,17 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **Zwölf Investitionen** daneben, die man immer wieder kaufen kann: jede Stufe kostet mehr als
   die davor, jede wirkt linear statt exponentiell. Die Upgrade-Liste geht irgendwann aus, diese
   nicht — sonst hätte eine Währung, die der Kollaps endlos nachliefert, irgendwann kein Ziel mehr
-- **Kometen**, die alle paar Minuten durchs Bild ziehen und nur zahlen, wenn man sie trifft:
-  geschenkte Produktion, ein Schub, oder eine Minute mit hundertfachem Tippwert
-- **60 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
+- **Fünf Kometenarten**, die alle paar Minuten durchs Bild ziehen und nur zahlen, wenn man sie
+  trifft: geschenkte Produktion, ein Schub, eine Minute mit hundertfachem Tippwert — und zwei mit
+  Kruste, die zwei bis drei Treffer brauchen und entsprechend mehr bringen. Die Farbe des Kopfes
+  verrät, was drin ist
+- **62 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
   gerade wie viel liefert
 - **Meilensteine**: alle 25 Stück einer Sorte liefert dieser Kollektor 15 % mehr, dauerhaft und
   ohne Zusatzkosten — der Zähler in der Shop-Zeile zählt jetzt auf etwas zu
-- **Vier Herausforderungen**: freiwillige Läufe unter einer Regel, die dir etwas wegnimmt —
-  ohne Kollektoren, ohne Tippen, mit halber Kraft, oder gegen die Uhr. Wer sie besteht, behält
-  die Belohnung für immer
+- **Acht Herausforderungen**: freiwillige Läufe unter einer Regel, die dir etwas wegnimmt — ohne
+  Kollektoren, ohne Tippen, ohne Upgrades, ohne Trabanten, mit halber Kraft oder gegen die Uhr.
+  Wer sie besteht, behält die Belohnung für immer
 - **Der Urknall**: ab zehn Kollapsen kannst du alles wegwerfen, was die Kollapse aufgebaut
   haben, und bekommst dafür **Äonen** — eine Währung unter der Singularität, mit acht eigenen
   Upgrades. Dabei wählst du, **was für ein Universum** das nächste wird: die Hand (Tippen), die
@@ -75,6 +77,9 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **Musik**, ebenfalls gerechnet: sieben sechzehnsekündige Schleifen, eine je Art von Körper, aus
   Bordunstimme und einer Melodie aus sechzehn Schritten. Der Bordun ist auf ganze Schwingungen
   pro Schleife gerundet und Noten laufen über den Anfang weiter, damit die Naht nicht knackt
+- **Eine Chronik**: eine Zeile Geschichte je Stufe, je Kollaps und je Urknall — siebenunddreißig
+  Fragmente, die zusammen etwas erzählen. Sie stehen im Erfolge-Reiter und tauchen beim Aufstieg
+  einzeln auf
 - **Produktionsverlauf** als Kurve über die letzte halbe Stunde, logarithmisch, weil eine lineare
   Achse in einem Idle-Spiel neunundzwanzig Minuten flach und dann senkrecht wäre
 - **Zweispaltig im Querformat** und auf Tablets: Körper links, Shop rechts

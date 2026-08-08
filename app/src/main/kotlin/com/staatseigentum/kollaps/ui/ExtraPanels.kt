@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.Achievements
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.History
+import com.staatseigentum.kollaps.core.Lore
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Numbers
@@ -147,6 +148,36 @@ fun AchievementList(state: GameState, modifier: Modifier = Modifier) {
                                 .height(8.dp),
                         )
                         Spacer(Modifier.height(6.dp))
+                    }
+                }
+            }
+        }
+
+        // The chronicle sits above the achievements because it is the only thing in the game
+        // that says what any of the numbers are for.
+        if (Lore.isWorthShowing(state)) {
+            val fragments = Lore.unlocked(state)
+            item {
+                PixelPanel(modifier = Modifier.fillMaxWidth(), border = Nebula) {
+                    PixelLabel(
+                        "Chronik ${fragments.size}/${Lore.total}",
+                        color = Nebula,
+                        size = 15,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    // Newest first: the last thing that happened is the thing worth reading.
+                    for (fragment in fragments.asReversed()) {
+                        Text(
+                            text = fragment.source,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Ember,
+                        )
+                        Text(
+                            text = fragment.text,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Starlight,
+                        )
+                        Spacer(Modifier.height(8.dp))
                     }
                 }
             }

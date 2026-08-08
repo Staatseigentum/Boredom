@@ -53,16 +53,20 @@ import androidx.compose.ui.unit.sp
 import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.Comet
+import com.staatseigentum.kollaps.core.Element
+import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.OfflineReport
+import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.core.audio.Mood
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Space
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -182,6 +186,19 @@ fun GameScreen(
             blast = state.collapses to BlastKind.KOLLAPS
             blastSfx?.success()
         }
+    }
+
+    // The two quiet ones. Both fire off a state change rather than off a button, because neither
+    // has one: a project comes due on the wall clock and a core catches light on its own.
+    val researchAtStart = remember { state.research.size }
+    LaunchedEffect(state.research.size) {
+        if (state.research.size > researchAtStart) blastSfx?.research()
+    }
+
+    val litAtStart = remember { Fusion.amountOf(state, Element.HELIUM) >= 1.0 }
+    val lit = Fusion.amountOf(state, Element.HELIUM) >= 1.0
+    LaunchedEffect(lit) {
+        if (lit && !litAtStart) blastSfx?.ignition()
     }
 
     val bangsAtStart = remember { state.bigBangs }
@@ -345,6 +362,11 @@ private fun Header(state: GameState, stats: Stats) {
             }
         }
 
+        // What the lab is doing, in the one place the player is always looking. The Kosmos tab
+        // is three taps away and the whole point of the lab is that it runs while you are not
+        // looking at it.
+        ResearchTicker(state = state)
+
         Spacer(Modifier.height(12.dp))
 
         val next = stats.nextTier
@@ -377,6 +399,47 @@ private fun Header(state: GameState, stats: Stats) {
             )
         }
     }
+}
+
+/** One line under the header while a project is running, counting down on the wall clock. */
+@Composable
+private fun ResearchTicker(state: GameState) {
+    val running = ResearchTree.active(state) ?: return
+
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(running.id) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(1_000)
+        }
+    }
+
+    val left = ResearchTree.secondsLeft(state, now)
+    Spacer(Modifier.height(8.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = "Labor: ${running.name}",
+            style = MaterialTheme.typography.bodySmall,
+            color = Muted,
+        )
+        Text(
+            text = if (left <= 0.0) "fertig" else Numbers.formatDuration(left.toLong()),
+            style = MaterialTheme.typography.bodySmall,
+            color = Ember,
+        )
+    }
+    Spacer(Modifier.height(4.dp))
+    PixelBar(
+        progress = ResearchTree.progress(state, now),
+        color = Ember,
+        cells = 20,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(6.dp),
+    )
 }
 
 // ---------------------------------------------------------------------- tap area

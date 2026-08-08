@@ -201,7 +201,10 @@ object GameEngine {
     fun tick(state: GameState, seconds: Double): GameState {
         if (seconds <= 0.0) return state
         val gained = massPerSecond(state) * seconds
-        var ticked = credit(state, gained).copy(playedSeconds = state.playedSeconds + seconds)
+        var ticked = credit(state, gained).copy(
+            playedSeconds = state.playedSeconds + seconds,
+            runSeconds = state.runSeconds + seconds,
+        )
         ticked = autoTap(ticked, seconds)
         ticked = Fusion.advance(ticked, seconds)
         // Fed and eroded by what the body itself makes, so the system scales with the run rather
@@ -541,6 +544,9 @@ object GameEngine {
                 bestRunMass = maxOf(state.bestRunMass, state.runMass),
                 lastSeenAt = nowMillis,
                 startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
+                // What the run that just ended came to, so the next one has something to beat.
+                lastRunSeconds = state.runSeconds,
+                lastRunMass = state.runMass,
                 // Everything below is the point of collapsing: it is what carries over.
                 heavy = forged,
                 prestigeUpgrades = state.prestigeUpgrades,
@@ -596,6 +602,8 @@ object GameEngine {
                 achievements = state.achievements,
                 challengesDone = state.challengesDone,
                 heavy = state.heavy,
+                lastRunSeconds = state.lastRunSeconds,
+                lastRunMass = state.lastRunMass,
                 playedSeconds = state.playedSeconds,
                 cometsCaught = state.cometsCaught,
                 soundOn = state.soundOn,
@@ -815,6 +823,8 @@ object GameEngine {
         prestigeUpgrades = state.prestigeUpgrades,
         investments = state.investments,
         heavy = state.heavy,
+        lastRunSeconds = state.lastRunSeconds,
+        lastRunMass = state.lastRunMass,
         achievements = state.achievements,
         playedSeconds = state.playedSeconds,
         cometsCaught = state.cometsCaught,

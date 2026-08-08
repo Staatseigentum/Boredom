@@ -110,6 +110,10 @@ private class AndroidSounds(context: Context) : Sounds {
 
     override fun success() = play(cueSamples[Cue.SUCCESS], CUE_VOLUME)
 
+    override fun research() = play(cueSamples[Cue.RESEARCH], CUE_VOLUME * 0.8f)
+
+    override fun ignition() = play(cueSamples[Cue.IGNITION], CUE_VOLUME)
+
     private fun play(sample: Int?, volume: Float) {
         if (sample == null || sample !in ready) return
         pool.play(sample, volume, volume, PRIORITY, 0, 1f)

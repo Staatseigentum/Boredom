@@ -28,6 +28,12 @@ interface Sounds {
 
     /** A challenge handed in. */
     fun success() = Unit
+
+    /** A research project come due. */
+    fun research() = Unit
+
+    /** The core catching light. */
+    fun ignition() = Unit
 }
 
 /**

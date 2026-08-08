@@ -72,6 +72,13 @@ data class GameState(
     /** Seconds the game was actually on screen, for the statistics. */
     val playedSeconds: Double = 0.0,
 
+    /** Seconds of play spent in the current run. Reset by anything that resets the run. */
+    val runSeconds: Double = 0.0,
+
+    /** How long the previous run took and how far it got, so this one has something to beat. */
+    val lastRunSeconds: Double = 0.0,
+    val lastRunMass: Double = 0.0,
+
     /** Comets caught, across all runs. */
     val cometsCaught: Long = 0,
 

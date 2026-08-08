@@ -17,6 +17,12 @@ enum class Cue {
 
     /** A challenge handed in. */
     SUCCESS,
+
+    /** A research project come due. Quiet: it arrives while the player is doing something else. */
+    RESEARCH,
+
+    /** The core catching light for the first time in a run. */
+    IGNITION,
 }
 
 /**
@@ -72,6 +78,19 @@ object Chiptune {
         Cue.PURCHASE -> listOf(
             Note(G5, 0.00, 0.04, gain = 0.7),
             Note(C6, 0.035, 0.05, gain = 0.7),
+        )
+
+        // Two soft notes a fifth apart, no attack to speak of. This one interrupts nothing.
+        Cue.RESEARCH -> listOf(
+            Note(C5, 0.00, 0.14, gain = 0.5),
+            Note(G5, 0.10, 0.22, gain = 0.45),
+        )
+
+        // Low to high and held: something starting rather than something finishing.
+        Cue.IGNITION -> listOf(
+            Note(hertz = G4, startSeconds = 0.00, seconds = 0.30, toHertz = C5),
+            Note(hertz = C5, startSeconds = 0.14, seconds = 0.34, gain = 0.6, toHertz = G5),
+            Note(hertz = E5, startSeconds = 0.28, seconds = 0.30, gain = 0.4),
         )
 
         // A triad that lands on the octave and holds.
