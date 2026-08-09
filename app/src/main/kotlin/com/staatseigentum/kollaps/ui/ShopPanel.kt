@@ -129,7 +129,10 @@ fun ShopPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
+                .horizontalScroll(rememberScrollState())
+                // As one piece: a tab strip whose six tabs each fell in on their own would read as
+                // the interface coming apart before it is pulled, which is the next phase's job.
+                .sog(SogDepth.CONTAINER, Nebula),
         ) {
             tabs.forEach { entry ->
                 PixelTab(
@@ -615,7 +618,8 @@ private fun CosmosPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(SpaceCard),
+                .background(SpaceCard)
+                .sog(SogDepth.CONTAINER, Nebula),
         ) {
             sections.forEach { entry ->
                 CosmosChip(
@@ -768,8 +772,18 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
     var confirming by remember { mutableStateOf(false) }
     val forged = remember(state) { Heavy.pending(state) }
 
-    PixelPanel(modifier = Modifier.fillMaxWidth(), border = Ember) {
-        PixelLabel(text = "Kollaps", color = Ember, size = 16)
+    // Two depths on one card, which is the whole idea: the lines implode into the card, and a
+    // quarter of a second later the card follows them into the hole.
+    PixelPanel(
+        modifier = Modifier.fillMaxWidth().sog(SogDepth.CONTAINER, Ember),
+        border = Ember,
+    ) {
+        PixelLabel(
+            text = "Kollaps",
+            color = Ember,
+            size = 16,
+            modifier = Modifier.sog(SogDepth.CONTENT, Ember),
+        )
         Spacer(Modifier.height(8.dp))
         Text(
             text = if (stats.canCollapse) {
@@ -781,6 +795,7 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
             },
             style = MaterialTheme.typography.bodyMedium,
             color = Muted,
+            modifier = Modifier.sog(SogDepth.CONTENT, Muted),
         )
         Spacer(Modifier.height(10.dp))
         Text(
@@ -788,6 +803,7 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
                 "(${Numbers.formatMultiplier(1.0 + GameEngine.SINGULARITY_BONUS * stats.pendingSingularities)} extra)",
             style = MaterialTheme.typography.bodyMedium,
             color = if (stats.canCollapse) Positive else Muted,
+            modifier = Modifier.sog(SogDepth.CONTENT, Positive),
         )
         // Only once there is iron in the core. Before that the line would be an empty promise
         // about a system the player has not switched on yet.
@@ -815,7 +831,7 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
                     confirming = true
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().sog(SogDepth.CONTENT, Ember),
             enabled = stats.canCollapse,
             accent = Ember,
         )

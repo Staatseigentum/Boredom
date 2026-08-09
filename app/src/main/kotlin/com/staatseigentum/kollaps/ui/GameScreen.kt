@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -69,6 +70,7 @@ import com.staatseigentum.kollaps.core.pixel.Skins
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Space
+import com.staatseigentum.kollaps.ui.theme.Starlight
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.staatseigentum.kollaps.core.pixel.PixelPlanet
@@ -206,11 +208,67 @@ fun GameScreen(
     // provider below has not narrowed the sound away yet.
     val blastSfx = sfx.takeIf { state.soundOn }
 
+    /*
+     * The collapse, as a picture.
+     *
+     * The rules have already run by the time this starts — `state` is the new run, one meteorite
+     * and no mass. That is deliberate: making the sequence part of the game state would mean a
+     * player who closes the app a second in has not collapsed, and a collapse that can be lost by
+     * locking a phone is worse than an animation that can be. So the screen keeps the *old* state
+     * on display for as long as it is being pulled in, and nothing below has to know.
+     */
+    val collapse = remember { CollapseSequence() }
+    val reduceMotion = LocalReduceMotion.current
+
+    /*
+     * Recorded here in the composition rather than from an effect, because effects run on the frame
+     * that already carries the reset state — anything written from one would be the new run, which
+     * is precisely the screen the sequence is not supposed to show. While the counter still agrees
+     * this is simply the current screen; the frame it stops agreeing, the sequence is about to take
+     * over and this is what it inherits. Recording resumes when the sequence hands it back.
+     */
+    val held = remember { HeldScreen(state, stats, state.collapses) }
+    if (state.collapses == held.collapses) {
+        held.state = state
+        held.stats = stats
+    }
+
+    /*
+     * Through [derivedStateOf], which matters more than it looks.
+     *
+     * `showingOld` is a function of the clock, and the clock moves sixty times a second. Read
+     * directly, this composable would subscribe to it and recompose the entire screen — header,
+     * shop, every row in it — on every frame of the sequence, at exactly the moment the game most
+     * needs the frames. The derived value changes twice in four seconds; that is what recomposes.
+     */
+    val showingOld by remember(collapse) { derivedStateOf { collapse.showingOld } }
+    val shownState = if (showingOld) held.state else state
+    val shownStats = if (showingOld) held.stats else stats
+
     val collapsesAtStart = remember { state.collapses }
     LaunchedEffect(state.collapses) {
-        if (state.collapses > collapsesAtStart) {
+        if (state.collapses <= collapsesAtStart) return@LaunchedEffect
+
+        val detonate: () -> Unit = {
             blast = state.collapses to BlastKind.KOLLAPS
             blastSfx?.success()
+        }
+
+        // Straight to the bang when the system has been told to keep still. Not a shortened
+        // version of the same thing — somebody who switched animations off does not want a
+        // politer spiral, they want it over with.
+        if (reduceMotion) {
+            detonate()
+            held.collapses = state.collapses
+            return@LaunchedEffect
+        }
+
+        // In a `finally` so that a screen torn down mid-fall still hands recording back: were it
+        // not, the next composition would go on showing a game that ended four seconds ago.
+        try {
+            collapse.run(detonate)
+        } finally {
+            held.collapses = state.collapses
         }
     }
 
@@ -236,8 +294,9 @@ fun GameScreen(
     }
 
     // The palette is settled once, here, so every body on screen agrees on it — and it is
-    // resolved rather than taken raw, so a scheme that is not actually earned falls back.
-    val skin = Skins.current(state.skinId, state.achievements.size)
+    // resolved rather than taken raw, so a scheme that is not actually earned falls back. Off the
+    // shown state, so the body being pulled in keeps the colours it had.
+    val skin = Skins.current(shownState.skinId, shownState.achievements.size)
 
     // The number format likewise, and for the same reason: one place decides, everything below
     // reads the same thing. Applied on every change rather than once, because a save imported
@@ -249,6 +308,7 @@ fun GameScreen(
     CompositionLocalProvider(
         LocalSfx provides sfx.takeIf { state.soundOn },
         LocalSkin provides skin,
+        LocalCollapse provides collapse,
     ) {
         Box(
             modifier = modifier
@@ -256,8 +316,10 @@ fun GameScreen(
                 .background(Space),
         ) {
             Starfield(
-                tint = Color(stats.tier.glowColor),
-                depth = stats.tier.index / (Tiers.all.size - 1f).coerceAtLeast(1f),
+                tint = Color(shownStats.tier.glowColor),
+                depth = shownStats.tier.index / (Tiers.all.size - 1f).coerceAtLeast(1f),
+                warp = { collapse.warp },
+                warpCentre = { collapse.centre },
                 modifier = Modifier.fillMaxSize(),
             )
 
@@ -267,12 +329,19 @@ fun GameScreen(
                     .safeDrawingPadding(),
             ) {
                 val body = @Composable { modifier: Modifier ->
-                    TapArea(state = state, stats = stats, actions = actions, modifier = modifier)
+                    TapArea(
+                        state = shownState,
+                        stats = shownStats,
+                        actions = actions,
+                        // The one thing that does not move: it is what everything else moves
+                        // towards, and the sprite in the middle of it is the hole itself.
+                        modifier = modifier.collapseCentre(),
+                    )
                 }
                 val shop = @Composable { modifier: Modifier ->
                     ShopPanel(
-                        state = state,
-                        stats = stats,
+                        state = shownState,
+                        stats = shownStats,
                         buyAmount = buyAmount,
                         actions = actions,
                         modifier = modifier,
@@ -289,14 +358,14 @@ fun GameScreen(
                 if (maxWidth >= WIDE_THRESHOLD && maxWidth > maxHeight) {
                     Row(modifier = Modifier.fillMaxSize()) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Header(state = state, stats = stats)
+                            Header(state = shownState, stats = shownStats)
                             body(Modifier.fillMaxWidth().weight(1f))
                         }
                         shop(Modifier.fillMaxHeight().weight(1f))
                     }
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        Header(state = state, stats = stats)
+                        Header(state = shownState, stats = shownStats)
                         body(Modifier.fillMaxWidth().weight(1f))
                         shop(Modifier.fillMaxWidth().weight(1.15f))
                     }
@@ -329,10 +398,23 @@ fun GameScreen(
                 )
             }
 
+            // Higher still, because the pieces come off things that are themselves above the
+            // sky — and because they are drawn in window coordinates, which is what this box is.
+            CollapseDebris(sequence = collapse, modifier = Modifier.fillMaxSize())
+
             updateDialog()
         }
     }
 }
+
+/**
+ * The screen as it stood before the last collapse.
+ *
+ * A plain object rather than snapshot state on purpose: it is written during composition, and a
+ * snapshot write there would either be discarded or start the composition over. Nothing observes
+ * it — what reads it is already recomposing on the sequence's clock.
+ */
+private class HeldScreen(var state: GameState, var stats: Stats, var collapses: Int)
 
 // ---------------------------------------------------------------------- header
 
@@ -345,7 +427,7 @@ private fun Header(state: GameState, stats: Stats) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().sog(SogDepth.CONTENT, Muted),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -369,12 +451,14 @@ private fun Header(state: GameState, stats: Stats) {
             text = Numbers.formatMass(state.mass),
             style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.sog(SogDepth.CONTENT, Starlight),
         )
 
         Text(
             text = "${Numbers.formatRate(stats.massPerSecond)}  ·  ${Numbers.format(stats.massPerTap)} pro Tipp",
             style = MaterialTheme.typography.bodyMedium,
             color = Muted,
+            modifier = Modifier.sog(SogDepth.CONTENT, Muted),
         )
 
         val buff = stats.buff
@@ -411,6 +495,7 @@ private fun Header(state: GameState, stats: Stats) {
         Spacer(Modifier.height(12.dp))
 
         val next = stats.nextTier
+        val glow = Color(stats.tier.glowColor)
         Text(
             text = if (next != null) {
                 "${stats.tier.label} > ${next.label}"
@@ -418,17 +503,19 @@ private fun Header(state: GameState, stats: Stats) {
                 "${stats.tier.label} — das Ende der Leiter"
             },
             style = MaterialTheme.typography.titleLarge,
-            color = Color(stats.tier.glowColor),
+            color = glow,
+            modifier = Modifier.sog(SogDepth.CONTENT, glow),
         )
 
         Spacer(Modifier.height(6.dp))
 
         PixelBar(
             progress = stats.tierProgress,
-            color = Color(stats.tier.glowColor),
+            color = glow,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(10.dp),
+                .height(10.dp)
+                .sog(SogDepth.CONTENT, glow),
         )
 
         if (next != null) {
@@ -437,6 +524,7 @@ private fun Header(state: GameState, stats: Stats) {
                 text = "noch ${Numbers.formatMass(next.threshold - state.runMass)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
+                modifier = Modifier.sog(SogDepth.CONTENT, Muted),
             )
         }
     }
@@ -580,13 +668,20 @@ private fun TapArea(
         },
         contentAlignment = Alignment.Center,
     ) {
+        // The body is the one thing the collapse does not pull anywhere — it swells as it feeds,
+        // is crushed to nothing, and comes back as the meteorite of the new run. Its share of the
+        // sequence is read straight off the clock rather than going through [sog].
+        val collapse = LocalCollapse.current
         CelestialBody(
             tier = tier,
+            extraTurns = { collapse?.extraSpin ?: 0f },
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    scaleX = squash.value
-                    scaleY = squash.value
+                    val swell = collapse?.bodyScale ?: 1f
+                    scaleX = squash.value * swell
+                    scaleY = squash.value * swell
+                    alpha = collapse?.bodyAlpha ?: 1f
                 },
         )
 

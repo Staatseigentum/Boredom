@@ -95,6 +95,16 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **Eine Chronik**: eine Zeile Geschichte je Stufe, je Kollaps und je Urknall — siebenunddreißig
   Fragmente, die zusammen etwas erzählen. Sie stehen im Erfolge-Reiter und tauchen beim Aufstieg
   einzeln auf
+- **Die Kollaps-Sequenz**: beim Kollaps wird nicht nur der Körper verschluckt, sondern die ganze
+  Oberfläche. Kopfzeile, Reiter, Kosmos-Chips und die Kollaps-Karte spiralen auf Gravitationsbahnen
+  nach innen, zerfallen unterwegs in Pixelblöcke, die im Horizont verglühen; der Sternenhimmel wird
+  mitgezogen, die Akkretionsscheibe dreht sich auf das Siebenundzwanzigfache hoch, dann wird der
+  Körper in einem Viertelsekunde zerdrückt. Erst über dem leeren Bild knallt es, und der neue
+  Durchlauf fliegt als Meteorit aus dem Zentrum zurück an seinen Platz. Zwei Sog-Ebenen sorgen
+  dafür, dass es nach Kollaps aussieht und nicht nach einem Bild, das kleiner skaliert wird: der
+  Inhalt implodiert zuerst in seine Karte, die Karte danach ins Loch. Das Ganze ist reine
+  Darstellung — der Kollaps selbst ist längst passiert, wer die App mittendrin schließt, hat
+  trotzdem korrekt kollabiert. Wer Systemanimationen abgeschaltet hat, bekommt direkt den Knall
 - **Produktionsverlauf** als Kurve über die letzte halbe Stunde, logarithmisch, weil eine lineare
   Achse in einem Idle-Spiel neunundzwanzig Minuten flach und dann senkrecht wäre
 - **Zweispaltig im Querformat** und auf Tablets: Körper links, Shop rechts

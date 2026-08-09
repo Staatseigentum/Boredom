@@ -36,6 +36,18 @@ fun CelestialBody(
     modifier: Modifier = Modifier,
     /** The colour scheme the body is drawn in. */
     skin: Skin = LocalSkin.current,
+    /**
+     * Whole turns added on top of the body's own rotation.
+     *
+     * The collapse feeds the accretion disc and it has to visibly run up before it is crushed. No
+     * new sprites are needed for that — the sheet already holds a full turn, so a faster walk
+     * through the frames it already has is the whole effect.
+     *
+     * A lambda rather than a value, and for the usual reason: it changes every frame, and read as
+     * a parameter it would recompose this whole subtree sixty times a second. Read inside the
+     * canvas it costs a redraw, which is what it actually is.
+     */
+    extraTurns: () -> Float = { 0f },
 ) {
     val factory = LocalSpriteFactory.current
 
@@ -66,7 +78,10 @@ fun CelestialBody(
         // The edge length comes off the sheet rather than from the tier, so the source rectangle
         // can never be a different size than the bitmap it is read from.
         val side = current.side
-        val index = (phase * PixelPlanet.FRAMES).toInt().coerceIn(0, current.frames.lastIndex)
+        // Wrapped rather than clamped: the extra turns keep counting up for as long as the
+        // collapse lasts, and a clamp would park the disc on its last frame instead of spinning it.
+        val turn = ((phase + extraTurns()) % 1f + 1f) % 1f
+        val index = (turn * PixelPlanet.FRAMES).toInt().coerceIn(0, current.frames.lastIndex)
 
         val available = min(size.width, size.height) * PixelPlanet.spriteFraction(tier)
         // Whole-number scaling is what keeps the pixels square.

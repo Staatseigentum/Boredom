@@ -1,9 +1,12 @@
 package com.staatseigentum.kollaps.ui
 
+import android.provider.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.staatseigentum.kollaps.GameViewModel
 import com.staatseigentum.kollaps.core.BuyAmount
@@ -73,25 +76,44 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
         }
     }
 
-    GameScreen(
-        state = state,
-        stats = stats,
-        buyAmount = buyAmount,
-        offlineReport = offlineReport,
-        actions = actions,
-        updateSection = { UpdateCard(updateModel) },
-        saveSlots = {
-            // Re-read whenever the slot changes rather than once: switching has to leave the
-            // list describing where the player actually is.
-            val slot by model.activeSlot.collectAsStateWithLifecycle()
-            var summaries by remember { mutableStateOf(emptyList<SlotSummary>()) }
-            LaunchedEffect(slot, state.collapses, state.bigBangs) {
-                summaries = model.slotSummaries()
-            }
-            if (summaries.isNotEmpty()) {
-                SaveSlotPanel(slots = summaries, onSwitch = model::switchSlot)
-            }
-        },
-        updateDialog = { if (updatePrompt) UpdateDialog(updateModel) },
-    )
+    /*
+     * Whether the phone has been told to keep still.
+     *
+     * Android has no flag for this, only the scale it multiplies every animation duration by —
+     * developer options and several accessibility settings all end up writing a zero there. Read
+     * once per composition rather than watched: somebody who changes it mid-collapse has bigger
+     * things going on, and it is the sequence's own start that reads it.
+     */
+    val context = LocalContext.current
+    val reduceMotion = remember(context) {
+        Settings.Global.getFloat(
+            context.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f,
+        ) == 0f
+    }
+
+    CompositionLocalProvider(LocalReduceMotion provides reduceMotion) {
+        GameScreen(
+            state = state,
+            stats = stats,
+            buyAmount = buyAmount,
+            offlineReport = offlineReport,
+            actions = actions,
+            updateSection = { UpdateCard(updateModel) },
+            saveSlots = {
+                // Re-read whenever the slot changes rather than once: switching has to leave the
+                // list describing where the player actually is.
+                val slot by model.activeSlot.collectAsStateWithLifecycle()
+                var summaries by remember { mutableStateOf(emptyList<SlotSummary>()) }
+                LaunchedEffect(slot, state.collapses, state.bigBangs) {
+                    summaries = model.slotSummaries()
+                }
+                if (summaries.isNotEmpty()) {
+                    SaveSlotPanel(slots = summaries, onSwitch = model::switchSlot)
+                }
+            },
+            updateDialog = { if (updatePrompt) UpdateDialog(updateModel) },
+        )
+    }
 }

@@ -12,13 +12,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.pixel.Sky
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.hypot
+import kotlin.math.sin
 
 /**
  * The background: a sky with depth in it.
@@ -40,6 +45,19 @@ fun Starfield(
     modifier: Modifier = Modifier,
     /** How far up the ladder the player is, in `0f..1f`. Deeper skies for later bodies. */
     depth: Float = 0f,
+    /**
+     * How hard the sky is being wound into the hole, `0f` for not at all.
+     *
+     * The sky takes part in the collapse rather than sitting behind it. Anything less looks like a
+     * photograph of space with an animation played on top; this way the whole picture goes down
+     * the drain together.
+     *
+     * A lambda for the same reason the twinkle and the drift are read inside the canvas below: it
+     * changes every frame, and read as a parameter it would recompose rather than redraw.
+     */
+    warp: () -> Float = { 0f },
+    /** Where it is being wound into. Unspecified means the middle of the canvas. */
+    warpCentre: () -> Offset = { Offset.Unspecified },
 ) {
     val stars = remember { Sky.stars() }
     // Rebuilt when the body changes rung, which is a few times an hour.
@@ -67,12 +85,21 @@ fun Starfield(
     Canvas(modifier = modifier) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
         val block = PIXEL.toPx()
+        val pull = warp().coerceIn(0f, 1f)
+        val centre = warpCentre()
+        val eye = if (centre.isSpecified) centre else Offset(size.width / 2f, size.height / 2f)
 
         // Furthest first, so a near star is never hidden behind something that is behind it.
         for (cloud in clouds) {
             drawBlock(
-                x = Sky.wrap(cloud.x + drift * CLOUD_DRIFT) * size.width,
-                y = cloud.y * size.height,
+                point = wound(
+                    Offset(
+                        Sky.wrap(cloud.x + drift * CLOUD_DRIFT) * size.width,
+                        cloud.y * size.height,
+                    ),
+                    pull,
+                    eye,
+                ),
                 size = block * if (cloud.wide) 3f else 2f,
                 color = lerp(tint, accent, cloud.warmth).copy(alpha = cloud.alpha),
             )
@@ -80,8 +107,14 @@ fun Starfield(
 
         for (grain in dust) {
             drawBlock(
-                x = Sky.wrap(grain.x + drift * DUST_DRIFT) * size.width,
-                y = grain.y * size.height,
+                point = wound(
+                    Offset(
+                        Sky.wrap(grain.x + drift * DUST_DRIFT) * size.width,
+                        grain.y * size.height,
+                    ),
+                    pull,
+                    eye,
+                ),
                 size = block,
                 color = DustColor.copy(alpha = grain.alpha),
             )
@@ -104,8 +137,14 @@ fun Starfield(
             } * layer.brightness
 
             drawBlock(
-                x = Sky.wrap(star.x + drift * layer.drift) * size.width,
-                y = star.y * size.height,
+                point = wound(
+                    Offset(
+                        Sky.wrap(star.x + drift * layer.drift) * size.width,
+                        star.y * size.height,
+                    ),
+                    pull,
+                    eye,
+                ),
                 size = block * layer.blocks,
                 color = (if (star.warm) WarmStar else Color.White).copy(alpha = alpha),
             )
@@ -113,10 +152,26 @@ fun Starfield(
     }
 }
 
+/**
+ * Where a block of sky ends up once the hole has hold of it.
+ *
+ * Polar around the same centre everything else falls towards: pulled most of the way in and turned
+ * through a third of a circle at full strength. The field itself is never rebuilt — it is the same
+ * hundred and fifty stars, read through a different lens for a second and a half.
+ */
+private fun wound(point: Offset, warp: Float, centre: Offset): Offset {
+    if (warp <= 0f) return point
+    val dx = point.x - centre.x
+    val dy = point.y - centre.y
+    val radius = hypot(dx, dy) * (1f - warp * 0.92f)
+    val angle = atan2(dy, dx) + warp * 2.3f
+    return Offset(centre.x + cos(angle) * radius, centre.y + sin(angle) * radius)
+}
+
 /** Snaps to the pixel grid so every block sits whole. */
-private fun DrawScope.drawBlock(x: Float, y: Float, size: Float, color: Color) {
-    val snappedX = floor(x / size) * size
-    val snappedY = floor(y / size) * size
+private fun DrawScope.drawBlock(point: Offset, size: Float, color: Color) {
+    val snappedX = floor(point.x / size) * size
+    val snappedY = floor(point.y / size) * size
     drawRect(color = color, topLeft = Offset(snappedX, snappedY), size = Size(size, size))
 }
 
