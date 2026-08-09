@@ -137,6 +137,9 @@ interface GameActions {
     fun setAutoBuy(on: Boolean)
     fun setReminders(on: Boolean)
 
+    /** Whether a quiet line stays in the shade while the game is closed. */
+    fun setStatus(on: Boolean)
+
     /** Replaces the running game with an exported one. False when the block was not readable. */
     fun importSave(block: String): Boolean
 

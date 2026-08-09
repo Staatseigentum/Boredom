@@ -15,6 +15,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.staatseigentum.kollaps.notify.LiveStatus
 import com.staatseigentum.kollaps.notify.ReturnReminder
 import com.staatseigentum.kollaps.ui.AndroidPlatform
 import com.staatseigentum.kollaps.ui.GameScreen
@@ -54,8 +55,10 @@ class MainActivity : ComponentActivity() {
                         when (event) {
                             Lifecycle.Event.ON_START -> {
                                 model.onForeground()
-                                // Whoever is looking at the game does not need reminding of it.
+                                // Whoever is looking at the game does not need reminding of it,
+                                // and does not need a line in the shade saying what it says.
                                 ReturnReminder.cancel(context)
+                                LiveStatus.hide(context)
                             }
 
                             Lifecycle.Event.ON_STOP -> {
@@ -68,6 +71,21 @@ class MainActivity : ComponentActivity() {
                                         context = context,
                                         capSeconds = model.offlineCapSeconds(),
                                         summary = text,
+                                    )
+                                }
+
+                                // The quiet line that stays. Posted from the numbers as they are
+                                // right now, which is exactly what they will still be an hour
+                                // later — nothing produces while the app is closed.
+                                val status = model.statusLine()
+                                if (status == null) {
+                                    LiveStatus.hide(context)
+                                } else {
+                                    LiveStatus.show(
+                                        context = context,
+                                        headline = status.headline,
+                                        detail = status.detail,
+                                        researchDoneAtMillis = status.researchDoneAtMillis,
                                     )
                                 }
                             }

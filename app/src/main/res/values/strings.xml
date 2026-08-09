@@ -5,4 +5,6 @@
     <string name="channel_yield">Ertrag</string>
     <string name="channel_yield_description">Meldet sich, wenn die Kollektoren voll gelaufen sind.</string>
     <string name="notification_title">Deine Kollektoren haben gearbeitet</string>
+    <string name="channel_status">Laufender Stand</string>
+    <string name="channel_status_description">Eine stille Zeile mit Produktion und Forschung, solange das Spiel zu ist.</string>
 </resources>

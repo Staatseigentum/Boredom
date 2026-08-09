@@ -187,6 +187,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.setReminders(state, on)
     }
 
+    override fun setStatus(on: Boolean) {
+        state = GameEngine.setStatus(state, on)
+    }
+
     override fun importSave(block: String): Boolean {
         val loaded = SaveCodec.import(block) ?: return false
         state = loaded

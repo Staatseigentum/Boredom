@@ -310,6 +310,7 @@ fun SettingsSection(
     onMusic: (Boolean) -> Unit,
     onAutoBuy: (Boolean) -> Unit,
     onReminders: (Boolean) -> Unit,
+    onStatus: (Boolean) -> Unit,
     onExport: () -> String,
     onImport: (String) -> Boolean,
     onErase: () -> Unit,
@@ -338,6 +339,16 @@ fun SettingsSection(
         Toggle("Erinnerung, wenn der Speicher voll ist", state.remindersOn) {
             onReminders(!state.remindersOn)
         }
+        Spacer(Modifier.height(6.dp))
+        Toggle("Laufende Anzeige, solange das Spiel zu ist", state.statusOn) {
+            onStatus(!state.statusOn)
+        }
+        Text(
+            text = "Eine stille Zeile mit Produktion und der Restzeit im Labor. Sie bleibt " +
+                "stehen, bis du das Spiel wieder öffnest.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Muted,
+        )
 
         // The automatic buyer used to live here as a single switch. It is a rule among five now,
         // and a second control for the same setting would only be a way to disagree with itself.

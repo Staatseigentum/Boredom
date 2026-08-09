@@ -10,6 +10,7 @@ import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.core.SaveCodec
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.Numbers
+import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.Roles
@@ -276,6 +277,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun setStatus(on: Boolean) {
+        _state.value = GameEngine.setStatus(_state.value, on)
+        persist()
+    }
+
     fun setReminders(on: Boolean) {
         _state.value = GameEngine.setReminders(_state.value, on)
         persist()
@@ -298,6 +304,33 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     /** The player's offline cap, which is when the collectors stop earning. */
     fun offlineCapSeconds(): Long = GameEngine.stats(_state.value).offlineCapSeconds
+
+    /**
+     * The three things the ongoing status line shows, or `null` when it should not be posted.
+     *
+     * Assembled here rather than in the notification, for the same reason the reminder text is:
+     * every decision about wording and formatting stays on this side, and what crosses over is a
+     * finished string.
+     */
+    fun statusLine(): StatusLine? {
+        val state = _state.value
+        if (!state.remindersOn || !state.statusOn) return null
+
+        val stats = GameEngine.stats(state)
+        if (stats.massPerSecond <= 0.0 && state.activeResearch == null) return null
+
+        val project = ResearchTree.byId(state.activeResearch)
+        return StatusLine(
+            headline = "${Numbers.formatMass(stats.massPerSecond)}/s · ${stats.tier.name}",
+            detail = when {
+                project != null -> "Labor: ${project.name}"
+                // Said once, plainly, rather than left blank: the number above is a snapshot and
+                // the shade has no way of showing that on its own.
+                else -> "Stand beim Schließen"
+            },
+            researchDoneAtMillis = state.researchDoneAt.takeIf { project != null && it > 0 },
+        )
+    }
 
     /** Replaces the running game with an imported one. Saved at once, so it cannot be lost. */
     fun importSave(block: String): Boolean {
@@ -330,3 +363,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         const val AUTOSAVE_MILLIS = 10_000L
     }
 }
+
+/** What the ongoing notification puts on screen. Three finished strings and a target time. */
+data class StatusLine(
+    val headline: String,
+    val detail: String?,
+    val researchDoneAtMillis: Long?,
+)

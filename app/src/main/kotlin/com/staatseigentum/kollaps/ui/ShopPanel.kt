@@ -707,6 +707,7 @@ private fun CosmosPanel(
                             onMusic = actions::setMusic,
                             onAutoBuy = actions::setAutoBuy,
                             onReminders = actions::setReminders,
+                            onStatus = actions::setStatus,
                             onExport = actions::exportSave,
                             onImport = actions::importSave,
                             onErase = actions::eraseSave,

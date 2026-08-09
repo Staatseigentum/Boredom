@@ -168,6 +168,15 @@ data class GameState(
     val remindersOn: Boolean = true,
 
     /**
+     * Whether a quiet line stays in the shade while the game is closed.
+     *
+     * Its own switch rather than part of [remindersOn], because the two are different bargains: a
+     * reminder arrives once and is gone, while this one sits there until the game is opened, and
+     * plenty of people who want the first want nothing to do with the second.
+     */
+    val statusOn: Boolean = true,
+
+    /**
      * Id of whatever is waiting for an answer, if anything.
      *
      * Either a [CosmicEvent] id or, while a chain is running, the id of the [ChainStation] on the

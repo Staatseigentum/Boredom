@@ -627,6 +627,7 @@ object GameEngine {
                 autoBuyOn = state.autoBuyOn,
                 automation = state.automation,
                 remindersOn = state.remindersOn,
+                statusOn = state.statusOn,
                 eventsAnswered = state.eventsAnswered,
                 // A story does not un-happen because the body did. The chain keeps the station it
                 // reached, so a collapse three answers in picks the fourth question back up.
@@ -687,6 +688,7 @@ object GameEngine {
                 autoBuyOn = state.autoBuyOn,
                 automation = state.automation,
                 remindersOn = state.remindersOn,
+                statusOn = state.statusOn,
                 eventsAnswered = state.eventsAnswered,
                 // The point of pressing it.
                 aeons = state.aeons + earned,
@@ -961,6 +963,7 @@ object GameEngine {
         autoBuyOn = state.autoBuyOn,
         automation = state.automation,
         remindersOn = state.remindersOn,
+        statusOn = state.statusOn,
         eventsAnswered = state.eventsAnswered,
         challengesDone = state.challengesDone,
         challengeDuos = state.challengeDuos,
@@ -1120,6 +1123,8 @@ object GameEngine {
     }
 
     fun setReminders(state: GameState, on: Boolean): GameState = state.copy(remindersOn = on)
+
+    fun setStatus(state: GameState, on: Boolean): GameState = state.copy(statusOn = on)
 
     /** Whether the automatic buyer has been unlocked at all. */
     fun hasAutoBuy(state: GameState): Boolean = modifiersOf(state).autoBuy
