@@ -91,6 +91,9 @@ private class DesktopSounds : Sounds {
     // its point and the explosion has none.
     override fun collapse() = play(Cue.COLLAPSE, CUE_VOLUME * 0.8f)
 
+    // Half volume. It lands in the hole the rumble leaves behind, where it needs nothing more.
+    override fun explosion() = play(Cue.EXPLOSION, CUE_VOLUME * 0.5f)
+
     private fun play(cue: Cue, volume: Float) {
         val clip = synchronized(clips) { clips[cue] } ?: return
         runCatching {

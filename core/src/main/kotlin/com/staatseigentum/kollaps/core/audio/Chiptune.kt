@@ -53,6 +53,15 @@ enum class Cue {
      * screen is empty. The silence at the end is the point: what follows it is the bang.
      */
     COLLAPSE,
+
+    /**
+     * The bang itself, over the empty screen.
+     *
+     * The blast used to borrow the challenge fanfare, which is a triad landing on the octave —
+     * a well-done, not an explosion. This is noise rather than notes, and deliberately quiet:
+     * it lands in the silence the rumble leaves behind, and silence is what makes it loud.
+     */
+    EXPLOSION,
 }
 
 /**
@@ -168,8 +177,9 @@ object Chiptune {
             Note(C6, 0.32, 0.38, gain = 0.6),
         )
 
-        // Not a list of notes at all — see [renderCollapse].
+        // Neither of these is a list of notes — see [renderCollapse] and [renderExplosion].
         Cue.COLLAPSE -> emptyList()
+        Cue.EXPLOSION -> emptyList()
     }
 
     /** The cue as a playable WAV file. */
@@ -178,6 +188,7 @@ object Chiptune {
     /** Raw samples, exposed so a test can look at the waveform without parsing a header. */
     fun render(cue: Cue): ShortArray {
         if (cue == Cue.COLLAPSE) return Wav.normalise(renderCollapse(), PEAK)
+        if (cue == Cue.EXPLOSION) return Wav.normalise(renderExplosion(), PEAK)
 
         val notes = notesOf(cue)
         val totalSeconds = notes.maxOf { it.startSeconds + it.seconds } + TAIL_SECONDS
@@ -270,6 +281,58 @@ object Chiptune {
     }
 
     /**
+     * The bang: noise that starts bright and goes dull, over a sub that falls away.
+     *
+     * An explosion is not a chord, so this is not notes either. Two things make it read as one
+     * rather than as a burst of static:
+     *
+     * - the filter *opens* for a tenth of a second and then closes for the rest of the second.
+     *   That is the whole trick — the crack at the front is the high end being let through
+     *   briefly, and everything after it is the same noise with the top taken off, which is what
+     *   distance and air actually do to a loud sound;
+     * - a sine underneath sliding from 90 Hz down to 28, so there is a body under the noise
+     *   rather than only hiss.
+     *
+     * It is kept short and it is played quietly. The bang lands in the silence the collapse
+     * rumble leaves behind, and a sound in silence does not need volume to be an event — asking
+     * it to be loud as well would only make it a clipped mess on a phone speaker.
+     */
+    private fun renderExplosion(): DoubleArray {
+        val body = (EXPLOSION_SECONDS * SAMPLE_RATE).toInt()
+        val total = ((EXPLOSION_SECONDS + TAIL_SECONDS) * SAMPLE_RATE).toInt()
+        val out = DoubleArray(total)
+
+        var subPhase = 0.0
+        var filtered = 0.0
+        var seed = 0x2545F4914F6CDD1DuL.toLong()
+
+        // Where the filter turns around: bright on the way up, dull for the whole way down.
+        val opening = 0.09 * SAMPLE_RATE
+
+        for (i in 0 until body) {
+            val p = i.toDouble() / body
+
+            seed = seed * 6_364_136_223_846_793_005L + 1_442_695_040_888_963_407L
+            val white = ((seed ushr 40).toDouble() / (1 shl 23).toDouble()) - 1.0
+
+            // 0.9 lets almost everything through, 0.05 is a dull thud. One pole either way.
+            val cutoff = if (i < opening) 0.12 + 0.78 * (i / opening) else 0.9 - 0.85 * p
+            filtered += (white - filtered) * cutoff.coerceIn(0.03, 0.95)
+
+            val sub = 90.0 - 62.0 * p
+            subPhase += 2.0 * PI * sub / SAMPLE_RATE
+
+            // Six milliseconds of attack: enough not to be a step in the signal, short enough
+            // that it still hits rather than swells.
+            val attack = (i / (0.006 * SAMPLE_RATE)).coerceAtMost(1.0)
+            val decay = exp(-3.4 * p)
+
+            out[i] = (filtered * 0.75 + sin(subPhase) * 0.55) * attack * decay
+        }
+        return out
+    }
+
+    /**
      * A fast attack and an exponential decay.
      *
      * The attack is a fixed number of milliseconds rather than a share of the note, because the
@@ -299,4 +362,7 @@ object Chiptune {
      */
     const val COLLAPSE_RUMBLE_SECONDS = 2.6
     private const val COLLAPSE_SILENCE_SECONDS = 0.34
+
+    /** How long the bang rings out. Short: it is an impact, not a wash. */
+    private const val EXPLOSION_SECONDS = 1.0
 }

@@ -53,6 +53,15 @@ interface Sounds {
      * of the picture, not part of the game.
      */
     fun collapse() = Unit
+
+    /**
+     * The bang, over the empty screen.
+     *
+     * Its own cue rather than the challenge fanfare it used to borrow: a triad landing on the
+     * octave is a well-done, and what happens here is a star being crushed. Played quietly on
+     * purpose — it arrives in silence, and silence is what makes it an event.
+     */
+    fun explosion() = Unit
 }
 
 /**

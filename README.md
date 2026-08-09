@@ -105,7 +105,11 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   hoch. Dazu ein **gerechnetes Grollen**: eine Bassstimme, die auf `p²` von 38 auf 116 Hz steigt,
   eine Quinte darüber, die dabei immer schiefer wird, und gefiltertes Rauschen, das erst in der
   zweiten Hälfte dazukommt. Es bricht eine Drittelsekunde vor dem Knall ab — die Stille macht die
-  Arbeit. Dann wird der Körper zerdrückt, es knallt über dem leeren Bild, und der neue Durchlauf
+  Arbeit. Dann wird der Körper zerdrückt, und es **knallt** über dem leeren Bild — ein eigener
+  Ton statt der Fanfare, die der Knall sich vorher von den Herausforderungen geliehen hatte:
+  Rauschen, dessen Filter sich eine Zehntelsekunde weit öffnet und danach eine Sekunde lang
+  zufällt, mit einem Sinus darunter, der von 90 auf 28 Hz fällt. Bewusst leise gespielt; er landet
+  in der Stille, und Stille ist es, was ihn laut macht. Danach fliegt der neue Durchlauf
   fliegt als Meteorit aus dem Zentrum zurück an seinen Platz. **Das Spiel steht solange still**:
   keine Produktion, keine Eingabe — was die Sekunden kosten, wird verworfen und nicht nachgezahlt,
   und der Bildschirm zeigt den Durchlauf, der gerade zu Ende ging. Der Kollaps selbst ist zu dem

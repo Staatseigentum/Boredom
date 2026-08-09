@@ -266,7 +266,7 @@ fun GameScreen(
 
         val detonate: () -> Unit = {
             blast = state.collapses to BlastKind.KOLLAPS
-            blastSfx?.success()
+            blastSfx?.explosion()
         }
 
         // Straight to the bang when the system has been told to keep still. Not a shortened
@@ -312,7 +312,7 @@ fun GameScreen(
     LaunchedEffect(state.bigBangs) {
         if (state.bigBangs > bangsAtStart) {
             blast = -state.bigBangs to BlastKind.URKNALL
-            blastSfx?.success()
+            blastSfx?.explosion()
         }
     }
 
