@@ -9,6 +9,7 @@ import com.staatseigentum.kollaps.GameViewModel
 import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.update.UpdateViewModel
+import com.staatseigentum.kollaps.core.NumberFormat
 
 /**
  * Binds the platform-free [GameScreen] to the app's view models.
@@ -62,6 +63,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun setAutoBuy(on: Boolean) = model.setAutoBuy(on)
             override fun setReminders(on: Boolean) = model.setReminders(on)
             override fun setStatus(on: Boolean) = model.setStatus(on)
+            override fun setNumberFormat(format: NumberFormat) = model.setNumberFormat(format)
             override fun importSave(block: String): Boolean = model.importSave(block)
             override fun exportSave(): String = model.exportSave()
         }

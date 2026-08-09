@@ -57,6 +57,7 @@ import com.staatseigentum.kollaps.core.pixel.Skins
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import com.staatseigentum.kollaps.core.NumberFormat
 
 /** Achievements, and the statistics that explain how they were earned. */
 @Composable
@@ -311,6 +312,7 @@ fun SettingsSection(
     onAutoBuy: (Boolean) -> Unit,
     onReminders: (Boolean) -> Unit,
     onStatus: (Boolean) -> Unit,
+    onNumberFormat: (NumberFormat) -> Unit,
     onExport: () -> String,
     onImport: (String) -> Boolean,
     onErase: () -> Unit,
@@ -349,6 +351,33 @@ fun SettingsSection(
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
+
+        Spacer(Modifier.height(14.dp))
+        PixelLabel("Zahlen", size = 13, color = Muted)
+        Spacer(Modifier.height(4.dp))
+        // Each option is labelled with what it actually looks like. "Wissenschaftlich" tells
+        // nobody anything; `1,23e9` next to it decides the question in one glance.
+        val chosen = NumberFormat.byName(state.numberFormat)
+        for (option in NumberFormat.entries) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onNumberFormat(option) }
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = option.label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (option == chosen) Starlight else Muted,
+                )
+                Text(
+                    text = option.example,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (option == chosen) Ember else Muted,
+                )
+            }
+        }
 
         // The automatic buyer used to live here as a single switch. It is a rule among five now,
         // and a second control for the same setting would only be a way to disagree with itself.

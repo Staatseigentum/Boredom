@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
+import com.staatseigentum.kollaps.core.NumberFormat
 
 /**
  * Owns the game state and drives the simulation while the app is in the foreground.
@@ -274,6 +275,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setAutoBuy(on: Boolean) {
         _state.value = GameEngine.setAutoBuy(_state.value, on)
+        persist()
+    }
+
+    fun setNumberFormat(format: NumberFormat) {
+        _state.value = GameEngine.setNumberFormat(_state.value, format)
         persist()
     }
 

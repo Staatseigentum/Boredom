@@ -708,6 +708,7 @@ private fun CosmosPanel(
                             onAutoBuy = actions::setAutoBuy,
                             onReminders = actions::setReminders,
                             onStatus = actions::setStatus,
+                            onNumberFormat = actions::setNumberFormat,
                             onExport = actions::exportSave,
                             onImport = actions::importSave,
                             onErase = actions::eraseSave,

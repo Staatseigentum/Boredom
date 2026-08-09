@@ -12,6 +12,7 @@ import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.Roles
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.ui.GameActions
+import com.staatseigentum.kollaps.core.NumberFormat
 
 /**
  * The game, driven from plain Compose state instead of a view model.
@@ -189,6 +190,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
 
     override fun setStatus(on: Boolean) {
         state = GameEngine.setStatus(state, on)
+    }
+
+    override fun setNumberFormat(format: NumberFormat) {
+        state = GameEngine.setNumberFormat(state, format)
     }
 
     override fun importSave(block: String): Boolean {

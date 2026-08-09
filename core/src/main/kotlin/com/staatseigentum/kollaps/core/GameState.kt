@@ -176,6 +176,9 @@ data class GameState(
      */
     val statusOn: Boolean = true,
 
+    /** How numbers are written, by [NumberFormat] name. Null is the German names. */
+    val numberFormat: String? = null,
+
     /**
      * Id of whatever is waiting for an answer, if anything.
      *

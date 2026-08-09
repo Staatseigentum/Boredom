@@ -57,6 +57,7 @@ import com.staatseigentum.kollaps.core.Element
 import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.NumberFormat
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.ResearchTree
@@ -139,6 +140,9 @@ interface GameActions {
 
     /** Whether a quiet line stays in the shade while the game is closed. */
     fun setStatus(on: Boolean)
+
+    /** Picks how the very large numbers are written. */
+    fun setNumberFormat(format: NumberFormat)
 
     /** Replaces the running game with an exported one. False when the block was not readable. */
     fun importSave(block: String): Boolean
@@ -223,6 +227,13 @@ fun GameScreen(
     // The palette is settled once, here, so every body on screen agrees on it — and it is
     // resolved rather than taken raw, so a scheme that is not actually earned falls back.
     val skin = Skins.current(state.skinId, state.achievements.size)
+
+    // The number format likewise, and for the same reason: one place decides, everything below
+    // reads the same thing. Applied on every change rather than once, because a save imported
+    // mid-session brings its own preference with it.
+    LaunchedEffect(state.numberFormat) {
+        Numbers.format = NumberFormat.byName(state.numberFormat)
+    }
 
     CompositionLocalProvider(
         LocalSfx provides sfx.takeIf { state.soundOn },
