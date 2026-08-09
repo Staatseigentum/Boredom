@@ -274,10 +274,26 @@ object GameEngine {
         val left = state.nextEventSeconds - seconds
         if (left > 0.0) return state.copy(nextEventSeconds = left)
 
-        return state.copy(
-            pendingEvent = CosmicEvent.pick(state).id,
-            nextEventSeconds = eventInterval(state),
-        )
+        val scheduled = state.copy(nextEventSeconds = eventInterval(state))
+
+        // A chain already under way owns every slot until it ends. Interleaving one-offs between
+        // its stations would stretch a three-answer story across half an hour of other questions,
+        // by which point the first answer is forgotten and the branching is wasted.
+        state.chainStation?.let { return scheduled.copy(pendingEvent = it) }
+
+        // Otherwise every third question opens a story, if one is waiting. Derived from the
+        // number of events already answered rather than from a random source, for the same reason
+        // the pick below is: the engine has no generator, and a reload must not be a way to reroll.
+        val chain = Chains.startable(state)
+        if (chain != null && state.eventsAnswered.mod(3L) == 2L) {
+            return scheduled.copy(
+                activeChain = chain.id,
+                chainStation = chain.start,
+                pendingEvent = chain.start,
+            )
+        }
+
+        return scheduled.copy(pendingEvent = CosmicEvent.pick(state).id)
     }
 
     /** Spread across the window, derived from the save so it needs no random source. */
@@ -295,6 +311,8 @@ object GameEngine {
      * those two.
      */
     fun chooseEvent(state: GameState, optionIndex: Int): GameState {
+        state.station?.let { return answerStation(state, it, optionIndex) }
+
         val event = state.event ?: return state
         val option = event.optionAt(optionIndex) ?: return state
 
@@ -315,7 +333,48 @@ object GameEngine {
         )
     }
 
-    /** Turns the event down. Nothing is paid, and the clock simply starts again. */
+    /**
+     * Answers one stop of a chain and moves the story to wherever that answer leads.
+     *
+     * The reward is paid exactly as a one-off event pays, so no chain can be worth taking for a
+     * currency the rest of the game does not have. What the answer really buys is the next
+     * station: when the option leads nowhere the chain is finished and filed away, and a finished
+     * chain never starts again — an ending you already know is not a decision any more.
+     */
+    private fun answerStation(state: GameState, station: ChainStation, optionIndex: Int): GameState {
+        val option = station.optionAt(optionIndex) ?: return state
+        val ending = option.next == null
+
+        val answered = state.copy(
+            pendingEvent = null,
+            eventsAnswered = state.eventsAnswered + 1,
+            chainStation = option.next,
+            activeChain = if (ending) null else state.activeChain,
+            chainsDone = if (ending && state.activeChain != null) {
+                state.chainsDone + state.activeChain
+            } else {
+                state.chainsDone
+            },
+        )
+        return award(payOut(answered, option.reward))
+    }
+
+    /** What an answer is worth, in the two shapes a comet already pays in. */
+    private fun payOut(state: GameState, reward: CometReward): GameState = when (reward) {
+        is CometReward.Windfall -> credit(state, massPerSecond(state) * reward.secondsOfProduction)
+        is CometReward.Timed -> state.copy(
+            buffId = reward.buff.id,
+            buffSecondsLeft = reward.buff.seconds,
+        )
+    }
+
+    /**
+     * Turns the question down. Nothing is paid, and the clock simply starts again.
+     *
+     * A chain is not lost by this — only the dialog closes. The story stays at the station it
+     * reached and asks again at the next interval, because a mis-tap on the way to the shop should
+     * not silently end something three answers deep.
+     */
     fun dismissEvent(state: GameState): GameState =
         if (state.pendingEvent == null) state else state.copy(pendingEvent = null)
 
@@ -561,6 +620,11 @@ object GameEngine {
                 automation = state.automation,
                 remindersOn = state.remindersOn,
                 eventsAnswered = state.eventsAnswered,
+                // A story does not un-happen because the body did. The chain keeps the station it
+                // reached, so a collapse three answers in picks the fourth question back up.
+                activeChain = state.activeChain,
+                chainStation = state.chainStation,
+                chainsDone = state.chainsDone,
                 challengesDone = state.challengesDone,
                 aeons = state.aeons,
                 aeonUpgrades = state.aeonUpgrades,

@@ -39,6 +39,21 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+/**
+ * The pixel fonts travel with the build.
+ *
+ * They live in the app module because that is where Android needs them, and copying rather than
+ * duplicating keeps one copy in the repository. Without this the packaged desktop build had no
+ * fonts at all and quietly rendered the whole game in the system monospace — it looked like a
+ * different program, and nothing failed to say so.
+ */
+tasks.named<ProcessResources>("processResources") {
+    from("../app/src/main/res/font") {
+        include("*.ttf")
+        into("font")
+    }
+}
+
 dependencies {
     implementation(project(":core"))
     implementation(libs.kotlinx.coroutines.swing)
@@ -129,6 +144,11 @@ logger.info("Paketversion: $appVersion")
 compose.desktop {
     application {
         mainClass = entryPoint.get()
+
+        // How the running program learns which version it is. The installer already knows the
+        // number; writing it into a second place would only give it somewhere to be wrong. Absent
+        // when running from a checkout, which the updater reads as "do not offer an update".
+        jvmArgs += "-Dkollaps.version=$appVersion"
 
         nativeDistributions {
             targetFormats(

@@ -1,7 +1,19 @@
 package com.staatseigentum.kollaps.core
 
-/** One of the two things an event lets the player pick. */
-data class EventOption(val label: String, val flavor: String, val reward: CometReward) {
+/**
+ * One of the two things an event lets the player pick.
+ *
+ * [next] is empty for a one-off event and carries the story for a chain: it names the station this
+ * answer leads to, and `null` there means the chain ends here. Keeping it on the option rather
+ * than on the station is what makes an answer a decision — the two ways out of a stop go to
+ * different places, and that is the only difference between a chain and four separate events.
+ */
+data class EventOption(
+    val label: String,
+    val flavor: String,
+    val reward: CometReward,
+    val next: String? = null,
+) {
     val rewardText: String
         get() = when (reward) {
             is CometReward.Windfall ->
@@ -11,6 +23,21 @@ data class EventOption(val label: String, val flavor: String, val reward: CometR
                 "${reward.buff.label} für ${Numbers.formatDuration(reward.buff.seconds.toLong())}"
         }
 }
+
+/**
+ * A question on the table, with the two answers to it.
+ *
+ * One shape for both kinds, so the dialog never has to ask which it is drawing. [chain] is the
+ * name of the story when this is a stop inside one, and `null` for a one-off — the only visible
+ * difference, and the one the player wants: knowing that this answer has a consequence later.
+ */
+data class EventPrompt(
+    val title: String,
+    val flavor: String,
+    val first: EventOption,
+    val second: EventOption,
+    val chain: String?,
+)
 
 /**
  * Something that happens every few minutes and asks a question.

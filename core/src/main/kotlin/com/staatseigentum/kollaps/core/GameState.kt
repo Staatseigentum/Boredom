@@ -134,8 +134,28 @@ data class GameState(
     /** Whether the game may remind the player that the collectors have filled up. */
     val remindersOn: Boolean = true,
 
-    /** Id of the event waiting for an answer, if any. */
+    /**
+     * Id of whatever is waiting for an answer, if anything.
+     *
+     * Either a [CosmicEvent] id or, while a chain is running, the id of the [ChainStation] on the
+     * table. One field rather than two, because "something is asking a question" is one condition
+     * and two flags for it is two ways to disagree; which kind it is comes from [activeChain].
+     */
     val pendingEvent: String? = null,
+
+    /** The [EventChain] being told, if one is. */
+    val activeChain: String? = null,
+
+    /**
+     * Which station of that chain comes next.
+     *
+     * Held apart from [pendingEvent] so that turning a station down closes the dialog without
+     * losing the story: the chain stays where it is and asks again at the next interval.
+     */
+    val chainStation: String? = null,
+
+    /** Chains seen through to an ending. Kept for good, like the achievements. */
+    val chainsDone: Set<String> = emptySet(),
 
     /**
      * Seconds of play until the next event.
@@ -211,8 +231,33 @@ data class GameState(
     /** The challenge currently being run, or `null`. */
     val challenge: Challenge? get() = Challenge.byId(activeChallenge)
 
-    /** The event waiting for an answer, or `null`. */
-    val event: CosmicEvent? get() = CosmicEvent.byId(pendingEvent)
+    /** The one-off event waiting for an answer, or `null` — a chain station is not one. */
+    val event: CosmicEvent? get() = if (activeChain != null) null else CosmicEvent.byId(pendingEvent)
+
+    /** The chain station waiting for an answer, or `null`. */
+    val station: ChainStation? get() = Chains.stationOf(this)
+
+    /**
+     * What the dialog should put on screen, whichever kind of event produced it.
+     *
+     * The screen has no business knowing whether a question came from a one-off or from the middle
+     * of a story — it draws a title, a sentence and two answers either way. Deriving the one shape
+     * here keeps that difference in the rules, where it belongs.
+     */
+    val prompt: EventPrompt?
+        get() {
+            station?.let { stop ->
+                return EventPrompt(
+                    title = stop.title,
+                    flavor = stop.flavor,
+                    first = stop.first,
+                    second = stop.second,
+                    chain = Chains.byId(activeChain)?.title,
+                )
+            }
+            val single = event ?: return null
+            return EventPrompt(single.title, single.flavor, single.first, single.second, chain = null)
+        }
 
     companion object {
         /**

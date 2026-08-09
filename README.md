@@ -168,6 +168,16 @@ Neben der Android-Fassung baut jeder Release eine spielbare Windows-Version:
   Installer braucht Werkzeug auf dem Bau-Rechner, das nicht uns gehört, und kann darum einmal
   fehlen.
 
+Ton und Musik sind dieselben wie auf dem Handy — dieselben Generatoren, gespielt über die
+Java-Audioschnittstelle, die in der Laufzeit ohnehin mitkommt. Läuft auf dem Rechner keine
+Tonausgabe, bleibt es still, statt dass das Spiel nicht startet.
+
+Der Updater ist auch da: die Fassung prüft beim Öffnen des Kosmos-Reiters einmal, ob es etwas
+Neueres gibt, lädt den Installer und startet ihn. Der Installer trägt eine feste Kennung und
+ersetzt darum die vorhandene Installation, statt eine zweite danebenzustellen. Das Spiel schließt
+sich dafür — `msiexec` kann keine Dateien austauschen, die gerade offen sind — und speichert
+vorher.
+
 Es ist dieselbe Oberfläche wie auf dem Handy, nur breiter: ab etwa 600 Punkten Fensterbreite
 schaltet das Fenster auf zwei Spalten um, Körper links und Laden rechts. Der Spielstand liegt
 unter `~/.kollaps/spielstand.txt` beziehungsweise `C:\Users\<name>\.kollaps\spielstand.txt` und

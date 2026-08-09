@@ -270,9 +270,9 @@ fun GameScreen(
                 TierCelebration(tier = stats.tier, onDismiss = actions::acknowledgeTier)
             }
 
-            state.event?.let { event ->
+            state.prompt?.let { prompt ->
                 EventDialog(
-                    event = event,
+                    prompt = prompt,
                     onChoose = actions::chooseEvent,
                     onDismiss = actions::dismissEvent,
                 )

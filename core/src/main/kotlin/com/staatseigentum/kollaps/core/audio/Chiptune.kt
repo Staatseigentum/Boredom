@@ -26,6 +26,16 @@ enum class Cue {
 
     /** A comet that drifted off the screen uncaught. */
     MISSED,
+
+    /**
+     * Any tap.
+     *
+     * Android plays a recording for this and never asks for the cue; the desktop has no such file
+     * and would otherwise be the one platform where tapping the body is silent. Synthesising it
+     * means both platforms make a noise without a sound file having to be carried into an
+     * installer that already bundles a Java runtime.
+     */
+    CLICK,
 }
 
 /**
@@ -95,6 +105,13 @@ object Chiptune {
             Note(hertz = G4, startSeconds = 0.00, seconds = 0.30, toHertz = C5),
             Note(hertz = C5, startSeconds = 0.14, seconds = 0.34, gain = 0.6, toHertz = G5),
             Note(hertz = E5, startSeconds = 0.28, seconds = 0.30, gain = 0.4),
+        )
+
+        // One note and gone. Fired more often than everything else put together, so it is the one
+        // cue where length is the whole design: long enough to hear, short enough that two taps
+        // in quick succession are two sounds rather than a smear.
+        Cue.CLICK -> listOf(
+            Note(hertz = C6, startSeconds = 0.0, seconds = 0.05, toHertz = G5),
         )
 
         // Two steps down and done, low and short.

@@ -21,8 +21,8 @@ import com.staatseigentum.kollaps.ui.GameScreen
  *
  * The same screen the phone runs, driven by the same rules, with a save file next to the user's
  * own — and it reads the same exported block the phone writes, because the format was text from
- * the start. What is deliberately missing is the updater: nothing here installs anything over
- * itself, so the window says which version it is and leaves it at that.
+ * the start. It looks after its own updates too, for the same reason the phone does: this is not
+ * shipped through a store, so nothing else is going to say that a new version exists.
  *
  * Arguments: `--tier 17` starts on a given rung, which is otherwise hours away, and `--frisch`
  * ignores whatever is in the save file.
@@ -98,6 +98,7 @@ fun RunningGame(game: DesktopGame, modifier: Modifier = Modifier) {
         offlineReport = game.offlineReport,
         actions = game,
         modifier = modifier,
+        updateSection = { DesktopUpdateCard(onBeforeExit = { DesktopSave.save(game.state) }) },
     )
 }
 

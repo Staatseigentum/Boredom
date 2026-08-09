@@ -12,6 +12,20 @@ data class ReleaseAsset(
     val size: Long = 0,
 ) {
     val isApk: Boolean get() = name.endsWith(".apk", ignoreCase = true)
+
+    val isWindowsInstaller: Boolean get() = name.endsWith(".msi", ignoreCase = true)
+}
+
+/**
+ * Which file a platform is looking for in a release.
+ *
+ * The feed carries three now — an APK, an installer and a portable archive — and each version of
+ * the game can install exactly one of them. Asking for the wrong kind has to come out as "nothing
+ * to update", never as a download the machine cannot use.
+ */
+enum class AssetKind(val matches: (ReleaseAsset) -> Boolean) {
+    APK({ it.isApk }),
+    WINDOWS_INSTALLER({ it.isWindowsInstaller }),
 }
 
 /** A release as GitHub reports it. Only the fields the updater actually needs. */
@@ -77,21 +91,22 @@ object ReleaseFeed {
         release: Release?,
         current: AppVersion?,
         allowPrereleases: Boolean = false,
+        kind: AssetKind = AssetKind.APK,
     ): AvailableUpdate? {
         if (release == null || !release.isUsable(allowPrereleases)) return null
 
         val version = AppVersion.parse(release.tag) ?: return null
         if (current != null && version <= current) return null
 
-        val apk = release.assets.firstOrNull { it.isApk } ?: return null
-        if (apk.downloadUrl.isBlank()) return null
+        val asset = release.assets.firstOrNull(kind.matches) ?: return null
+        if (asset.downloadUrl.isBlank()) return null
 
         return AvailableUpdate(
             version = version,
             title = release.name?.takeIf { it.isNotBlank() } ?: "Version ${version.canonical()}",
             notes = release.body?.trim().orEmpty(),
-            downloadUrl = apk.downloadUrl,
-            sizeBytes = apk.size,
+            downloadUrl = asset.downloadUrl,
+            sizeBytes = asset.size,
         )
     }
 
