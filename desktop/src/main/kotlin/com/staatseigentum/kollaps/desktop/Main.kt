@@ -11,6 +11,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toComposeImageBitmap
+import org.jetbrains.skia.Image
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -57,6 +61,7 @@ fun main(args: Array<String>) = application {
             exitApplication()
         },
         title = "Kollaps",
+        icon = windowIcon(),
         // Wide enough for the two-column layout, and resizable down to a phone shape if that is
         // what somebody wants. Both are the same screen; only the width decides.
         state = rememberWindowState(size = DpSize(1_100.dp, 760.dp)),
@@ -173,3 +178,14 @@ fun StillGame(game: DesktopGame, width: Int, height: Int, tab: Int = 0, section:
         )
     }
 }
+
+/**
+ * The window's icon: the same picture the phone puts on its home screen.
+ *
+ * Loaded from the classpath, where the build puts it, and `null` if it is not there — a missing
+ * icon is a window with the default one, never a game that does not open.
+ */
+private fun windowIcon(): Painter? = runCatching {
+    val bytes = DesktopSave.javaClass.getResourceAsStream("/icon.png")?.readBytes() ?: return null
+    BitmapPainter(Image.makeFromEncoded(bytes).toComposeImageBitmap())
+}.getOrNull()

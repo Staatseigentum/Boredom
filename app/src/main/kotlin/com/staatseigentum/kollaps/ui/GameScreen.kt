@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -489,13 +490,29 @@ private fun TapArea(
     modifier: Modifier = Modifier,
 ) {
     val tier = stats.tier
-    val onTap: () -> Double = actions::tap
     val effects = remember { mutableStateListOf<TapEffect>() }
     var nextId by remember { mutableLongStateOf(0L) }
     val squash = remember { Animatable(1f) }
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
-    val sfx = LocalSfx.current
+
+    /*
+     * Read through [rememberUpdatedState] rather than captured directly.
+     *
+     * The gesture detector below is keyed on `Unit`, so Compose sets it up once and never restarts
+     * it — which is what you want for a handler that fires several times a second. The catch is
+     * that its lambda then keeps whatever it closed over on the *first* composition, for good. That
+     * is exactly what happened here: switching the click sound off changed what `LocalSfx` provides,
+     * the composable recomposed, and the tap handler went on calling the sound object it had
+     * captured minutes earlier. The setting looked ignored because it was.
+     *
+     * Re-keying the detector on these values would fix it too, and would tear down and rebuild the
+     * gesture handler every time a switch is flipped. This way the handler stays put and simply
+     * reads the current value each time it fires.
+     */
+    val sfx by rememberUpdatedState(LocalSfx.current)
+    val hapticsOn by rememberUpdatedState(state.hapticsOn)
+    val tap by rememberUpdatedState(actions::tap)
 
     // A ring thrown off the body every time it climbs a rung. Only upwards: a collapse drops the
     // tier by twenty-four steps at once and already has a blast of its own.
@@ -509,10 +526,10 @@ private fun TapArea(
     Box(
         modifier = modifier.pointerInput(Unit) {
             detectTapGestures { position ->
-                val gained = onTap()
+                val gained = tap()
                 effects += TapEffect(nextId++, position, Numbers.format(gained))
                 sfx?.click()
-                if (state.hapticsOn) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                if (hapticsOn) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 scope.launch {
                     squash.snapTo(0.93f)
                     squash.animateTo(

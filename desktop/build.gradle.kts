@@ -1,3 +1,5 @@
+import java.io.ByteArrayOutputStream
+
 plugins {
     id("org.jetbrains.kotlin.jvm")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -51,6 +53,55 @@ tasks.named<ProcessResources>("processResources") {
     from("../app/src/main/res/font") {
         include("*.ttf")
         into("font")
+    }
+    // The same icon the phone puts on its home screen, for the window and the taskbar.
+    from("../app/src/main/res/mipmap-xxxhdpi") {
+        include("ic_launcher.png")
+        rename { "icon.png" }
+    }
+}
+
+/**
+ * The launcher icon, wrapped in an ICO container for the Windows installer.
+ *
+ * jpackage wants an `.ico` on Windows and the repository has a PNG — so rather than committing a
+ * second copy of the same picture in a second format, the container is written here. An ICO may
+ * hold a PNG verbatim (Windows has understood that since Vista), which makes the whole file a
+ * twenty-two byte header in front of the bytes that already exist. One icon, one source.
+ */
+val windowsIcon by tasks.registering {
+    val source = layout.projectDirectory.file("../app/src/main/res/mipmap-xxxhdpi/ic_launcher.png")
+    val target = layout.buildDirectory.file("icon/kollaps.ico")
+    inputs.file(source)
+    outputs.file(target)
+
+    doLast {
+        val png = source.asFile.readBytes()
+        val out = ByteArrayOutputStream()
+
+        fun short(value: Int) {
+            out.write(value and 0xFF)
+            out.write(value shr 8 and 0xFF)
+        }
+        fun int(value: Int) {
+            short(value and 0xFFFF)
+            short(value shr 16 and 0xFFFF)
+        }
+
+        // ICONDIR: reserved, type 1 = icon, one image.
+        short(0); short(1); short(1)
+        // ICONDIRENTRY. A side of 256 is written as zero; 192 fits in the byte as itself.
+        out.write(192); out.write(192)
+        out.write(0); out.write(0)
+        short(1); short(32)
+        int(png.size)
+        int(22)
+        out.write(png)
+
+        target.get().asFile.apply {
+            parentFile.mkdirs()
+            writeBytes(out.toByteArray())
+        }
     }
 }
 
@@ -160,7 +211,9 @@ compose.desktop {
             description = "Ein Idle-Clicker vom Meteoriten bis zum Schwarzen Loch"
             vendor = "Staatseigentum"
 
+            // Both formats come from the one PNG: the ICO is generated, the PNG is used as it is.
             windows {
+                iconFile.set(layout.buildDirectory.file("icon/kollaps.ico").get().asFile)
                 menuGroup = "Kollaps"
                 // A stable UUID, so an installer upgrades the previous version in place instead
                 // of leaving two entries in the list of installed programs.
@@ -168,6 +221,17 @@ compose.desktop {
                 dirChooser = true
                 shortcut = true
             }
+
+            linux {
+                iconFile.set(
+                    rootProject.file("app/src/main/res/mipmap-xxxhdpi/ic_launcher.png"),
+                )
+            }
         }
     }
 }
+
+// The packaging tasks read the icon file, so it has to exist before they run. Named rather than
+// inferred: `iconFile` takes a plain File, which carries no provenance for Gradle to follow.
+tasks.matching { it.name.startsWith("package") || it.name == "createDistributable" }
+    .configureEach { dependsOn(windowsIcon) }
