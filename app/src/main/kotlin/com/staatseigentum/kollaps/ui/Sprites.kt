@@ -4,6 +4,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.ImageBitmap
 import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.pixel.PixelPlanet
+import com.staatseigentum.kollaps.core.pixel.Skin
+import com.staatseigentum.kollaps.core.pixel.Skins
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -31,6 +33,17 @@ val LocalSpriteFactory = staticCompositionLocalOf<SpriteFactory> {
 }
 
 /**
+ * The colour scheme every body on screen is drawn in.
+ *
+ * A composition local rather than a parameter because the body appears in three places that have
+ * nothing else to do with each other — the tap area, the tier celebration and the orbiting
+ * satellites — and threading a palette through all of them would put a decoration into the
+ * signature of half the screen. Defaults to the plain one, so previews and the harness need
+ * provide nothing.
+ */
+val LocalSkin = staticCompositionLocalOf { Skins.ORIGINAL }
+
+/**
  * Keeps the last couple of sprite sheets around.
  *
  * Two is enough on purpose: the game only ever shows the current body, and the sheet for the
@@ -42,21 +55,35 @@ object SpriteCache {
     private const val KEEP = 2
 
     private val lock = Mutex()
-    private val sheets = LinkedHashMap<Int, SpriteSheet>()
+    private val sheets = LinkedHashMap<String, SpriteSheet>()
+
+    /**
+     * Keyed by tier *and* colour scheme.
+     *
+     * The scheme is baked into the pixels, so keying by tier alone would hand back the body in
+     * whatever palette happened to be chosen when it was first drawn — and switching the palette
+     * would change nothing until the next rung.
+     */
+    private fun keyOf(tier: CelestialTier, skin: Skin) = "\${tier.index}/\${skin.id}"
 
     /** The sheet if it has already been built, for showing a body without a blank frame first. */
-    fun ready(tier: CelestialTier): SpriteSheet? = synchronized(sheets) { sheets[tier.index] }
+    fun ready(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): SpriteSheet? =
+        synchronized(sheets) { sheets[keyOf(tier, skin)] }
 
-    suspend fun sheet(tier: CelestialTier, factory: SpriteFactory): SpriteSheet {
-        ready(tier)?.let { return it }
+    suspend fun sheet(
+        tier: CelestialTier,
+        factory: SpriteFactory,
+        skin: Skin = Skins.ORIGINAL,
+    ): SpriteSheet {
+        ready(tier, skin)?.let { return it }
         return lock.withLock {
             // Another caller may have finished it while this one waited for the lock.
-            ready(tier) ?: withContext(Dispatchers.Default) {
+            ready(tier, skin) ?: withContext(Dispatchers.Default) {
                 val side = PixelPlanet.size(tier)
-                SpriteSheet(side, PixelPlanet.frames(tier).map { factory.bitmap(it, side) })
+                SpriteSheet(side, PixelPlanet.frames(tier, skin).map { factory.bitmap(it, side) })
             }.also { built ->
                 synchronized(sheets) {
-                    sheets[tier.index] = built
+                    sheets[keyOf(tier, skin)] = built
                     while (sheets.size > KEEP) sheets.remove(sheets.keys.first())
                 }
             }

@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.pixel.PixelPlanet
+import com.staatseigentum.kollaps.core.pixel.Skin
+import com.staatseigentum.kollaps.core.pixel.Skins
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -32,18 +34,21 @@ import kotlin.math.roundToInt
 fun CelestialBody(
     tier: CelestialTier,
     modifier: Modifier = Modifier,
+    /** The colour scheme the body is drawn in. */
+    skin: Skin = LocalSkin.current,
 ) {
     val factory = LocalSpriteFactory.current
 
-    // Keyed on the tier, which is the whole point: this used to be a produceState, whose backing
-    // remember carries no key, so on a tier change the state kept the previous body's sheet and
-    // the producer — seeing a non-null value — never loaded the new one.
-    var sheet by remember(tier.index) { mutableStateOf(SpriteCache.ready(tier)) }
-    LaunchedEffect(tier.index) {
+    // Keyed on the tier *and* the scheme, which is the whole point: this used to be a produceState,
+    // whose backing remember carries no key, so on a tier change the state kept the previous
+    // body's sheet and the producer — seeing a non-null value — never loaded the new one. A
+    // palette change has exactly the same shape, and would otherwise not show until the next rung.
+    var sheet by remember(tier.index, skin.id) { mutableStateOf(SpriteCache.ready(tier, skin)) }
+    LaunchedEffect(tier.index, skin.id) {
         // Rendering costs tens of milliseconds, so it happens off the main thread and the body
         // appears once it is ready. The cache matters: the tap area and the tier celebration are
         // two composables showing the same body at the same moment.
-        if (sheet == null) sheet = SpriteCache.sheet(tier, factory)
+        if (sheet == null) sheet = SpriteCache.sheet(tier, factory, skin)
     }
 
     val transition = rememberInfiniteTransition(label = "body-${tier.index}")

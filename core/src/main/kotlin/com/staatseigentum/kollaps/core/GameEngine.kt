@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.pixel.Skins
 import kotlin.math.floor
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -1090,6 +1091,18 @@ object GameEngine {
     fun setHaptics(state: GameState, on: Boolean): GameState = state.copy(hapticsOn = on)
 
     fun setMusic(state: GameState, on: Boolean): GameState = state.copy(musicOn = on)
+
+    /**
+     * Picks the colour scheme, refusing one that has not been earned.
+     *
+     * Checked here rather than only in the list that offers it, so an imported save cannot arrive
+     * wearing a palette nobody played for.
+     */
+    fun setSkin(state: GameState, skinId: String): GameState {
+        val skin = Skins.byId(skinId)
+        if (!Skins.isUnlocked(state.achievements.size, skin)) return state
+        return state.copy(skinId = skin.id)
+    }
 
     /** The old single switch, kept because the settings screen still offers it as one. */
     fun setAutoBuy(state: GameState, on: Boolean): GameState =

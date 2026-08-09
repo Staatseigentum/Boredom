@@ -266,6 +266,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun setSkin(skinId: String) {
+        _state.value = GameEngine.setSkin(_state.value, skinId)
+        persist()
+    }
+
     fun setAutoBuy(on: Boolean) {
         _state.value = GameEngine.setAutoBuy(_state.value, on)
         persist()

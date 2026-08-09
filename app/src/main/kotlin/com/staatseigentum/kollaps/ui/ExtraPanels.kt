@@ -53,16 +53,28 @@ import com.staatseigentum.kollaps.ui.theme.Starlight
 import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.roundToInt
+import com.staatseigentum.kollaps.core.pixel.Skins
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 
 /** Achievements, and the statistics that explain how they were earned. */
 @Composable
-fun AchievementList(state: GameState, modifier: Modifier = Modifier) {
+fun AchievementList(
+    state: GameState,
+    modifier: Modifier = Modifier,
+    onPickSkin: (String) -> Unit = {},
+) {
     val earned = state.achievements
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        // The palettes live here rather than in the settings, because this is where they are
+        // earned: the next one along is a line in the same list as the achievements paying for it.
+        item { SkinPicker(state = state, onPick = onPickSkin) }
+
         item {
             PixelPanel(modifier = Modifier.fillMaxWidth(), border = Ember) {
                 PixelLabel("Statistik", color = Ember, size = 15)
@@ -511,3 +523,92 @@ private fun Sparkline(samples: List<Double>, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/**
+ * The colour schemes, and which are still to come.
+ *
+ * Locked ones stay in the list with their threshold showing. A palette nobody knows about is not
+ * a reward for anything — the whole value of the fifty-fifth achievement being worth a palette is
+ * that it was visible from the tenth.
+ */
+@Composable
+private fun SkinPicker(state: GameState, onPick: (String) -> Unit) {
+    val earned = state.achievements.size
+    val current = Skins.current(state.skinId, earned)
+    val sfx = LocalSfx.current
+
+    PixelPanel(modifier = Modifier.fillMaxWidth(), border = Nebula) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            PixelLabel("Farben", color = Nebula, size = 15)
+            PixelLabel(
+                text = "${Skins.unlocked(earned).size}/${Skins.all.size}",
+                color = Muted,
+                size = 13,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+
+        for (skin in Skins.all) {
+            val unlocked = Skins.isUnlocked(earned, skin)
+            val chosen = skin.id == current.id
+
+            PixelPanel(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp)
+                    .clickable(enabled = unlocked) {
+                        sfx?.click()
+                        onPick(skin.id)
+                    },
+                border = if (chosen) Nebula else Outline,
+                padding = 10,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = skin.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (unlocked) Starlight else Muted,
+                        )
+                        Text(
+                            text = if (unlocked) {
+                                skin.flavor
+                            } else {
+                                "Ab ${skin.requiredAchievements} Erfolgen. Du hast $earned."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Muted,
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    // Three swatches of the scheme applied to a fixed set of colours, so the row
+                    // shows what it does instead of describing it.
+                    Row {
+                        for (sample in SKIN_SAMPLES) {
+                            Box(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .padding(end = 2.dp)
+                                    .background(Color(skin.apply(sample))),
+                            )
+                        }
+                    }
+                    if (chosen) {
+                        Spacer(Modifier.width(8.dp))
+                        PixelLabel("aktiv", color = Nebula, size = 12)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** A rock, a gas giant and a star, roughly — enough spread to tell the schemes apart. */
+private val SKIN_SAMPLES = intArrayOf(
+    0xFF8C6B4F.toInt(),
+    0xFF4F7FC4.toInt(),
+    0xFFFFC65C.toInt(),
+)

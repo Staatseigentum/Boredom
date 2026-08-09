@@ -175,6 +175,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.setMusic(state, on)
     }
 
+    override fun setSkin(id: String) {
+        state = GameEngine.setSkin(state, id)
+    }
+
     override fun setAutoBuy(on: Boolean) {
         state = GameEngine.setAutoBuy(state, on)
     }

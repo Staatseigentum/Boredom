@@ -160,7 +160,7 @@ fun ShopPanel(
                 actions = actions,
             )
 
-            ShopTab.ACHIEVEMENTS -> AchievementList(state = state)
+            ShopTab.ACHIEVEMENTS -> AchievementList(state = state, onPickSkin = actions::setSkin)
 
             ShopTab.COSMOS -> CosmosPanel(
                 state = state,

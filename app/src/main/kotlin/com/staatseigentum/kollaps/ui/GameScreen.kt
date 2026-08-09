@@ -63,6 +63,7 @@ import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.core.audio.Mood
+import com.staatseigentum.kollaps.core.pixel.Skins
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Space
@@ -130,6 +131,9 @@ interface GameActions {
     fun setSound(on: Boolean)
     fun setHaptics(on: Boolean)
     fun setMusic(on: Boolean)
+
+    /** Picks the colour scheme the bodies are drawn in. */
+    fun setSkin(id: String)
     fun setAutoBuy(on: Boolean)
     fun setReminders(on: Boolean)
 
@@ -213,7 +217,14 @@ fun GameScreen(
         }
     }
 
-    CompositionLocalProvider(LocalSfx provides sfx.takeIf { state.soundOn }) {
+    // The palette is settled once, here, so every body on screen agrees on it — and it is
+    // resolved rather than taken raw, so a scheme that is not actually earned falls back.
+    val skin = Skins.current(state.skinId, state.achievements.size)
+
+    CompositionLocalProvider(
+        LocalSfx provides sfx.takeIf { state.soundOn },
+        LocalSkin provides skin,
+    ) {
         Box(
             modifier = modifier
                 .fillMaxSize()

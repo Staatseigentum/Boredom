@@ -46,9 +46,9 @@ object PixelPlanet {
      * Renders the full sprite sheet for a tier as raw ARGB buffers, each [size] by [size].
      * Costs tens of milliseconds, so it belongs on a background thread.
      */
-    fun frames(tier: CelestialTier): List<IntArray> {
+    fun frames(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): List<IntArray> {
         val side = size(tier)
-        val palette = Palette.of(tier)
+        val palette = Palette.of(tier, skin)
         val texture = Texture.of(tier, side)
         return List(FRAMES) { frame ->
             val pixels = IntArray(side * side)
@@ -65,10 +65,15 @@ object PixelPlanet {
      * hole at whatever edge length each density folder wants, and asking for that size directly
      * beats scaling a sprite that happens to be a different size.
      */
-    fun frame(tier: CelestialTier, index: Int, size: Int): IntArray {
+    fun frame(
+        tier: CelestialTier,
+        index: Int,
+        size: Int,
+        skin: Skin = Skins.ORIGINAL,
+    ): IntArray {
         val pixels = IntArray(size * size)
         val phase = index.toFloat() / FRAMES
-        renderFrame(tier, size, Palette.of(tier), Texture.of(tier, size), phase, pixels)
+        renderFrame(tier, size, Palette.of(tier, skin), Texture.of(tier, size), phase, pixels)
         return pixels
     }
 
@@ -349,12 +354,19 @@ object PixelPlanet {
         }
 
         companion object {
-            fun of(tier: CelestialTier): Palette {
-                val primary = tier.primaryColor.toInt()
-                val secondary = tier.secondaryColor.toInt()
-                val glow = tier.glowColor.toInt()
+            /**
+             * The ramps for a tier, put through a scheme.
+             *
+             * The skin is applied to the four colours the tier declares and to nothing else, so
+             * every shade, dither step and ring below is built out of already-transformed colours
+             * — one place to change the look rather than one per material.
+             */
+            fun of(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): Palette {
+                val primary = skin.apply(tier.primaryColor.toInt())
+                val secondary = skin.apply(tier.secondaryColor.toInt())
+                val glow = skin.apply(tier.glowColor.toInt())
 
-                val accent = tier.accentColor?.toInt() ?: secondary
+                val accent = tier.accentColor?.let { skin.apply(it.toInt()) } ?: secondary
                 val materials = when (tier.kind) {
                     BodyKind.TERRESTRIAL -> intArrayOf(primary, accent, mix(primary, WHITE, 0.75f))
                     BodyKind.GAS -> intArrayOf(primary, secondary, mix(accent, glow, 0.45f))

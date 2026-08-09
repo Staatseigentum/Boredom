@@ -99,6 +99,14 @@ data class GameState(
     val musicOn: Boolean = true,
 
     /**
+     * Which colour scheme the bodies are drawn in, by [com.staatseigentum.kollaps.core.pixel.Skin].
+     *
+     * Null is the plain one. An id that is unknown, or one whose achievements are no longer there,
+     * falls back rather than failing — a palette is decoration and never a reason not to draw.
+     */
+    val skinId: String? = null,
+
+    /**
      * Id of the challenge being run — the shape from before two could run at once.
      *
      * Read only where an old save carries it; see [runningChallengeIds]. Kept rather than removed
