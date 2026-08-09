@@ -42,11 +42,15 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   ohne Zusatzkosten — der Zähler in der Shop-Zeile zählt jetzt auf etwas zu
 - **Acht Herausforderungen**: freiwillige Läufe unter einer Regel, die dir etwas wegnimmt — ohne
   Kollektoren, ohne Tippen, ohne Upgrades, ohne Trabanten, mit halber Kraft oder gegen die Uhr.
-  Wer sie besteht, behält die Belohnung für immer
+  Wer sie besteht, behält die Belohnung für immer. **Zwei gleichzeitig** gehen auch: beide Regeln,
+  beide Ziele, beide Belohnungen — und ×1,2 dauerhaft obendrauf, wenn keine der beiden vorher
+  schon bestanden war. Ein Paar ist verboten, weil zusammen nichts übrig bliebe, was Masse macht
 - **Der Urknall**: ab zehn Kollapsen kannst du alles wegwerfen, was die Kollapse aufgebaut
   haben, und bekommst dafür **Äonen** — eine Währung unter der Singularität, mit acht eigenen
   Upgrades. Dabei wählst du, **was für ein Universum** das nächste wird: die Hand (Tippen), die
-  Maschine (Idle), das Labor (Forschung und Offline) oder der Kern (Fusion). Jede Ausrichtung ist
+  Maschine (Idle), das Labor (Forschung und Offline) oder der Kern (Fusion). Jede hat einen
+  **eigenen kleinen Baum** aus vier Knoten, gekauft mit Äonen: gekauft bleibt gekauft, wirkt aber
+  nur unter dieser Ausrichtung. Jede Ausrichtung ist
   in einer Sache stark und sagt über den Rest nichts — die Wahl ist eine Entscheidung darüber,
   wie sich die nächsten Stunden anfühlen, keine Rechenaufgabe mit richtiger Antwort
 - **Ereignisse mit Wahl**: alle paar Minuten eine Frage mit zwei Antworten. Masse sofort, oder
@@ -73,8 +77,16 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **Fünf Automatisierungs-Regeln** mit je einem Wert: Kollektoren nachkaufen, Upgrades mitnehmen,
   die Fusionskette ausbauen, die Laborbank füllen, kollabieren. Eine Zeile, ein Tipp — der dreht
   weiter und nach der letzten Stufe wieder aus
-- **Klang** für Stufenaufstieg, gefangenen Kometen, Kauf und bestandene Herausforderung, alles
-  im Code aus Rechteckwellen synthetisiert statt als Audiodatei mitgeliefert
+- **Ereignisketten**: aus einer Frage werden drei, und die erste Antwort entscheidet, welche
+  zweite es überhaupt gibt. Drei Geschichten, die nicht zweimal gleich ausgehen
+- **Ein Tutorial für die ersten fünf Minuten** — ein Streifen unten am Körper, der weiterzählt,
+  sobald man das Beschriebene getan hat, und sich jederzeit abschalten lässt
+- **Drei Spielstände**, auf Handy und PC. Beim Wechseln wird zuerst gespeichert
+- **Sechs Farbpaletten**, verdient über Erfolge, plus **wählbares Zahlenformat** (deutsche Namen,
+  wissenschaftlich oder Kurzform)
+- **Klang** für Stufenaufstieg, gefangenen und verpassten Kometen, Kauf, Zündung, fertige
+  Forschung und bestandene Herausforderung, alles im Code aus Rechteckwellen synthetisiert statt
+  als Audiodatei mitgeliefert
 - **Musik**, ebenfalls gerechnet: sieben sechzehnsekündige Schleifen, eine je Art von Körper, aus
   Bordunstimme und einer Melodie aus sechzehn Schritten. Der Bordun ist auf ganze Schwingungen
   pro Schleife gerundet und Noten laufen über den Anfang weiter, damit die Naht nicht knackt
