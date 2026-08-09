@@ -153,7 +153,7 @@ object Chains {
                 second = EventOption(
                     "Abwarten",
                     "Es kommt so oder so. Bis dahin läuft die Produktion weiter.",
-                    CometReward.Windfall(50 * 60.0),
+                    CometReward.Windfall(34 * 60.0),
                 ),
             ),
         ),
@@ -247,7 +247,7 @@ object Chains {
                 second = EventOption(
                     "Abtragen",
                     "Was da hängt, ist Material. Sehr viel Material.",
-                    CometReward.Windfall(60 * 60.0),
+                    CometReward.Windfall(38 * 60.0),
                     next = "bau_abbau",
                 ),
             ),
@@ -264,7 +264,7 @@ object Chains {
                 second = EventOption(
                     "Einziehen",
                     "Die Anlage passt hinein. Sie passt sogar auffällig gut hinein.",
-                    CometReward.Windfall(90 * 60.0),
+                    CometReward.Windfall(42 * 60.0),
                 ),
             ),
             ChainStation(
@@ -275,7 +275,7 @@ object Chains {
                 first = EventOption(
                     "Weitermachen",
                     "Der Vorgänger hat aufgehört. Das muss keinen Grund gehabt haben.",
-                    CometReward.Windfall(120 * 60.0),
+                    CometReward.Windfall(45 * 60.0),
                 ),
                 second = EventOption(
                     "Stehen lassen",

@@ -201,6 +201,26 @@ compose.desktop {
         // when running from a checkout, which the updater reads as "do not offer an update".
         jvmArgs += "-Dkollaps.version=$appVersion"
 
+        /*
+         * A ceiling on the heap, because the default is a share of the machine.
+         *
+         * Without this the JVM sizes its maximum heap at a quarter of physical memory — a
+         * gigabyte on a small laptop, four on a desktop — and then has no reason to collect
+         * anything until it gets there. The game allocates steadily (a fresh immutable state
+         * several times a second) and none of it is kept, so what a task manager showed was not a
+         * leak but garbage nobody had asked the collector to deal with yet.
+         *
+         * Two hundred and fifty-six megabytes is far more than this needs: the largest thing in
+         * memory is two sprite sheets and a sixteen-second music loop. Capping it means the
+         * collector runs when it should, and the number in the task manager is the number the
+         * game actually uses.
+         */
+        jvmArgs += "-Xmx256m"
+
+        // The heap starts where it will settle, so the first minute is not a series of growth
+        // pauses on a machine that was always going to give it this much.
+        jvmArgs += "-Xms64m"
+
         nativeDistributions {
             targetFormats(
                 org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,

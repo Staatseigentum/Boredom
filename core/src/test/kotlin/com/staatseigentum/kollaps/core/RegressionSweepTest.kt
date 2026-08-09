@@ -330,4 +330,41 @@ class RegressionSweepTest {
         assertTrue(id in Achievements.newlyEarned(everything))
     }
 
+    // ---------------------------------------------------------------- windfall ceiling
+
+    /**
+     * No single payout hands over more than three quarters of an hour.
+     *
+     * Checked over every catalogue at once rather than over the one that was too generous: the
+     * event chains were the offenders, but comets and one-shot events pay from the same type, and
+     * the next number somebody adds is as likely to be in one of those.
+     */
+    @Test
+    fun `nothing pays more instant production than the ceiling`() {
+        val payouts = buildList {
+            for (comet in Comet.entries) add(comet.name to comet.reward)
+            for (event in CosmicEvent.entries) {
+                add(event.id to event.first.reward)
+                add(event.id to event.second.reward)
+            }
+            for (chain in Chains.all) {
+                for (station in chain.stations) {
+                    add(station.id to station.first.reward)
+                    add(station.id to station.second.reward)
+                }
+            }
+        }
+
+        assertTrue(payouts.isNotEmpty(), "Keine Belohnungen gefunden — der Test misst nichts")
+
+        for ((where, reward) in payouts) {
+            if (reward !is CometReward.Windfall) continue
+            assertTrue(
+                reward.secondsOfProduction <= CometReward.MAX_WINDFALL_SECONDS,
+                "$where zahlt ${reward.secondsOfProduction} s, erlaubt sind " +
+                    "${CometReward.MAX_WINDFALL_SECONDS}",
+            )
+        }
+    }
+
 }

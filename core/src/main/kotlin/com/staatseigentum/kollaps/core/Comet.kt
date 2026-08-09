@@ -33,8 +33,33 @@ enum class Buff(
 
 /** What catching a comet is worth. */
 sealed interface CometReward {
+
+    companion object {
+        /**
+         * The most instant production any one payout may hand over, in seconds.
+         *
+         * Three quarters of an hour, and the same number as the hardest comet in the game — the
+         * one that has to be hit three times while it crosses the screen. That is the point of
+         * the ceiling: the best thing a windfall can do is match the best thing skill can do.
+         *
+         * The end of an event chain used to pay two hours, which is most of a run handed over for
+         * picking the second option four times. A reward that large stops being a reward and
+         * starts being the game skipping itself.
+         */
+        const val MAX_WINDFALL_SECONDS = 45 * 60.0
+    }
+
     /** Mass equal to this many seconds of current production, paid at once. */
-    data class Windfall(val secondsOfProduction: Double) : CometReward
+    data class Windfall(private val seconds: Double) : CometReward {
+        /**
+         * Clamped here rather than at each of the three places that pay it out.
+         *
+         * A catalogue is a list of numbers somebody will add to, and a ceiling that lives at the
+         * point of payment is one every future entry has to remember. Held at the point of
+         * *description*, the card and the credit can never disagree about what was promised.
+         */
+        val secondsOfProduction: Double get() = seconds.coerceAtMost(MAX_WINDFALL_SECONDS)
+    }
 
     /** A buff for its own duration. */
     data class Timed(val buff: Buff) : CometReward

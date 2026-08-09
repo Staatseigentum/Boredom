@@ -54,7 +54,9 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   in einer Sache stark und sagt über den Rest nichts — die Wahl ist eine Entscheidung darüber,
   wie sich die nächsten Stunden anfühlen, keine Rechenaufgabe mit richtiger Antwort
 - **Ereignisse mit Wahl**: alle paar Minuten eine Frage mit zwei Antworten. Masse sofort, oder
-  ein Bonus auf Zeit — was besser ist, hängt davon ab, ob du gleich weiterspielst
+  ein Bonus auf Zeit — was besser ist, hängt davon ab, ob du gleich weiterspielst. Kein einzelner
+  Sofort-Gewinn zahlt mehr als **45 Minuten Produktion**, dieselbe Grenze wie der schwerste Komet:
+  das Beste, was Glück kann, ist damit genau das Beste, was Geschick kann
 - **Das Sternensystem**: ab dem Saturn hält deine Schwerkraft etwas fest. Acht Bahnen zum
   Öffnen, auf jede kommt ein eigener Körper mit eigener Stufe. Innen wird schnell gefüttert und
   von den Gezeiten genauso schnell wieder zerrissen — ein Körper dort pendelt sich ein und bleibt.

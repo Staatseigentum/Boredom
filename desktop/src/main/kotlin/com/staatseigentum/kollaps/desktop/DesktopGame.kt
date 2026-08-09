@@ -38,7 +38,30 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
     var paused = false
         private set
 
-    val stats: Stats get() = GameEngine.stats(state)
+    /*
+     * Worked out once per state rather than on every read.
+     *
+     * This was a plain getter, and [GameEngine.stats] is not cheap — it folds every owned upgrade,
+     * investment, path node and Äonen purchase into a fresh set of modifiers before it can answer.
+     * The screen reads it twice per composition and composes on every frame, so the whole fold ran
+     * a hundred and twenty times a second and threw all of it away.
+     *
+     * Keyed on identity, not equality: the state is immutable, so a new object is the only way it
+     * can have changed, and comparing forty fields to find that out would cost more than it saves.
+     */
+    private var statsOf: GameState? = null
+    private var statsWere: Stats? = null
+
+    val stats: Stats
+        get() {
+            val current = state
+            val cached = statsWere
+            if (cached != null && statsOf === current) return cached
+            return GameEngine.stats(current).also {
+                statsOf = current
+                statsWere = it
+            }
+        }
 
     fun tick(seconds: Double) {
         state = GameEngine.tick(state, seconds)

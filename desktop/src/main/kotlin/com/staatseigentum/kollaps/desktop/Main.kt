@@ -85,19 +85,38 @@ fun RunningGame(game: DesktopGame, modifier: Modifier = Modifier) {
     LaunchedEffect(game) {
         var previous = 0L
         var sinceSave = 0.0
+        var sinceTick = 0.0
         while (true) {
             withFrameNanos { now ->
                 // The clock keeps running while the game is paused for the collapse sequence, and
                 // only the tick is skipped — so those seconds are lost rather than banked up and
                 // paid out in one lump the moment the animation ends.
                 if (previous != 0L && !game.paused) {
-                    val seconds = (now - previous) / 1_000_000_000.0
-                    game.tick(seconds)
-                    game.settleWallClock()
-                    sinceSave += seconds
-                    if (sinceSave >= AUTOSAVE_SECONDS) {
-                        sinceSave = 0.0
-                        DesktopSave.save(game.state)
+                    sinceTick += (now - previous) / 1_000_000_000.0
+
+                    /*
+                     * Ten times a second, not sixty.
+                     *
+                     * The frame clock is the right thing to *read*, but it was also driving the
+                     * rules: every frame produced a fresh immutable state, and at a hundred and
+                     * forty hertz on a modern monitor that was a new one every seven
+                     * milliseconds, all of it thrown away immediately. Production is a number
+                     * that grows smoothly — nobody can see the difference between ten steps a
+                     * second and a hundred and forty — so this now matches the phone's tick and
+                     * makes six times less rubbish.
+                     *
+                     * Everything that genuinely needs a frame — the sequences, the comet, the tap
+                     * feedback — has its own frame clock and is untouched by this.
+                     */
+                    if (sinceTick >= TICK_SECONDS) {
+                        game.tick(sinceTick)
+                        game.settleWallClock()
+                        sinceSave += sinceTick
+                        sinceTick = 0.0
+                        if (sinceSave >= AUTOSAVE_SECONDS) {
+                            sinceSave = 0.0
+                            DesktopSave.save(game.state)
+                        }
                     }
                 }
                 previous = now
@@ -162,6 +181,14 @@ private fun describeSlot(state: GameState?): String {
     }
     return parts.joinToString(" · ")
 }
+
+/**
+ * How often the rules are advanced, in seconds.
+ *
+ * The same rate the phone uses, and for the same reason: production is a smooth number and ten
+ * steps a second is already more than anybody can see.
+ */
+private const val TICK_SECONDS = 0.1
 
 private const val AUTOSAVE_SECONDS = 12.0
 
