@@ -17,6 +17,9 @@ import com.staatseigentum.kollaps.core.Roles
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.UpgradeOffer
 import com.staatseigentum.kollaps.data.SaveStore
+import com.staatseigentum.kollaps.data.SlotPreference
+import com.staatseigentum.kollaps.ui.SAVE_SLOTS
+import com.staatseigentum.kollaps.ui.SlotSummary
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +39,17 @@ import com.staatseigentum.kollaps.core.NumberFormat
  */
 class GameViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val store = SaveStore(application)
+    /**
+     * The slot this session is playing, and the store that goes with it.
+     *
+     * Both change together in [switchSlot] and nowhere else, so there is never a moment where the
+     * game is writing into one slot while claiming to be in another.
+     */
+    private var slot = SlotPreference.active(application)
+    private var store = SaveStore(application, slot)
+
+    private val _activeSlot = MutableStateFlow(slot)
+    val activeSlot: StateFlow<Int> = _activeSlot.asStateFlow()
 
     private val _state = MutableStateFlow(GameState.new(System.currentTimeMillis()))
     val state: StateFlow<GameState> = _state.asStateFlow()
@@ -348,6 +361,51 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun exportSave(): String = SaveCodec.export(_state.value)
 
+    /**
+     * Puts the running game away and picks up whatever is in another slot.
+     *
+     * The order is the whole point: the current state is written out before anything else
+     * happens, so a mis-tap costs a tab and not an afternoon. An empty slot starts a new game,
+     * which is what an empty slot is for.
+     */
+    fun switchSlot(target: Int) {
+        if (target == slot || target !in 0 until SAVE_SLOTS) return
+        viewModelScope.launch {
+            store.save(_state.value)
+
+            slot = target
+            store = SaveStore(getApplication(), target)
+            SlotPreference.setActive(getApplication(), target)
+            _activeSlot.value = target
+
+            val loaded = store.load()
+            _state.value = loaded ?: GameState.new(System.currentTimeMillis())
+            Numbers.format = NumberFormat.byName(_state.value.numberFormat)
+
+            // A slot picked up after a week away has earned its offline production exactly as the
+            // one being put down would have.
+            if (loaded != null) {
+                val report = GameEngine.applyOffline(_state.value, System.currentTimeMillis())
+                _state.value = report.state
+                _offlineReport.value = report.takeIf { it.worthShowing }
+            } else {
+                _offlineReport.value = null
+            }
+            persist()
+        }
+    }
+
+    /** What each slot holds, for the picker. Reads all three files, which is cheap enough. */
+    suspend fun slotSummaries(): List<SlotSummary> = (0 until SAVE_SLOTS).map { index ->
+        val state = if (index == slot) _state.value else SaveStore(getApplication(), index).load()
+        SlotSummary(
+            index = index,
+            detail = describe(state),
+            isActive = index == slot,
+            isEmpty = state == null,
+        )
+    }
+
     // ------------------------------------------------------------------ derived views
 
     fun collectorOffers(state: GameState, amount: BuyAmount): List<CollectorOffer> =
@@ -376,3 +434,15 @@ data class StatusLine(
     val detail: String?,
     val researchDoneAtMillis: Long?,
 )
+
+/** One line saying what is in a slot, or that there is nothing in it. */
+private fun describe(state: GameState?): String {
+    if (state == null) return "Leer — hier fängt ein neues Spiel an."
+    val tier = com.staatseigentum.kollaps.core.Tiers.forMass(state.runMass)
+    val parts = buildList {
+        add(tier.name)
+        if (state.collapses > 0) add("${state.collapses} Kollapse")
+        if (state.bigBangs > 0) add("${state.bigBangs} Urknalle")
+    }
+    return parts.joinToString(" · ")
+}

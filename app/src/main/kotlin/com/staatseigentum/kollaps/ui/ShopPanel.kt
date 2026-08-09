@@ -102,6 +102,8 @@ fun ShopPanel(
     startSection: Int = 0,
     /** The update section, handed in so the shop stays free of any networking concern. */
     updateSection: @Composable () -> Unit = {},
+    /** The save slots, handed in for the same reason: the files are the platform's business. */
+    saveSlots: @Composable () -> Unit = {},
 ) {
     val tabs = tabsFor(state)
     // Saved by name so that reopening the app, or unlocking fusion mid-session, still lands on
@@ -168,6 +170,7 @@ fun ShopPanel(
                 actions = actions,
                 startSection = startSection,
                 updateSection = updateSection,
+                saveSlots = saveSlots,
             )
         }
     }
@@ -594,6 +597,7 @@ private fun CosmosPanel(
     actions: GameActions,
     startSection: Int,
     updateSection: @Composable () -> Unit,
+    saveSlots: @Composable () -> Unit,
 ) {
     val sections = sectionsFor(state, stats)
     // By name, for the same reason the tab strip above is: the list grows as things unlock, and
@@ -714,6 +718,9 @@ private fun CosmosPanel(
                             onErase = actions::eraseSave,
                         )
                     }
+
+                    item { Spacer(Modifier.height(8.dp)) }
+                    item { saveSlots() }
 
                     item { Spacer(Modifier.height(8.dp)) }
                     item { updateSection() }

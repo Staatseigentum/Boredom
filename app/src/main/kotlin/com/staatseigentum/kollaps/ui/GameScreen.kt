@@ -172,6 +172,8 @@ fun GameScreen(
     /** Which section of the Kosmos tab to open on. Only the harness passes anything else. */
     startSection: Int = 0,
     updateSection: @Composable () -> Unit = {},
+    /** The save slots, handed in because where the files live is the platform's business. */
+    saveSlots: @Composable () -> Unit = {},
     updateDialog: @Composable () -> Unit = {},
 ) {
     // The sound setting is enforced once, here, by taking the player away from every widget
@@ -268,6 +270,7 @@ fun GameScreen(
                         startTab = startTab,
                         startSection = startSection,
                         updateSection = updateSection,
+                        saveSlots = saveSlots,
                     )
                 }
 

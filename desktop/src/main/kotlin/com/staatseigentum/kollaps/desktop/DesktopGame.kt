@@ -8,11 +8,12 @@ import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.core.SaveCodec
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.NumberFormat
+import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.Roles
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.ui.GameActions
-import com.staatseigentum.kollaps.core.NumberFormat
 
 /**
  * The game, driven from plain Compose state instead of a view model.
@@ -45,6 +46,19 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
      */
     fun settleWallClock() {
         state = GameEngine.onWallClock(state, System.currentTimeMillis())
+    }
+
+    /**
+     * Replaces the running game with another slot's, or with a fresh one where it is empty.
+     *
+     * Credits the time away for the game being picked up, for the same reason opening the app
+     * does: a save that was put down a week ago has earned exactly as much as one that was not.
+     */
+    fun load(loaded: GameState?) {
+        state = loaded ?: GameState.new(System.currentTimeMillis())
+        Numbers.format = NumberFormat.byName(state.numberFormat)
+        offlineReport = null
+        if (loaded != null) creditTimeAway()
     }
 
     /** Credits the production earned while the game was closed, and shows the report. */

@@ -10,6 +10,8 @@ import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.update.UpdateViewModel
 import com.staatseigentum.kollaps.core.NumberFormat
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 /**
  * Binds the platform-free [GameScreen] to the app's view models.
@@ -76,6 +78,18 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
         offlineReport = offlineReport,
         actions = actions,
         updateSection = { UpdateCard(updateModel) },
+        saveSlots = {
+            // Re-read whenever the slot changes rather than once: switching has to leave the
+            // list describing where the player actually is.
+            val slot by model.activeSlot.collectAsStateWithLifecycle()
+            var summaries by remember { mutableStateOf(emptyList<SlotSummary>()) }
+            LaunchedEffect(slot, state.collapses, state.bigBangs) {
+                summaries = model.slotSummaries()
+            }
+            if (summaries.isNotEmpty()) {
+                SaveSlotPanel(slots = summaries, onSwitch = model::switchSlot)
+            }
+        },
         updateDialog = { if (updatePrompt) UpdateDialog(updateModel) },
     )
 }

@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -14,7 +17,10 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.ui.GameScreen
+import com.staatseigentum.kollaps.ui.SaveSlotPanel
+import com.staatseigentum.kollaps.ui.SlotSummary
 
 /**
  * The game, in a window, as a thing somebody can actually play.
@@ -99,7 +105,54 @@ fun RunningGame(game: DesktopGame, modifier: Modifier = Modifier) {
         actions = game,
         modifier = modifier,
         updateSection = { DesktopUpdateCard(onBeforeExit = { DesktopSave.save(game.state) }) },
+        saveSlots = { DesktopSlots(game) },
     )
+}
+
+/**
+ * The three save slots on the PC.
+ *
+ * Same panel the phone draws, filled from files in the user's home directory. Switching writes the
+ * running game out first, exactly as on the phone — the order is the safety of the whole feature.
+ */
+@Composable
+private fun DesktopSlots(game: DesktopGame) {
+    var active by remember { mutableStateOf(DesktopSave.activeSlot()) }
+    var summaries by remember { mutableStateOf(emptyList<SlotSummary>()) }
+
+    LaunchedEffect(active, game.state.collapses, game.state.bigBangs) {
+        summaries = (0 until DesktopSave.SLOTS).map { index ->
+            val state = if (index == active) game.state else DesktopSave.load(index)
+            SlotSummary(
+                index = index,
+                detail = describeSlot(state),
+                isActive = index == active,
+                isEmpty = state == null,
+            )
+        }
+    }
+
+    if (summaries.isEmpty()) return
+    SaveSlotPanel(
+        slots = summaries,
+        onSwitch = { target ->
+            DesktopSave.save(game.state, active)
+            DesktopSave.setActiveSlot(target)
+            active = target
+            game.load(DesktopSave.load(target))
+        },
+    )
+}
+
+/** One line saying what is in a slot, or that there is nothing in it. */
+private fun describeSlot(state: GameState?): String {
+    if (state == null) return "Leer — hier fängt ein neues Spiel an."
+    val parts = buildList {
+        add(Tiers.forMass(state.runMass).name)
+        if (state.collapses > 0) add("${state.collapses} Kollapse")
+        if (state.bigBangs > 0) add("${state.bigBangs} Urknalle")
+    }
+    return parts.joinToString(" · ")
 }
 
 private const val AUTOSAVE_SECONDS = 12.0
