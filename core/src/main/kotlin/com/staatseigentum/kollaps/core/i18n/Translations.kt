@@ -241,10 +241,147 @@ internal object Translations {
             "Collects what will be left. Backwards, starting from the end.",
     )
 
+    /** The lab bench. */
+    private val RESEARCH: Map<String, String> = mapOf(
+        "Spektralanalyse" to "Spectral Analysis",
+        "Wer weiß, woraus ein Lichtpunkt besteht, sieht ihn früher kommen." to
+            "Knowing what a point of light is made of means seeing it coming sooner.",
+        "Massespeicher" to "Mass Store",
+        "Ein Lager, das auch dann noch annimmt, wenn niemand hinsieht." to
+            "A depot that keeps taking deliveries when nobody is watching.",
+        "Ionenantrieb" to "Ion Drive",
+        "Wenig Schub, endlos lange. Genau richtig für etwas, das nie ankommen muss." to
+            "Little thrust, forever. Just right for something that never has to arrive.",
+        "Telemetrie" to "Telemetry",
+        "Die Flotte funkt, was sie tut. Vorher war es Vertrauenssache." to
+            "The fleet reports what it is doing. Before, it was a matter of trust.",
+        "Schwarmlogik" to "Swarm Logic",
+        "Hundert Maschinen, die sich absprechen, sind mehr als hundert Maschinen." to
+            "A hundred machines that talk to each other are more than a hundred machines.",
+        "Kryospeicher" to "Cryogenic Store",
+        "Kalt genug, dass sich ein ganzer Tag Produktion nicht langweilt." to
+            "Cold enough that a whole day of production does not get bored.",
+        "Lademaschine" to "Loading Engine",
+        "Kauft nach, solange Überschuss da ist. Fragt nicht, ob es passt." to
+            "Buys more while there is a surplus. Does not ask whether it fits.",
+        "Resonanzhammer" to "Resonance Hammer",
+        "Schlägt im Takt der Eigenfrequenz. Dein Finger darf sich ausruhen." to
+            "Strikes on the natural frequency. Your finger may rest.",
+        "Gravitationslinse" to "Gravitational Lens",
+        "Krümmt den Raum so, dass mehr davon auf dich zeigt." to
+            "Bends space so that more of it points at you.",
+        "Parallelrechnung" to "Parallel Computation",
+        "Zwei Fragen gleichzeitig zu stellen war die letzte Frage." to
+            "Asking two questions at once was the last question.",
+        "Magnetischer Einschluss" to "Magnetic Confinement",
+        "Hält das Plasma dort, wo es brennen soll, statt an der Wand." to
+            "Keeps the plasma where it should burn, rather than against the wall.",
+        "Katalysierte Fusion" to "Catalysed Fusion",
+        "Ein Myon an der richtigen Stelle spart dem Kern zehn Millionen Grad." to
+            "One muon in the right place saves the core ten million degrees.",
+        "Horizontmechanik" to "Horizon Mechanics",
+        "Was hineinfällt, ist weg. Was am Rand bleibt, lässt sich zählen." to
+            "What falls in is gone. What stays at the edge can be counted.",
+        "Ewigkeitsformel" to "Eternity Formula",
+        "Acht Stunden Rechenzeit für einen Satz, den danach niemand mehr braucht." to
+            "Eight hours of computing for a sentence nobody needs afterwards.",
+    )
+
+    /** The repeatable singularity sinks. */
+    private val INVESTMENTS: Map<String, String> = mapOf(
+        "Rücklagenkonto" to "Reserve Account",
+        "Jeder Durchlauf legt etwas zur Seite, das der nächste vorfindet." to
+            "Every run puts something aside for the next one to find.",
+        "Muskelgedächtnis" to "Muscle Memory",
+        "Die Hand weiß, wo sie hinschlägt, bevor der Kopf es merkt." to
+            "The hand knows where it is striking before the head notices.",
+        "Verdichtung" to "Compaction",
+        "Was oft genug durch einen Horizont ging, bleibt dichter zurück." to
+            "What has been through a horizon often enough comes back denser.",
+        "Bahnrechnung" to "Orbital Reckoning",
+        "Du weißt inzwischen nicht nur wo, sondern auch wann." to
+            "By now you know not only where, but when.",
+        "Tiefkühlhalle" to "Cold Store",
+        "Reihe um Reihe Kammern, und alle nehmen weiter an." to
+            "Row upon row of chambers, all of them still accepting.",
+        "Nachtschicht" to "Night Shift",
+        "Irgendwann arbeitet die Flotte ohne dich genauso gut wie mit dir." to
+            "Eventually the fleet works as well without you as with you.",
+        "Eingelagerte Flotte" to "Stored Fleet",
+        "Nicht die Anlagen überleben den Kollaps, sondern das Lagerverzeichnis." to
+            "It is not the machines that survive the collapse — it is the inventory.",
+        "Serienfertigung" to "Series Production",
+        "Jede fünfundzwanzigste Maschine ist ein bisschen besser als die davor." to
+            "Every twenty-fifth machine is a little better than the one before.",
+        "Brennkammern" to "Burn Chambers",
+        "Mehr Öfen an derselben Kette, alle mit demselben Feuer." to
+            "More furnaces on the same chain, all on the same fire.",
+        "Zweite Schicht" to "Second Shift",
+        "Das Labor läuft jetzt auch nachts. Warten muss man trotzdem." to
+            "The lab runs at night too now. You still have to wait.",
+        "Gebündelte Enden" to "Bundled Ends",
+        "Singularitäten liegen dichter, wenn man sie ordentlich stapelt." to
+            "Singularities sit closer together when stacked properly.",
+        "Sauberer Schnitt" to "Clean Cut",
+        "Beim nächsten Kollaps geht weniger daneben." to
+            "Less goes to waste in the next collapse.",
+    )
+
+    /** The four path trees. */
+    private val PATHS: Map<String, String> = mapOf(
+        "Geübter Schlag" to "Practised Strike",
+        "Zehntausend Wiederholungen später sitzt jede Bewegung." to
+            "Ten thousand repetitions later, every movement lands.",
+        "Doppelgriff" to "Double Grip",
+        "Zwei Hände, und keine wartet auf die andere." to
+            "Two hands, and neither waits for the other.",
+        "Nachhall" to "Reverberation",
+        "Was du angestoßen hast, schlägt eine Weile von allein weiter." to
+            "What you set going keeps striking on its own for a while.",
+        "Scharfes Auge" to "Sharp Eye",
+        "Nichts zieht mehr unbemerkt vorbei." to "Nothing drifts past unnoticed any more.",
+        "Durchlaufender Betrieb" to "Continuous Operation",
+        "Die Anlage kennt keine Schicht, die endet." to
+            "The plant knows no shift that ends.",
+        "Jede Auflage läuft glatter als die davor." to
+            "Every production run goes more smoothly than the last.",
+        "Abwesenheit ist auch eine Betriebsart." to
+            "Absence is a mode of operation too.",
+        "Stehende Flotte" to "Standing Fleet",
+        "Sie wird zwischen zwei Universen nicht abgebaut." to
+            "It is not dismantled between two universes.",
+        "Zweite Bank" to "Second Bench",
+        "Ein Projekt mehr, das über Nacht fertig wird." to
+            "One more project that finishes overnight.",
+        "Langzeitversuch" to "Long-Term Trial",
+        "Manches muss man einfach lange genug stehen lassen." to
+            "Some things simply have to be left standing long enough.",
+        "Anschubmittel" to "Seed Funding",
+        "Ein Labor, das bei null anfängt, forscht erst mal gar nichts." to
+            "A lab that starts from nothing researches nothing at first.",
+        "Querverweis" to "Cross-Reference",
+        "Zwei Ergebnisse, die nichts miteinander zu tun hatten, bis jemand hinsah." to
+            "Two results with nothing to do with each other, until somebody looked.",
+        "Heißerer Brennraum" to "Hotter Chamber",
+        "Es fusioniert schneller, als es sollte." to "It fuses faster than it should.",
+        "Höherer Druck" to "Higher Pressure",
+        "Was der Druck nicht schafft, schafft mehr Druck." to
+            "What pressure cannot manage, more pressure can.",
+        "Dichter Rest" to "Denser Remnant",
+        "Was am Rand des Kollapses bleibt, wiegt mehr." to
+            "What stays at the edge of the collapse weighs more.",
+        "Durchgebrannt" to "Burnt Through",
+        "Ein Stern, der schneller stirbt, gibt in kürzerer Zeit mehr her." to
+            "A star that dies faster gives up more in less time.",
+    )
+
     /** Everything, in one map. Areas are added here as each one is finished. */
     val EN: Map<String, String> = buildMap {
         putAll(UI)
         putAll(TIERS)
         putAll(COLLECTORS)
+        putAll(RESEARCH)
+        putAll(INVESTMENTS)
+        putAll(PATHS)
     }
 }
