@@ -326,7 +326,17 @@ fun SettingsSection(
         PixelLabel("Einstellungen", size = 15)
         Spacer(Modifier.height(10.dp))
 
-        Toggle("Klickgeräusch", state.soundOn) { onSound(!state.soundOn) }
+        // "Klickgeräusch" hieß der Schalter, als es genau ein Geräusch gab. Inzwischen hängen
+        // zehn daran — Vorbeiflug, Fang, verpasster Komet, Kauf, Zündung, fertige Forschung,
+        // Erfolg, Stufenaufstieg, bestandene Herausforderung — und ein Schalter, der mehr
+        // abschaltet als sein Name sagt, ist ein Schalter, dem man nicht traut.
+        Toggle("Geräusche", state.soundOn) { onSound(!state.soundOn) }
+        Text(
+            text = "Alle Klangeffekte: Tippen, vorbeiziehende und gefangene Kometen, Käufe, " +
+                "Zündung, fertige Forschung, neue Erfolge und der Kollaps.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Muted,
+        )
         Spacer(Modifier.height(6.dp))
         Toggle("Vibration", state.hapticsOn) { onHaptics(!state.hapticsOn) }
         Spacer(Modifier.height(6.dp))
