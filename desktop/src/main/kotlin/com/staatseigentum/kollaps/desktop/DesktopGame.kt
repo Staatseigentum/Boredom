@@ -135,6 +135,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.buyAeonUpgrade(state, id)
     }
 
+    override fun buyPathNode(id: String) {
+        state = GameEngine.buyPathNode(state, id)
+    }
+
     override fun startChallenges(ids: Set<String>) {
         state = GameEngine.startChallenges(state, ids, NOW)
     }

@@ -636,6 +636,7 @@ object GameEngine {
                 challengeDuos = state.challengeDuos,
                 aeons = state.aeons,
                 aeonUpgrades = state.aeonUpgrades,
+                pathNodes = state.pathNodes,
                 bigBangs = state.bigBangs,
                 path = state.path,
                 // Research is paid for in wall clock, which no reset can hand back.
@@ -689,6 +690,7 @@ object GameEngine {
                 // The point of pressing it.
                 aeons = state.aeons + earned,
                 aeonUpgrades = state.aeonUpgrades,
+                pathNodes = state.pathNodes,
                 bigBangs = state.bigBangs + 1,
                 path = chosen,
                 research = state.research,
@@ -708,6 +710,25 @@ object GameEngine {
             state.copy(
                 aeons = state.aeons - upgrade.cost,
                 aeonUpgrades = state.aeonUpgrades + upgradeId,
+            ),
+        )
+    }
+
+    /**
+     * Buys one node of the running universe's path tree.
+     *
+     * Paid in Äonen like the shelf above it, and kept for good — but silent under any other path,
+     * so this is an investment in playing that kind of universe again rather than a flat upgrade
+     * with a decoration on it.
+     */
+    fun buyPathNode(state: GameState, nodeId: String): GameState {
+        val node = PathTrees.byId(nodeId) ?: return state
+        if (!PathTrees.canBuy(state, node)) return state
+
+        return award(
+            state.copy(
+                aeons = state.aeons - node.cost,
+                pathNodes = state.pathNodes + node.id,
             ),
         )
     }
@@ -944,6 +965,7 @@ object GameEngine {
         challengeDuos = state.challengeDuos,
         aeons = state.aeons,
         aeonUpgrades = state.aeonUpgrades,
+        pathNodes = state.pathNodes,
         bigBangs = state.bigBangs,
         path = state.path,
         research = state.research,
@@ -969,6 +991,7 @@ object GameEngine {
         for (id in state.challengesDone) Challenge.byId(id)?.reward?.let { yield(it) }
         for (id in state.research) ResearchTree.byId(id)?.effect?.let { yield(it) }
         for (id in state.aeonUpgrades) AeonUpgrades.byId(id)?.effect?.let { yield(it) }
+        yieldAll(PathTrees.effects(state))
     }
 
     /** Mass a fresh run begins with. These add up. */
@@ -1383,8 +1406,11 @@ object GameEngine {
         // which two, which the chronicle wants; the bonus is the same for every pair.
         repeat(state.challengeDuos.size) { mods.global *= Challenge.DUO_BONUS }
 
-        // The lean of this universe, before anything bought inside it.
+        // The lean of this universe, before anything bought inside it — and then what has
+        // been built into that lean across earlier universes. Nodes of the other three paths
+        // are in the save too and say nothing here, which is what makes the choice matter.
         Path.of(state)?.effects?.forEach { apply(mods, it) }
+        PathTrees.effects(state).forEach { apply(mods, it) }
 
         // Finished research, likewise. It is the fourth kind of permanent thing and the fourth
         // list to walk, and all four say what they do in the same vocabulary — which is the whole

@@ -651,6 +651,7 @@ private fun CosmosPanel(
                                 stats = stats,
                                 onBigBang = actions::bigBang,
                                 onBuy = actions::buyAeonUpgrade,
+                                onBuyPathNode = actions::buyPathNode,
                             )
                         }
                     }

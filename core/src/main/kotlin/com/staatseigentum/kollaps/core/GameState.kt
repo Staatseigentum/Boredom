@@ -144,6 +144,15 @@ data class GameState(
     /** Which kind of universe this one is, chosen at the big bang. See [Path]. */
     val path: String? = null,
 
+    /**
+     * Nodes of the path trees that have been bought, by [PathNode.id].
+     *
+     * Every one of them is kept for good — but a node only does anything while [path] is the one
+     * it belongs to. Nodes bought for a path the player has since left stay in here, waiting for
+     * the universe that aligns to it again.
+     */
+    val pathNodes: Set<String> = emptySet(),
+
     /** Whether the automatic buyer is switched on. Off by default even once it is unlocked. */
     val autoBuyOn: Boolean = false,
 

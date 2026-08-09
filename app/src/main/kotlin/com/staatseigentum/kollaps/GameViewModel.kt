@@ -204,6 +204,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun buyPathNode(nodeId: String) {
+        _state.value = GameEngine.buyPathNode(_state.value, nodeId)
+        persist()
+    }
+
     fun startChallenges(challengeIds: Set<String>) {
         _state.value = GameEngine.startChallenges(_state.value, challengeIds, System.currentTimeMillis())
         persist()
