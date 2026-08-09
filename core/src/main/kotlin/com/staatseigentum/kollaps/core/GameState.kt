@@ -98,14 +98,30 @@ data class GameState(
     /** Whether the background loop plays. */
     val musicOn: Boolean = true,
 
-    /** Id of the challenge being run, if any. */
+    /**
+     * Id of the challenge being run — the shape from before two could run at once.
+     *
+     * Read only where an old save carries it; see [runningChallengeIds]. Kept rather than removed
+     * because deleting it would make every save written before this point start its challenge over.
+     */
     val activeChallenge: String? = null,
+
+    /** Ids of the challenges being run, at most [Challenge.MAX_AT_ONCE] of them. */
+    val activeChallenges: Set<String> = emptySet(),
 
     /** Seconds of play spent inside the running challenge. Only the tick moves it. */
     val challengeSeconds: Double = 0.0,
 
     /** Challenges completed. Their rewards are permanent, like prestige upgrades. */
     val challengesDone: Set<String> = emptySet(),
+
+    /**
+     * Pairs handed in together, by [Challenge.duoId].
+     *
+     * A pair is only recorded when neither of the two had been done before, which is what bounds
+     * this: with eight challenges there are at most four pairs of untouched ones to be had, ever.
+     */
+    val challengeDuos: Set<String> = emptySet(),
 
     /**
      * Fraction of an automatic tap carried over between ticks.
@@ -228,8 +244,22 @@ data class GameState(
     /** The buff currently running, or `null` once it has run out. */
     val buff: Buff? get() = if (buffSecondsLeft > 0.0) Buff.byId(buffId) else null
 
-    /** The challenge currently being run, or `null`. */
-    val challenge: Challenge? get() = Challenge.byId(activeChallenge)
+    /**
+     * The challenges currently being run, as ids.
+     *
+     * The set wins where it has anything in it, and the old single field answers otherwise — a
+     * save written before pairs existed keeps running exactly the challenge it was running.
+     */
+    val runningChallengeIds: Set<String>
+        get() = if (activeChallenges.isNotEmpty()) activeChallenges else setOfNotNull(activeChallenge)
+
+    /**
+     * The first challenge being run, or `null`.
+     *
+     * Everything that needs all of them asks [Challenge.running]; this stays for the places that
+     * only want to know whether a challenge is on at all.
+     */
+    val challenge: Challenge? get() = Challenge.running(this).firstOrNull()
 
     /** The one-off event waiting for an answer, or `null` — a chain station is not one. */
     val event: CosmicEvent? get() = if (activeChain != null) null else CosmicEvent.byId(pendingEvent)

@@ -135,8 +135,8 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.buyAeonUpgrade(state, id)
     }
 
-    override fun startChallenge(id: String) {
-        state = GameEngine.startChallenge(state, id, NOW)
+    override fun startChallenges(ids: Set<String>) {
+        state = GameEngine.startChallenges(state, ids, NOW)
     }
 
     override fun abortChallenge() {

@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,22 +36,25 @@ import com.staatseigentum.kollaps.ui.theme.Starlight
 /**
  * The challenges: optional runs under a rule that makes the game worse, for a permanent reward.
  *
- * Only one thing shows at a time — the running challenge, or the list of the ones on offer —
- * because starting a second while one is going is not a thing the rules allow and a list of
- * greyed-out buttons is a worse way to say so.
+ * Two can be taken at once, which is why this is a selection rather than a row of buttons: a
+ * player picking a pair is making one decision about the next run, not two decisions in a row, and
+ * the second half of the pair changes what the first one is worth.
+ *
+ * Only one thing shows at a time — what is running, or what is on offer — because starting
+ * anything while a run is going is not a thing the rules allow, and a list of greyed-out buttons
+ * is a worse way to say so.
  */
 @Composable
 fun ChallengePanel(
     state: GameState,
     stats: Stats,
-    onStart: (String) -> Unit,
+    onStart: (Set<String>) -> Unit,
     onAbort: () -> Unit,
     onFinish: () -> Unit,
 ) {
-    val running = stats.challenge
-    if (running != null) {
-        RunningChallenge(
-            challenge = running,
+    if (stats.challenges.isNotEmpty()) {
+        RunningChallenges(
+            challenges = stats.challenges,
             state = state,
             stats = stats,
             onAbort = onAbort,
@@ -60,6 +65,12 @@ fun ChallengePanel(
 
     val offered = Challenge.offered(state)
     val done = state.challengesDone.size
+
+    // Cleared whenever the offer changes, so a challenge that has just been beaten cannot stay
+    // selected under a card that is no longer there.
+    val picked = remember(offered) { mutableStateListOf<String>() }
+    var confirming by remember(picked.size) { mutableStateOf(false) }
+
     PixelPanel(modifier = Modifier.fillMaxWidth(), border = Nebula) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -87,39 +98,64 @@ fun ChallengePanel(
 
         Text(
             text = "Jede startet den Lauf neu und nimmt dir etwas weg. Der Vorsprung aus dem " +
-                "Prestige zählt dabei nicht — die dauerhaften Multiplikatoren schon.",
+                "Prestige zählt dabei nicht — die dauerhaften Multiplikatoren schon. Zwei " +
+                "gleichzeitig gehen auch: beide Regeln, beide Ziele, beide Belohnungen — und " +
+                "obendrauf ${Numbers.formatMultiplier(Challenge.DUO_BONUS)} für immer, wenn " +
+                "keine der beiden vorher schon bestanden war.",
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
         Spacer(Modifier.height(8.dp))
 
         for (challenge in offered) {
-            ChallengeRow(challenge = challenge, onStart = { onStart(challenge.id) })
+            val selected = challenge.id in picked
+            // A card is refused rather than hidden when it cannot join the selection, because the
+            // reason is worth reading: it is the one pair that would produce nothing at all.
+            val blocked = !selected && picked.isNotEmpty() &&
+                picked.mapNotNull(Challenge::byId).any { !Challenge.canCombine(it, challenge) }
+
+            ChallengeRow(
+                challenge = challenge,
+                selected = selected,
+                blocked = blocked,
+                onToggle = {
+                    when {
+                        selected -> picked.remove(challenge.id)
+                        blocked -> Unit
+                        picked.size < Challenge.MAX_AT_ONCE -> picked.add(challenge.id)
+                        // Full: the tap replaces the older pick rather than doing nothing, which
+                        // is what a player who has already chosen two obviously means by it.
+                        else -> {
+                            picked.removeAt(0)
+                            picked.add(challenge.id)
+                        }
+                    }
+                },
+            )
         }
-    }
-}
 
-@Composable
-private fun ChallengeRow(challenge: Challenge, onStart: () -> Unit) {
-    var confirming by remember(challenge) { mutableStateOf(false) }
+        if (picked.isEmpty()) return@PixelPanel
 
-    PixelPanel(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 6.dp),
-        border = Outline,
-        padding = 10,
-    ) {
-        Text(challenge.title, style = MaterialTheme.typography.bodyLarge, color = Starlight)
-        Text(challenge.flavor, style = MaterialTheme.typography.bodySmall, color = Muted)
+        Spacer(Modifier.height(4.dp))
+        val names = picked.mapNotNull { Challenge.byId(it)?.title }
+        val duo = picked.size == Challenge.MAX_AT_ONCE
+        Text(
+            text = if (duo) {
+                "${names.joinToString(" + ")} — beides gleichzeitig, beide Ziele nötig."
+            } else {
+                names.first()
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = if (duo) Positive else Muted,
+        )
         Spacer(Modifier.height(6.dp))
-        Line("Regel", challenge.ruleText, Ember)
-        Line("Ziel", challenge.goalText, Starlight)
-        Line("Belohnung", challenge.reward.text, Positive)
-        Spacer(Modifier.height(8.dp))
         PixelButton(
-            label = if (confirming) "Lauf wirklich neu starten?" else "Annehmen",
-            onClick = { if (confirming) onStart() else confirming = true },
+            label = when {
+                confirming -> "Lauf wirklich neu starten?"
+                duo -> "Beide annehmen"
+                else -> "Annehmen"
+            },
+            onClick = { if (confirming) onStart(picked.toSet()) else confirming = true },
             modifier = Modifier.fillMaxWidth(),
             accent = if (confirming) Ember else Nebula,
         )
@@ -127,8 +163,54 @@ private fun ChallengeRow(challenge: Challenge, onStart: () -> Unit) {
 }
 
 @Composable
-private fun RunningChallenge(
+private fun ChallengeRow(
     challenge: Challenge,
+    selected: Boolean,
+    blocked: Boolean,
+    onToggle: () -> Unit,
+) {
+    val sfx = LocalSfx.current
+    PixelPanel(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 6.dp)
+            .clickable(enabled = !blocked) {
+                sfx?.click()
+                onToggle()
+            },
+        border = if (selected) Nebula else Outline,
+        padding = 10,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = challenge.title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (blocked) Muted else Starlight,
+            )
+            if (selected) PixelLabel("gewählt", color = Nebula, size = 12)
+        }
+        Text(challenge.flavor, style = MaterialTheme.typography.bodySmall, color = Muted)
+        Spacer(Modifier.height(6.dp))
+        Line("Regel", challenge.ruleText, if (blocked) Muted else Ember)
+        Line("Ziel", challenge.goalText, if (blocked) Muted else Starlight)
+        Line("Belohnung", challenge.reward.text, if (blocked) Muted else Positive)
+        if (blocked) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Zusammen mit der anderen bliebe nichts übrig, was Masse macht.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Ember,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RunningChallenges(
+    challenges: List<Challenge>,
     state: GameState,
     stats: Stats,
     onAbort: () -> Unit,
@@ -136,20 +218,55 @@ private fun RunningChallenge(
 ) {
     var confirming by remember { mutableStateOf(false) }
     val sfx = LocalSfx.current
+    val duo = challenges.size > 1
 
     PixelPanel(
         modifier = Modifier.fillMaxWidth(),
         border = if (stats.challengeLost) Ember else Nebula,
     ) {
-        PixelLabel("Herausforderung läuft", color = Nebula, size = 15)
+        PixelLabel(
+            text = if (duo) "Zwei Herausforderungen laufen" else "Herausforderung läuft",
+            color = Nebula,
+            size = 15,
+        )
         Spacer(Modifier.height(6.dp))
-        Text(challenge.title, style = MaterialTheme.typography.bodyLarge, color = Starlight)
-        Text(challenge.flavor, style = MaterialTheme.typography.bodySmall, color = Muted)
-        Spacer(Modifier.height(8.dp))
 
-        Line("Regel", challenge.ruleText, Ember)
-        Line("Ziel", challenge.goalText, Starlight)
-        Line("Belohnung", challenge.reward.text, Positive)
+        // Each one gets its own block with its own met-or-not mark: with two running, "geschafft"
+        // as a single verdict would hide which half is still open.
+        for (challenge in challenges) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = challenge.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Starlight,
+                )
+                if (duo) {
+                    val met = challenge.isMetBy(state)
+                    PixelLabel(
+                        text = if (met) "erfüllt" else "offen",
+                        color = if (met) Positive else Muted,
+                        size = 12,
+                    )
+                }
+            }
+            Text(challenge.flavor, style = MaterialTheme.typography.bodySmall, color = Muted)
+            Spacer(Modifier.height(6.dp))
+            Line("Regel", challenge.ruleText, Ember)
+            Line("Ziel", challenge.goalText, Starlight)
+            Line("Belohnung", challenge.reward.text, Positive)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        if (duo) {
+            Line(
+                "Bonus",
+                "${Numbers.formatMultiplier(Challenge.DUO_BONUS)} zusätzlich, dauerhaft",
+                Positive,
+            )
+        }
         Line("Gespielt", Numbers.formatDuration(state.challengeSeconds.toLong()), Muted)
 
         Spacer(Modifier.height(10.dp))

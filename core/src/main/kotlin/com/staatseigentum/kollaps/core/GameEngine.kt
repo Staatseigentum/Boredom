@@ -23,7 +23,13 @@ data class Stats(
     val buffSecondsLeft: Double = 0.0,
     /** What the earned achievements are worth together. */
     val achievementMultiplier: Double = 1.0,
-    /** The challenge being run, if any, and whether it can be handed in or is already lost. */
+    /**
+     * The challenges being run, and whether they can be handed in or are already lost.
+     *
+     * A list because two may run at once. [challenge] is the first of them, kept for the places
+     * that only ask whether a challenge is on at all.
+     */
+    val challenges: List<Challenge> = emptyList(),
     val challenge: Challenge? = null,
     val challengeMet: Boolean = false,
     val challengeLost: Boolean = false,
@@ -160,6 +166,7 @@ object GameEngine {
             buff = state.buff,
             buffSecondsLeft = state.buffSecondsLeft,
             achievementMultiplier = Achievements.multiplier(state),
+            challenges = Challenge.running(state),
             challenge = state.challenge,
             challengeMet = Challenge.isMet(state),
             challengeLost = Challenge.isLost(state),
@@ -213,7 +220,7 @@ object GameEngine {
         ticked = automate(ticked)
         ticked = advanceEvents(ticked, seconds)
         ticked = sample(ticked, seconds)
-        if (ticked.activeChallenge != null) {
+        if (ticked.runningChallengeIds.isNotEmpty()) {
             ticked = ticked.copy(challengeSeconds = ticked.challengeSeconds + seconds)
         }
         return award(expireBuff(ticked, seconds))
@@ -564,7 +571,7 @@ object GameEngine {
     // ---------------------------------------------------------------- prestige
 
     fun canCollapse(state: GameState): Boolean =
-        state.activeChallenge == null &&
+        state.runningChallengeIds.isEmpty() &&
             state.runMass >= Tiers.last.threshold &&
             pendingSingularities(state) >= 1.0
 
@@ -626,6 +633,7 @@ object GameEngine {
                 chainStation = state.chainStation,
                 chainsDone = state.chainsDone,
                 challengesDone = state.challengesDone,
+                challengeDuos = state.challengeDuos,
                 aeons = state.aeons,
                 aeonUpgrades = state.aeonUpgrades,
                 bigBangs = state.bigBangs,
@@ -665,6 +673,7 @@ object GameEngine {
                 bestRunMass = maxOf(state.bestRunMass, state.runMass),
                 achievements = state.achievements,
                 challengesDone = state.challengesDone,
+                challengeDuos = state.challengeDuos,
                 heavy = state.heavy,
                 lastRunSeconds = state.lastRunSeconds,
                 lastRunMass = state.lastRunMass,
@@ -840,31 +849,63 @@ object GameEngine {
      * multipliers do carry over — a challenge unlocked three collapses in has to be winnable by
      * the player who unlocked it.
      */
-    fun startChallenge(state: GameState, challengeId: String, nowMillis: Long): GameState {
-        val challenge = Challenge.byId(challengeId) ?: return state
-        if (state.activeChallenge != null) return state
-        if (challenge.id in state.challengesDone) return state
-        if (state.collapses < challenge.requiredCollapses) return state
+    fun startChallenge(state: GameState, challengeId: String, nowMillis: Long): GameState =
+        startChallenges(state, setOf(challengeId), nowMillis)
+
+    /**
+     * Starts a run under one or two challenges at once.
+     *
+     * All of them begin together and are handed in together. Adding a second to a run already
+     * under way is deliberately not possible: the rules decide how a run is played from its first
+     * second, and switching one on halfway would let a player build under the easy rules and then
+     * claim the reward for the hard ones.
+     */
+    fun startChallenges(state: GameState, challengeIds: Set<String>, nowMillis: Long): GameState {
+        if (state.runningChallengeIds.isNotEmpty()) return state
+        if (challengeIds.isEmpty() || challengeIds.size > Challenge.MAX_AT_ONCE) return state
+
+        val challenges = challengeIds.mapNotNull(Challenge::byId)
+        if (challenges.size != challengeIds.size) return state
+        if (challenges.any { it.id in state.challengesDone }) return state
+        if (challenges.any { state.collapses < it.requiredCollapses }) return state
+        if (!Challenge.canCombineAll(challenges)) return state
 
         return freshRun(state, nowMillis).copy(
-            activeChallenge = challenge.id,
+            activeChallenges = challenges.map { it.id }.toSet(),
+            activeChallenge = null,
             challengeSeconds = 0.0,
         )
     }
 
-    /** Gives a challenge up. The run resets, the challenge stays unfinished. */
+    /** Gives the running challenges up. The run resets, none of them count as done. */
     fun abortChallenge(state: GameState, nowMillis: Long): GameState {
-        if (state.activeChallenge == null) return state
+        if (state.runningChallengeIds.isEmpty()) return state
         return freshRun(state, nowMillis)
     }
 
-    /** Hands a met challenge in, which records the reward and starts an ordinary run. */
+    /**
+     * Hands the met challenges in, which records their rewards and starts an ordinary run.
+     *
+     * A pair also earns a lasting bonus of its own — but only where neither half had been beaten
+     * before. That is what keeps it bounded and what makes the choice a real one: pairing up costs
+     * the safety of doing them one at a time, and the bonus can only ever be claimed on ground
+     * nobody has walked yet.
+     */
     fun finishChallenge(state: GameState, nowMillis: Long): GameState {
-        val challenge = state.challenge ?: return state
-        if (!Challenge.isMet(state)) return state
+        val running = Challenge.running(state)
+        if (running.isEmpty() || !Challenge.isMet(state)) return state
+
+        val ids = running.map { it.id }
+        val earnsDuo = ids.size == Challenge.MAX_AT_ONCE && ids.none { it in state.challengesDone }
+
         return award(
             freshRun(state, nowMillis).copy(
-                challengesDone = state.challengesDone + challenge.id,
+                challengesDone = state.challengesDone + ids,
+                challengeDuos = if (earnsDuo) {
+                    state.challengeDuos + Challenge.duoId(ids)
+                } else {
+                    state.challengeDuos
+                },
             ),
         )
     }
@@ -900,6 +941,7 @@ object GameEngine {
         remindersOn = state.remindersOn,
         eventsAnswered = state.eventsAnswered,
         challengesDone = state.challengesDone,
+        challengeDuos = state.challengeDuos,
         aeons = state.aeons,
         aeonUpgrades = state.aeonUpgrades,
         bigBangs = state.bigBangs,
@@ -1337,6 +1379,10 @@ object GameEngine {
             apply(mods, Challenge.byId(id)?.reward)
         }
 
+        // And what the pairs were worth on top. Counted rather than looked up: the id records
+        // which two, which the chronicle wants; the bonus is the same for every pair.
+        repeat(state.challengeDuos.size) { mods.global *= Challenge.DUO_BONUS }
+
         // The lean of this universe, before anything bought inside it.
         Path.of(state)?.effects?.forEach { apply(mods, it) }
 
@@ -1347,14 +1393,16 @@ object GameEngine {
             apply(mods, ResearchTree.byId(id)?.effect)
         }
 
-        // The running challenge, which is the only modifier that takes something away.
-        when (val rule = state.challenge?.rule) {
-            is ChallengeRule.NoCollectors -> mods.collectorsWork = false
-            is ChallengeRule.NoTaps -> mods.tapsWork = false
-            is ChallengeRule.Handicap -> mods.global *= rule.factor
-            is ChallengeRule.NoUpgrades -> mods.upgradesWork = false
-            is ChallengeRule.NoOrbits -> mods.orbitsWork = false
-            null -> Unit
+        // The running challenges, the only modifiers that take something away. Two of them stack
+        // exactly as they read: two switches go off, or a handicap lands on top of a switch.
+        for (challenge in Challenge.running(state)) {
+            when (val rule = challenge.rule) {
+                is ChallengeRule.NoCollectors -> mods.collectorsWork = false
+                is ChallengeRule.NoTaps -> mods.tapsWork = false
+                is ChallengeRule.Handicap -> mods.global *= rule.factor
+                is ChallengeRule.NoUpgrades -> mods.upgradesWork = false
+                is ChallengeRule.NoOrbits -> mods.orbitsWork = false
+            }
         }
 
         // Every achievement is worth a little, which is what stops them being decoration.

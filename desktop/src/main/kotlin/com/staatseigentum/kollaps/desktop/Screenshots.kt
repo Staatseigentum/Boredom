@@ -100,7 +100,7 @@ fun main(args: Array<String>) {
     val challenging = DesktopGame().apply {
         seekToTier(Tiers.indexOf("Saturn"))
         edit { it.copy(collapses = 6, singularities = 34.0) }
-        startChallenge("c_hand")
+        startChallenges(setOf("c_hand"))
         edit { GameEngine.tick(it, 11 * 60.0) }
     }
     shoot("23-herausforderung", challenging, tab = 3, section = 2, note = "(Herausforderung läuft)")

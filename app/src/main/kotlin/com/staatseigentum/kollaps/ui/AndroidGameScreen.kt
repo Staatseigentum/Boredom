@@ -48,7 +48,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun dismissEvent() = model.dismissEvent()
             override fun bigBang(pathId: String) = model.bigBang(pathId)
             override fun buyAeonUpgrade(id: String) = model.buyAeonUpgrade(id)
-            override fun startChallenge(id: String) = model.startChallenge(id)
+            override fun startChallenges(ids: Set<String>) = model.startChallenges(ids)
             override fun abortChallenge() = model.abortChallenge()
             override fun finishChallenge() = model.finishChallenge()
             override fun buyPrestigeUpgrade(id: String) = model.buyPrestigeUpgrade(id)

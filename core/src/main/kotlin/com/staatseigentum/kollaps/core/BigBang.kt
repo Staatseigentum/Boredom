@@ -29,7 +29,7 @@ object BigBang {
     }
 
     fun canBang(state: GameState): Boolean =
-        state.activeChallenge == null && pending(state) >= 1.0
+        state.runningChallengeIds.isEmpty() && pending(state) >= 1.0
 
     /** Not yet bought. Äonen upgrades are never gated on anything but their price. */
     fun offered(state: GameState): List<AeonUpgrade> =

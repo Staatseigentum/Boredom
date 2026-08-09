@@ -204,8 +204,8 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
-    fun startChallenge(challengeId: String) {
-        _state.value = GameEngine.startChallenge(_state.value, challengeId, System.currentTimeMillis())
+    fun startChallenges(challengeIds: Set<String>) {
+        _state.value = GameEngine.startChallenges(_state.value, challengeIds, System.currentTimeMillis())
         persist()
     }
 

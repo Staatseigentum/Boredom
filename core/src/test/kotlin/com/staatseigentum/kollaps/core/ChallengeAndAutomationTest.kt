@@ -135,7 +135,7 @@ class ChallengeAndAutomationTest {
         val state = GameEngine.buyPrestigeUpgrade(veteran(), "p_start_mass")
         val started = GameEngine.startChallenge(state, "c_hand", NOW)
 
-        assertEquals("c_hand", started.activeChallenge)
+        assertEquals(setOf("c_hand"), started.runningChallengeIds)
         assertEquals(0.0, started.runMass)
         assertEquals(0.0, started.mass, "Die Rücklage darf in einer Herausforderung nicht greifen")
         assertTrue(started.collectors.isEmpty())
@@ -205,7 +205,7 @@ class ChallengeAndAutomationTest {
         assertTrue(Challenge.isMet(met))
         val finished = GameEngine.finishChallenge(met, NOW)
 
-        assertNull(finished.activeChallenge)
+        assertTrue(finished.runningChallengeIds.isEmpty())
         assertTrue("c_hand" in finished.challengesDone)
         assertEquals(0.0, finished.runMass)
         assertTrue(Challenge.offered(finished).none { it.id == "c_hand" })
@@ -236,7 +236,7 @@ class ChallengeAndAutomationTest {
         val started = GameEngine.startChallenge(veteran(), "c_hand", NOW)
         val aborted = GameEngine.abortChallenge(started.copy(runMass = 5_000.0), NOW)
 
-        assertNull(aborted.activeChallenge)
+        assertTrue(aborted.runningChallengeIds.isEmpty())
         assertTrue(aborted.challengesDone.isEmpty())
         assertEquals(0.0, aborted.runMass)
     }
@@ -271,7 +271,7 @@ class ChallengeAndAutomationTest {
         val ticked = GameEngine.tick(started, 120.0)
         val restored = SaveCodec.decode(SaveCodec.encode(ticked))!!
 
-        assertEquals("c_sprint", restored.activeChallenge)
+        assertEquals(setOf("c_sprint"), restored.runningChallengeIds)
         assertEquals(ticked.challengeSeconds, restored.challengeSeconds, 1e-9)
     }
 
@@ -279,7 +279,7 @@ class ChallengeAndAutomationTest {
     fun `a challenge that no longer exists is dropped instead of trapping the run`() {
         val raw = SaveCodec.encode(veteran().copy(activeChallenge = "c_gibtsnicht"))
         val decoded = SaveCodec.decode(raw)!!
-        assertNull(decoded.activeChallenge)
+        assertTrue(decoded.runningChallengeIds.isEmpty())
     }
 
     @Test

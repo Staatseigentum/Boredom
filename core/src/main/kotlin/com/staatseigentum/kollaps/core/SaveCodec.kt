@@ -154,9 +154,15 @@ object SaveCodec {
             )
         }
         // A challenge that no longer exists would otherwise leave the run stuck under a rule
-        // nothing can lift.
-        if (migrated.activeChallenge != null && Challenge.byId(migrated.activeChallenge) == null) {
-            migrated = migrated.copy(activeChallenge = null, challengeSeconds = 0.0)
+        // nothing can lift. Both shapes are cleaned: a save written before two could run at once
+        // carries the single field, and one written since carries the set.
+        val liveChallenges = migrated.runningChallengeIds.filter { Challenge.byId(it) != null }
+        if (liveChallenges.size != migrated.runningChallengeIds.size) {
+            migrated = migrated.copy(
+                activeChallenge = null,
+                activeChallenges = liveChallenges.toSet(),
+                challengeSeconds = if (liveChallenges.isEmpty()) 0.0 else migrated.challengeSeconds,
+            )
         }
         // Same for an event nobody can answer any more.
         if (migrated.pendingEvent != null && CosmicEvent.byId(migrated.pendingEvent) == null) {

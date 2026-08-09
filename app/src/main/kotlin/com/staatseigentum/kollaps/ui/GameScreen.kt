@@ -112,7 +112,8 @@ interface GameActions {
     fun bigBang(pathId: String)
     fun buyAeonUpgrade(id: String)
 
-    fun startChallenge(id: String)
+    /** Starts a run under one or two challenges at once. */
+    fun startChallenges(ids: Set<String>)
     fun abortChallenge()
     fun finishChallenge()
 

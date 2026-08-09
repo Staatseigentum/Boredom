@@ -135,35 +135,84 @@ enum class Challenge(
             is ChallengeRule.NoOrbits -> "Nichts hält sich auf einer Bahn"
         }
 
+    /** Whether this one, on its own, has been met by the state given. */
+    fun isMetBy(state: GameState): Boolean {
+        val reached = Tiers.forMass(state.runMass).index
+        return when (val goal = goal) {
+            is ChallengeGoal.ReachTier -> reached >= Tiers.indexOf(goal.tierName)
+            is ChallengeGoal.ReachTierWithin ->
+                reached >= Tiers.indexOf(goal.tierName) && state.challengeSeconds <= goal.seconds
+        }
+    }
+
+    /** Whether this one can no longer be won. Only the timed goals can actually fail. */
+    fun isLostBy(state: GameState): Boolean {
+        val goal = goal as? ChallengeGoal.ReachTierWithin ?: return false
+        return state.challengeSeconds > goal.seconds &&
+            Tiers.forMass(state.runMass).index < Tiers.indexOf(goal.tierName)
+    }
+
     companion object {
+        /**
+         * How many may run at once.
+         *
+         * Two rather than any number. Three of these rules together is not a harder run, it is a
+         * slower one with the same shape, and the screen would need a third column to say so.
+         */
+        const val MAX_AT_ONCE = 2
+
+        /** What a pair is worth on top of the two rewards, for good. */
+        const val DUO_BONUS = 1.2
+
+        /**
+         * Whether two challenges can be run together.
+         *
+         * There is exactly one pair that cannot: the game has two sources of mass, and switching
+         * both off leaves a run that produces nothing at all. That is not a hard challenge, it is
+         * a screen the player has to give up on — so it is refused where it is chosen rather than
+         * discovered ten minutes in.
+         */
+        fun canCombine(first: Challenge, second: Challenge): Boolean {
+            if (first == second) return false
+            val rules = setOf(first.rule, second.rule)
+            return !(ChallengeRule.NoCollectors in rules && ChallengeRule.NoTaps in rules)
+        }
+
+        /** Whether a whole selection may be started together. */
+        fun canCombineAll(challenges: Collection<Challenge>): Boolean =
+            challenges.size <= 1 ||
+                challenges.all { one -> challenges.all { other -> one == other || canCombine(one, other) } }
+
         fun byId(id: String?): Challenge? = entries.firstOrNull { it.id == id }
 
         /** Not yet done, and enough collapses behind the player. */
         fun offered(state: GameState): List<Challenge> =
             entries.filter { it.id !in state.challengesDone && state.collapses >= it.requiredCollapses }
 
-        /** Whether the running challenge has been met and can be handed in. */
+        /**
+         * The name under which a pair is recorded, and the reason it is sorted.
+         *
+         * A duo is one thing however the player picked the two, so the id may not depend on the
+         * order they were tapped in — otherwise the same pair could be earned twice.
+         */
+        fun duoId(ids: Collection<String>): String = ids.sorted().joinToString("+")
+
+        /** Every running challenge, in a fixed order so the screen never reshuffles. */
+        fun running(state: GameState): List<Challenge> =
+            entries.filter { it.id in state.runningChallengeIds }
+
+        /** Whether everything currently running has been met and the set can be handed in. */
         fun isMet(state: GameState): Boolean {
-            val challenge = byId(state.activeChallenge) ?: return false
-            val reached = Tiers.forMass(state.runMass).index
-            return when (val goal = challenge.goal) {
-                is ChallengeGoal.ReachTier -> reached >= Tiers.indexOf(goal.tierName)
-                is ChallengeGoal.ReachTierWithin ->
-                    reached >= Tiers.indexOf(goal.tierName) && state.challengeSeconds <= goal.seconds
-            }
+            val running = running(state)
+            return running.isNotEmpty() && running.all { it.isMetBy(state) }
         }
 
         /**
-         * Whether the running challenge can no longer be won.
+         * Whether the run can no longer be won.
          *
-         * Only the timed one can actually fail; the others are merely slow. Saying so lets the
-         * screen offer a restart instead of leaving the player to work it out.
+         * One lost challenge loses the pair: they are handed in together or not at all, which is
+         * the risk that pays for the bonus.
          */
-        fun isLost(state: GameState): Boolean {
-            val challenge = byId(state.activeChallenge) ?: return false
-            val goal = challenge.goal as? ChallengeGoal.ReachTierWithin ?: return false
-            return state.challengeSeconds > goal.seconds &&
-                Tiers.forMass(state.runMass).index < Tiers.indexOf(goal.tierName)
-        }
+        fun isLost(state: GameState): Boolean = running(state).any { it.isLostBy(state) }
     }
 }

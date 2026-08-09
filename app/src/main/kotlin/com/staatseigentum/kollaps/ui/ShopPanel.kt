@@ -667,7 +667,7 @@ private fun CosmosPanel(
                             ChallengePanel(
                                 state = state,
                                 stats = stats,
-                                onStart = actions::startChallenge,
+                                onStart = actions::startChallenges,
                                 onAbort = actions::abortChallenge,
                                 onFinish = actions::finishChallenge,
                             )
