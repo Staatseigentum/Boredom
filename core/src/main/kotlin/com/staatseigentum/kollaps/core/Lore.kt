@@ -67,7 +67,7 @@ object Lore {
     /** The line for reaching a rung, or `null` if the ladder has grown past the text. */
     fun forTier(index: Int): Fragment? {
         val text = LADDER.getOrNull(index) ?: return null
-        return Fragment("lore_tier_$index", Tiers.byIndex(index).name, text)
+        return Fragment("lore_tier_$index", Tiers.byIndex(index).label, text)
     }
 
     /** The line for the *n*-th collapse, counting from one. */

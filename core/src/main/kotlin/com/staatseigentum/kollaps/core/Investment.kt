@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.pow
@@ -19,8 +21,8 @@ import kotlin.math.pow
  */
 data class Investment(
     val id: String,
-    val name: String,
-    val flavor: String,
+    val germanName: String,
+    val germanFlavor: String,
     /** What a level says it does, for the row. */
     val perLevel: String,
     val baseCost: Double,
@@ -36,6 +38,10 @@ data class Investment(
      */
     val effectAt: (Int) -> PrestigeEffect,
 ) {
+    /** Shown text, translated where a translation exists. */
+    val name: String get() = Lang.t(germanName)
+    val flavor: String get() = Lang.t(germanFlavor)
+
     /** Price of going from [level] to [level] + 1. */
     fun costAt(level: Int): Double = baseCost * growth.pow(level)
 
@@ -59,8 +65,8 @@ object Investments {
     val all: List<Investment> = listOf(
         Investment(
             id = "i_start_mass",
-            name = "Rücklagenkonto",
-            flavor = "Jeder Durchlauf legt etwas zur Seite, das der nächste vorfindet.",
+            germanName = "Rücklagenkonto",
+            germanFlavor = "Jeder Durchlauf legt etwas zur Seite, das der nächste vorfindet.",
             perLevel = "je Stufe ×4 Startmasse",
             baseCost = 4.0,
             growth = 1.26,
@@ -72,8 +78,8 @@ object Investments {
         ),
         Investment(
             id = "i_tap",
-            name = "Muskelgedächtnis",
-            flavor = "Die Hand weiß, wo sie hinschlägt, bevor der Kopf es merkt.",
+            germanName = "Muskelgedächtnis",
+            germanFlavor = "Die Hand weiß, wo sie hinschlägt, bevor der Kopf es merkt.",
             perLevel = "je Stufe +30 % pro Tipp",
             baseCost = 5.0,
             growth = 1.28,
@@ -82,8 +88,8 @@ object Investments {
         ),
         Investment(
             id = "i_global",
-            name = "Verdichtung",
-            flavor = "Was oft genug durch einen Horizont ging, bleibt dichter zurück.",
+            germanName = "Verdichtung",
+            germanFlavor = "Was oft genug durch einen Horizont ging, bleibt dichter zurück.",
             perLevel = "je Stufe +12 % auf alles",
             baseCost = 8.0,
             growth = 1.32,
@@ -93,8 +99,8 @@ object Investments {
         ),
         Investment(
             id = "i_comets",
-            name = "Bahnrechnung",
-            flavor = "Du weißt inzwischen nicht nur wo, sondern auch wann.",
+            germanName = "Bahnrechnung",
+            germanFlavor = "Du weißt inzwischen nicht nur wo, sondern auch wann.",
             perLevel = "je Stufe +15 % Kometen",
             baseCost = 7.0,
             growth = 1.30,
@@ -104,8 +110,8 @@ object Investments {
         ),
         Investment(
             id = "i_offline_cap",
-            name = "Tiefkühlhalle",
-            flavor = "Reihe um Reihe Kammern, und alle nehmen weiter an.",
+            germanName = "Tiefkühlhalle",
+            germanFlavor = "Reihe um Reihe Kammern, und alle nehmen weiter an.",
             perLevel = "je Stufe +3 Stunden offline",
             baseCost = 9.0,
             growth = 1.30,
@@ -115,8 +121,8 @@ object Investments {
         ),
         Investment(
             id = "i_offline_share",
-            name = "Nachtschicht",
-            flavor = "Irgendwann arbeitet die Flotte ohne dich genauso gut wie mit dir.",
+            germanName = "Nachtschicht",
+            germanFlavor = "Irgendwann arbeitet die Flotte ohne dich genauso gut wie mit dir.",
             perLevel = "je Stufe +4 Punkte Offline-Ausbeute",
             baseCost = 10.0,
             growth = 1.34,
@@ -132,8 +138,8 @@ object Investments {
         ),
         Investment(
             id = "i_fleet",
-            name = "Eingelagerte Flotte",
-            flavor = "Nicht die Anlagen überleben den Kollaps, sondern das Lagerverzeichnis.",
+            germanName = "Eingelagerte Flotte",
+            germanFlavor = "Nicht die Anlagen überleben den Kollaps, sondern das Lagerverzeichnis.",
             perLevel = "je Stufe +3 Kollektoren zum Start",
             baseCost = 16.0,
             growth = 1.34,
@@ -143,8 +149,8 @@ object Investments {
         ),
         Investment(
             id = "i_milestone",
-            name = "Serienfertigung",
-            flavor = "Jede fünfundzwanzigste Maschine ist ein bisschen besser als die davor.",
+            germanName = "Serienfertigung",
+            germanFlavor = "Jede fünfundzwanzigste Maschine ist ein bisschen besser als die davor.",
             perLevel = "je Stufe +1 Punkt je Meilenstein",
             baseCost = 22.0,
             growth = 1.36,
@@ -154,8 +160,8 @@ object Investments {
         ),
         Investment(
             id = "i_fusion",
-            name = "Brennkammern",
-            flavor = "Mehr Öfen an derselben Kette, alle mit demselben Feuer.",
+            germanName = "Brennkammern",
+            germanFlavor = "Mehr Öfen an derselben Kette, alle mit demselben Feuer.",
             perLevel = "je Stufe +20 % Fusionstempo",
             baseCost = 26.0,
             growth = 1.32,
@@ -165,8 +171,8 @@ object Investments {
         ),
         Investment(
             id = "i_research",
-            name = "Zweite Schicht",
-            flavor = "Das Labor läuft jetzt auch nachts. Warten muss man trotzdem.",
+            germanName = "Zweite Schicht",
+            germanFlavor = "Das Labor läuft jetzt auch nachts. Warten muss man trotzdem.",
             perLevel = "je Stufe +15 % Forschungstempo",
             baseCost = 30.0,
             growth = 1.34,
@@ -176,8 +182,8 @@ object Investments {
         ),
         Investment(
             id = "i_bonus",
-            name = "Gebündelte Enden",
-            flavor = "Singularitäten liegen dichter, wenn man sie ordentlich stapelt.",
+            germanName = "Gebündelte Enden",
+            germanFlavor = "Singularitäten liegen dichter, wenn man sie ordentlich stapelt.",
             perLevel = "je Stufe +2 Punkte je Singularität",
             baseCost = 35.0,
             growth = 1.38,
@@ -189,8 +195,8 @@ object Investments {
         ),
         Investment(
             id = "i_gain",
-            name = "Sauberer Schnitt",
-            flavor = "Beim nächsten Kollaps geht weniger daneben.",
+            germanName = "Sauberer Schnitt",
+            germanFlavor = "Beim nächsten Kollaps geht weniger daneben.",
             // The one that pays in its own currency, so it is the steepest and the shortest.
             perLevel = "je Stufe +8 % Singularitäten je Kollaps",
             baseCost = 45.0,

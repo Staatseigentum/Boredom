@@ -78,7 +78,7 @@ object Statistics {
             StatLine("Tipps", Numbers.format(state.taps.toDouble())),
             StatLine("Masse insgesamt", Numbers.formatMass(state.totalMass)),
             StatLine("Bester Lauf", Numbers.formatMass(state.bestRunMass)),
-            StatLine("Höchste Stufe", Tiers.all[state.bestTier].name),
+            StatLine("Höchste Stufe", Tiers.all[state.bestTier].label),
             StatLine("Kollapse", Numbers.format(state.collapses.toDouble())),
             StatLine("Singularitäten", Numbers.format(state.singularities)),
             StatLine("Kometen gefangen", Numbers.format(state.cometsCaught.toDouble())),

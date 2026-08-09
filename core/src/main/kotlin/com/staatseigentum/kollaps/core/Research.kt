@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /**
  * Something the player pays for once with mass and then waits out on the wall clock.
  *
@@ -15,8 +17,8 @@ package com.staatseigentum.kollaps.core
  */
 data class Research(
     val id: String,
-    val name: String,
-    val flavor: String,
+    val germanName: String,
+    val germanFlavor: String,
     /** Mass paid up front, when the project starts. */
     val cost: Double,
     /** Seconds of wall clock the project runs for, before any speed bonus. */
@@ -25,6 +27,10 @@ data class Research(
     val requires: List<String> = emptyList(),
     val effect: PrestigeEffect,
 ) {
+    /** Shown text, translated where a translation exists. */
+    val name: String get() = Lang.t(germanName)
+    val flavor: String get() = Lang.t(germanFlavor)
+
     val effectText: String get() = effect.text
 }
 
@@ -42,24 +48,24 @@ object ResearchTree {
         // ---- the root: cheap, quick, and each one opens a different branch
         Research(
             id = "r_optics",
-            name = "Spektralanalyse",
-            flavor = "Wer weiß, woraus ein Lichtpunkt besteht, sieht ihn früher kommen.",
+            germanName = "Spektralanalyse",
+            germanFlavor = "Wer weiß, woraus ein Lichtpunkt besteht, sieht ihn früher kommen.",
             cost = 5e4,
             seconds = 3 * 60.0,
             effect = PrestigeEffect.CometFrequency(1.35),
         ),
         Research(
             id = "r_storage",
-            name = "Massespeicher",
-            flavor = "Ein Lager, das auch dann noch annimmt, wenn niemand hinsieht.",
+            germanName = "Massespeicher",
+            germanFlavor = "Ein Lager, das auch dann noch annimmt, wenn niemand hinsieht.",
             cost = 3e5,
             seconds = 6 * 60.0,
             effect = PrestigeEffect.OfflineCapHours(12.0),
         ),
         Research(
             id = "r_drives",
-            name = "Ionenantrieb",
-            flavor = "Wenig Schub, endlos lange. Genau richtig für etwas, das nie ankommen muss.",
+            germanName = "Ionenantrieb",
+            germanFlavor = "Wenig Schub, endlos lange. Genau richtig für etwas, das nie ankommen muss.",
             cost = 4e6,
             seconds = 12 * 60.0,
             effect = PrestigeEffect.GlobalMultiplier(1.25),
@@ -68,8 +74,8 @@ object ResearchTree {
         // ---- second row
         Research(
             id = "r_telemetry",
-            name = "Telemetrie",
-            flavor = "Die Flotte funkt, was sie tut. Vorher war es Vertrauenssache.",
+            germanName = "Telemetrie",
+            germanFlavor = "Die Flotte funkt, was sie tut. Vorher war es Vertrauenssache.",
             cost = 8e7,
             seconds = 20 * 60.0,
             requires = listOf("r_optics"),
@@ -77,8 +83,8 @@ object ResearchTree {
         ),
         Research(
             id = "r_swarm",
-            name = "Schwarmlogik",
-            flavor = "Hundert Maschinen, die sich absprechen, sind mehr als hundert Maschinen.",
+            germanName = "Schwarmlogik",
+            germanFlavor = "Hundert Maschinen, die sich absprechen, sind mehr als hundert Maschinen.",
             cost = 6e8,
             seconds = 30 * 60.0,
             requires = listOf("r_drives"),
@@ -86,8 +92,8 @@ object ResearchTree {
         ),
         Research(
             id = "r_cryo",
-            name = "Kryospeicher",
-            flavor = "Kalt genug, dass sich ein ganzer Tag Produktion nicht langweilt.",
+            germanName = "Kryospeicher",
+            germanFlavor = "Kalt genug, dass sich ein ganzer Tag Produktion nicht langweilt.",
             cost = 2e10,
             seconds = 45 * 60.0,
             requires = listOf("r_storage"),
@@ -97,8 +103,8 @@ object ResearchTree {
         // ---- third row: the automation the player has been doing by hand until now
         Research(
             id = "r_autoloader",
-            name = "Lademaschine",
-            flavor = "Kauft nach, solange Überschuss da ist. Fragt nicht, ob es passt.",
+            germanName = "Lademaschine",
+            germanFlavor = "Kauft nach, solange Überschuss da ist. Fragt nicht, ob es passt.",
             cost = 8e11,
             seconds = 60 * 60.0,
             requires = listOf("r_swarm"),
@@ -106,8 +112,8 @@ object ResearchTree {
         ),
         Research(
             id = "r_hammer",
-            name = "Resonanzhammer",
-            flavor = "Schlägt im Takt der Eigenfrequenz. Dein Finger darf sich ausruhen.",
+            germanName = "Resonanzhammer",
+            germanFlavor = "Schlägt im Takt der Eigenfrequenz. Dein Finger darf sich ausruhen.",
             cost = 3e12,
             seconds = 90 * 60.0,
             requires = listOf("r_drives"),
@@ -115,8 +121,8 @@ object ResearchTree {
         ),
         Research(
             id = "r_lens",
-            name = "Gravitationslinse",
-            flavor = "Krümmt den Raum so, dass mehr davon auf dich zeigt.",
+            germanName = "Gravitationslinse",
+            germanFlavor = "Krümmt den Raum so, dass mehr davon auf dich zeigt.",
             cost = 8e13,
             seconds = 2 * 60 * 60.0,
             requires = listOf("r_telemetry"),
@@ -124,8 +130,8 @@ object ResearchTree {
         ),
         Research(
             id = "r_parallel",
-            name = "Parallelrechnung",
-            flavor = "Zwei Fragen gleichzeitig zu stellen war die letzte Frage.",
+            germanName = "Parallelrechnung",
+            germanFlavor = "Zwei Fragen gleichzeitig zu stellen war die letzte Frage.",
             cost = 2e14,
             seconds = 60 * 60.0,
             requires = listOf("r_autoloader"),
@@ -135,8 +141,8 @@ object ResearchTree {
         // ---- the long ones, all pointed at the fusion chain and the collapse
         Research(
             id = "r_confinement",
-            name = "Magnetischer Einschluss",
-            flavor = "Hält das Plasma dort, wo es brennen soll, statt an der Wand.",
+            germanName = "Magnetischer Einschluss",
+            germanFlavor = "Hält das Plasma dort, wo es brennen soll, statt an der Wand.",
             cost = 2e15,
             seconds = 2 * 60 * 60.0,
             requires = listOf("r_lens"),
@@ -144,8 +150,8 @@ object ResearchTree {
         ),
         Research(
             id = "r_catalysis",
-            name = "Katalysierte Fusion",
-            flavor = "Ein Myon an der richtigen Stelle spart dem Kern zehn Millionen Grad.",
+            germanName = "Katalysierte Fusion",
+            germanFlavor = "Ein Myon an der richtigen Stelle spart dem Kern zehn Millionen Grad.",
             cost = 8e16,
             seconds = 3 * 60 * 60.0,
             requires = listOf("r_confinement"),
@@ -153,8 +159,8 @@ object ResearchTree {
         ),
         Research(
             id = "r_horizon",
-            name = "Horizontmechanik",
-            flavor = "Was hineinfällt, ist weg. Was am Rand bleibt, lässt sich zählen.",
+            germanName = "Horizontmechanik",
+            germanFlavor = "Was hineinfällt, ist weg. Was am Rand bleibt, lässt sich zählen.",
             cost = 5e18,
             seconds = 4 * 60 * 60.0,
             requires = listOf("r_lens"),
@@ -162,8 +168,8 @@ object ResearchTree {
         ),
         Research(
             id = "r_eternity",
-            name = "Ewigkeitsformel",
-            flavor = "Acht Stunden Rechenzeit für einen Satz, den danach niemand mehr braucht.",
+            germanName = "Ewigkeitsformel",
+            germanFlavor = "Acht Stunden Rechenzeit für einen Satz, den danach niemand mehr braucht.",
             cost = 1e20,
             seconds = 8 * 60 * 60.0,
             requires = listOf("r_horizon", "r_catalysis"),

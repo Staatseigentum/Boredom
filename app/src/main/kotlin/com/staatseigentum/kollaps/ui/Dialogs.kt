@@ -170,7 +170,7 @@ fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = tier.name,
+                text = tier.label,
                 style = MaterialTheme.typography.displayMedium,
                 color = Color(tier.glowColor),
                 textAlign = TextAlign.Center,

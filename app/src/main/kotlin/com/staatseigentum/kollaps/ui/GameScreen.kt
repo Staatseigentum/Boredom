@@ -407,9 +407,9 @@ private fun Header(state: GameState, stats: Stats) {
         val next = stats.nextTier
         Text(
             text = if (next != null) {
-                "${stats.tier.name} > ${next.name}"
+                "${stats.tier.label} > ${next.label}"
             } else {
-                "${stats.tier.name} — das Ende der Leiter"
+                "${stats.tier.label} — das Ende der Leiter"
             },
             style = MaterialTheme.typography.titleLarge,
             color = Color(stats.tier.glowColor),

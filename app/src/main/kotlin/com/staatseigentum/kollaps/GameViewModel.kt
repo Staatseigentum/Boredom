@@ -345,7 +345,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         val project = ResearchTree.byId(state.activeResearch)
         return StatusLine(
-            headline = "${Numbers.formatMass(stats.massPerSecond)}/s · ${stats.tier.name}",
+            headline = "${Numbers.formatMass(stats.massPerSecond)}/s · ${stats.tier.label}",
             detail = when {
                 project != null -> "Labor: ${project.name}"
                 // Said once, plainly, rather than left blank: the number above is a snapshot and
@@ -445,7 +445,7 @@ private fun describe(state: GameState?): String {
     if (state == null) return "Leer — hier fängt ein neues Spiel an."
     val tier = com.staatseigentum.kollaps.core.Tiers.forMass(state.runMass)
     val parts = buildList {
-        add(tier.name)
+        add(tier.label)
         if (state.collapses > 0) add("${state.collapses} Kollapse")
         if (state.bigBangs > 0) add("${state.bigBangs} Urknalle")
     }

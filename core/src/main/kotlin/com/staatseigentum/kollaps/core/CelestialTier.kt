@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /** Determines how the renderer draws a body. */
 enum class BodyKind {
     /** Solid, cratered rock. */
@@ -39,8 +41,16 @@ enum class BodyKind {
  */
 data class CelestialTier(
     val index: Int,
+    /**
+     * The body's German name, which is also its key.
+     *
+     * Deliberately *not* translated in place. Half the game refers to a rung by this string —
+     * `Tiers.byName("Erde")`, `unlockTier = "Saturn"`, the goals of the challenges, the unlocks of
+     * the event chains. Translating it would break every one of those, and only in English, where
+     * the tests do not look because they run in German. [label] is what gets shown.
+     */
     val name: String,
-    val flavor: String,
+    val germanFlavor: String,
     /** Mass collected in the current run needed to reach this tier. */
     val threshold: Double,
     /** Multiplies every source of mass while this tier is active. */
@@ -62,6 +72,11 @@ data class CelestialTier(
      */
     val relativeSize: Float = 0.6f,
 ) {
+    /** The name as the player reads it. Everything on screen uses this; nothing keys off it. */
+    val label: String get() = Lang.t(name)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
     val isFinal: Boolean get() = index == Tiers.all.lastIndex
 }
 
@@ -71,7 +86,7 @@ object Tiers {
         CelestialTier(
             index = 0,
             name = "Meteorit",
-            flavor = "Ein Klumpen Gestein, der niemandem gehört. Fang klein an.",
+            germanFlavor = "Ein Klumpen Gestein, der niemandem gehört. Fang klein an.",
             threshold = 0.0,
             productionMultiplier = 1.0,
             kind = BodyKind.ROCK,
@@ -83,7 +98,7 @@ object Tiers {
         CelestialTier(
             index = 1,
             name = "Asteroid",
-            flavor = "Groß genug, um einen Namen und eine Nummer zu bekommen.",
+            germanFlavor = "Groß genug, um einen Namen und eine Nummer zu bekommen.",
             threshold = 200.0,
             productionMultiplier = 1.35,
             kind = BodyKind.ROCK,
@@ -95,7 +110,7 @@ object Tiers {
         CelestialTier(
             index = 2,
             name = "Zwergplanet",
-            flavor = "Rund genug für Stolz, zu klein für Respekt.",
+            germanFlavor = "Rund genug für Stolz, zu klein für Respekt.",
             threshold = 2_500.0,
             productionMultiplier = 1.9,
             kind = BodyKind.ROCK,
@@ -107,7 +122,7 @@ object Tiers {
         CelestialTier(
             index = 3,
             name = "Mond",
-            flavor = "Grau, still, voller Krater. Und trotzdem sieht jeder hoch.",
+            germanFlavor = "Grau, still, voller Krater. Und trotzdem sieht jeder hoch.",
             threshold = 12_000.0,
             productionMultiplier = 2.25,
             kind = BodyKind.ROCK,
@@ -119,7 +134,7 @@ object Tiers {
         CelestialTier(
             index = 4,
             name = "Merkur",
-            flavor = "Verbrannt, vernarbt, aber offiziell ein Planet.",
+            germanFlavor = "Verbrannt, vernarbt, aber offiziell ein Planet.",
             threshold = 50_000.0,
             productionMultiplier = 2.7,
             kind = BodyKind.ROCK,
@@ -131,7 +146,7 @@ object Tiers {
         CelestialTier(
             index = 5,
             name = "Titan",
-            flavor = "Ein Mond mit Wetter. Es regnet Methan, seit es ihn gibt.",
+            germanFlavor = "Ein Mond mit Wetter. Es regnet Methan, seit es ihn gibt.",
             threshold = 150_000.0,
             productionMultiplier = 3.2,
             kind = BodyKind.TERRESTRIAL,
@@ -144,7 +159,7 @@ object Tiers {
         CelestialTier(
             index = 6,
             name = "Mars",
-            flavor = "Rost, Staub und ein paar sehr einsame Rover.",
+            germanFlavor = "Rost, Staub und ein paar sehr einsame Rover.",
             threshold = 400_000.0,
             productionMultiplier = 3.8,
             kind = BodyKind.TERRESTRIAL,
@@ -156,7 +171,7 @@ object Tiers {
         CelestialTier(
             index = 7,
             name = "Venus",
-            flavor = "Schön aus der Ferne. Aus der Nähe 460 Grad.",
+            germanFlavor = "Schön aus der Ferne. Aus der Nähe 460 Grad.",
             threshold = 3_000_000.0,
             productionMultiplier = 5.5,
             kind = BodyKind.TERRESTRIAL,
@@ -168,7 +183,7 @@ object Tiers {
         CelestialTier(
             index = 8,
             name = "Erde",
-            flavor = "Der einzige Ort mit Kaffee. Behandle ihn gut.",
+            germanFlavor = "Der einzige Ort mit Kaffee. Behandle ihn gut.",
             threshold = 20_000_000.0,
             productionMultiplier = 8.0,
             kind = BodyKind.TERRESTRIAL,
@@ -181,7 +196,7 @@ object Tiers {
         CelestialTier(
             index = 9,
             name = "Supererde",
-            flavor = "Doppelt so schwer wie zuhause. Treppen wären hier eine Zumutung.",
+            germanFlavor = "Doppelt so schwer wie zuhause. Treppen wären hier eine Zumutung.",
             threshold = 55_000_000.0,
             productionMultiplier = 9.8,
             kind = BodyKind.TERRESTRIAL,
@@ -194,7 +209,7 @@ object Tiers {
         CelestialTier(
             index = 10,
             name = "Neptun",
-            flavor = "Windgeschwindigkeit: 2000 km/h. Niemand beschwert sich.",
+            germanFlavor = "Windgeschwindigkeit: 2000 km/h. Niemand beschwert sich.",
             threshold = 150_000_000.0,
             productionMultiplier = 12.0,
             kind = BodyKind.GAS,
@@ -206,7 +221,7 @@ object Tiers {
         CelestialTier(
             index = 11,
             name = "Uranus",
-            flavor = "Liegt auf der Seite und findet das völlig in Ordnung.",
+            germanFlavor = "Liegt auf der Seite und findet das völlig in Ordnung.",
             threshold = 1_000_000_000.0,
             productionMultiplier = 18.0,
             kind = BodyKind.GAS,
@@ -219,7 +234,7 @@ object Tiers {
         CelestialTier(
             index = 12,
             name = "Saturn",
-            flavor = "Der einzige Planet mit richtig gutem Schmuck.",
+            germanFlavor = "Der einzige Planet mit richtig gutem Schmuck.",
             threshold = 6_500_000_000.0,
             productionMultiplier = 27.0,
             kind = BodyKind.GAS,
@@ -232,7 +247,7 @@ object Tiers {
         CelestialTier(
             index = 13,
             name = "Jupiter",
-            flavor = "Ein Sturm, der älter ist als jede Stadt der Erde.",
+            germanFlavor = "Ein Sturm, der älter ist als jede Stadt der Erde.",
             threshold = 50_000_000_000.0,
             productionMultiplier = 42.0,
             kind = BodyKind.GAS,
@@ -244,7 +259,7 @@ object Tiers {
         CelestialTier(
             index = 14,
             name = "Heißer Jupiter",
-            flavor = "Ein Gasriese so dicht an seinem Stern, dass er von unten glüht.",
+            germanFlavor = "Ein Gasriese so dicht an seinem Stern, dass er von unten glüht.",
             threshold = 130_000_000_000.0,
             productionMultiplier = 52.0,
             kind = BodyKind.GAS,
@@ -256,7 +271,7 @@ object Tiers {
         CelestialTier(
             index = 15,
             name = "Brauner Zwerg",
-            flavor = "Wollte ein Stern werden. Hat es knapp nicht geschafft.",
+            germanFlavor = "Wollte ein Stern werden. Hat es knapp nicht geschafft.",
             threshold = 350_000_000_000.0,
             productionMultiplier = 65.0,
             kind = BodyKind.STAR,
@@ -268,7 +283,7 @@ object Tiers {
         CelestialTier(
             index = 16,
             name = "Roter Zwerg",
-            flavor = "Brennt sparsam — und dafür ein paar Billionen Jahre.",
+            germanFlavor = "Brennt sparsam — und dafür ein paar Billionen Jahre.",
             threshold = 2_500_000_000_000.0,
             productionMultiplier = 100.0,
             kind = BodyKind.STAR,
@@ -280,7 +295,7 @@ object Tiers {
         CelestialTier(
             index = 17,
             name = "Sonne",
-            flavor = "Ganz normaler gelber Zwerg. Für uns trotzdem alles.",
+            germanFlavor = "Ganz normaler gelber Zwerg. Für uns trotzdem alles.",
             threshold = 34_000_000_000_000.0,
             productionMultiplier = 160.0,
             kind = BodyKind.STAR,
@@ -292,7 +307,7 @@ object Tiers {
         CelestialTier(
             index = 18,
             name = "Blauer Riese",
-            flavor = "Verschwendet in einer Million Jahren, was andere in Milliarden brauchen.",
+            germanFlavor = "Verschwendet in einer Million Jahren, was andere in Milliarden brauchen.",
             threshold = 830_000_000_000_000.0,
             productionMultiplier = 260.0,
             kind = BodyKind.STAR,
@@ -304,7 +319,7 @@ object Tiers {
         CelestialTier(
             index = 19,
             name = "Roter Überriese",
-            flavor = "So groß, dass die Erdbahn bequem hineinpasst.",
+            germanFlavor = "So groß, dass die Erdbahn bequem hineinpasst.",
             threshold = 20_000_000_000_000_000.0,
             productionMultiplier = 420.0,
             kind = BodyKind.STAR,
@@ -316,7 +331,7 @@ object Tiers {
         CelestialTier(
             index = 20,
             name = "Hyperriese",
-            flavor = "Das größte, was ein Stern werden kann, bevor er sich selbst zerreißt.",
+            germanFlavor = "Das größte, was ein Stern werden kann, bevor er sich selbst zerreißt.",
             threshold = 3_300_000_000_000_000_000.0,
             productionMultiplier = 520.0,
             kind = BodyKind.STAR,
@@ -328,7 +343,7 @@ object Tiers {
         CelestialTier(
             index = 21,
             name = "Weißer Zwerg",
-            flavor = "Was übrig bleibt, wenn ein Stern fertig ist: heiße Asche, erdgroß.",
+            germanFlavor = "Was übrig bleibt, wenn ein Stern fertig ist: heiße Asche, erdgroß.",
             threshold = 100_000_000_000_000_000_000.0,
             productionMultiplier = 640.0,
             kind = BodyKind.REMNANT,
@@ -340,7 +355,7 @@ object Tiers {
         CelestialTier(
             index = 22,
             name = "Neutronenstern",
-            flavor = "Ein Teelöffel davon wiegt so viel wie ein Gebirge.",
+            germanFlavor = "Ein Teelöffel davon wiegt so viel wie ein Gebirge.",
             threshold = 5_700_000_000_000_000_000_000.0,
             productionMultiplier = 780.0,
             kind = BodyKind.EXOTIC,
@@ -352,7 +367,7 @@ object Tiers {
         CelestialTier(
             index = 23,
             name = "Magnetar",
-            flavor = "Sein Magnetfeld würde dich noch aus tausend Kilometern zerlegen.",
+            germanFlavor = "Sein Magnetfeld würde dich noch aus tausend Kilometern zerlegen.",
             threshold = 55_000_000_000_000_000_000_000.0,
             productionMultiplier = 960.0,
             kind = BodyKind.EXOTIC,
@@ -364,7 +379,7 @@ object Tiers {
         CelestialTier(
             index = 24,
             name = "Schwarzes Loch",
-            flavor = "Das Ende der Leiter. Ab hier kommt nichts mehr zurück.",
+            germanFlavor = "Das Ende der Leiter. Ab hier kommt nichts mehr zurück.",
             threshold = 2_700_000_000_000_000_000_000_000.0,
             productionMultiplier = 1_200.0,
             kind = BodyKind.SINGULARITY,

@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /**
  * One node of a path's tree.
  *
@@ -12,14 +14,18 @@ package com.staatseigentum.kollaps.core
 data class PathNode(
     val id: String,
     val pathId: String,
-    val name: String,
-    val flavor: String,
+    val germanName: String,
+    val germanFlavor: String,
     /** In Äonen. */
     val cost: Double,
     val effect: PrestigeEffect,
     /** The node that has to be bought first, or `null` for the root of the tree. */
     val requires: String? = null,
 ) {
+    /** Shown text, translated where a translation exists. */
+    val name: String get() = Lang.t(germanName)
+    val flavor: String get() = Lang.t(germanFlavor)
+
     val effectText: String get() = effect.text
 }
 

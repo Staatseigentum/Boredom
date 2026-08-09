@@ -184,7 +184,7 @@ private fun OrbitRow(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (occupied) tier.name else "leer",
+                    text = if (occupied) tier.label else "leer",
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (occupied) Color(tier.glowColor) else Muted,
                 )
