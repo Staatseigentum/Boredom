@@ -122,6 +122,10 @@ private class AndroidSounds(context: Context) : Sounds {
 
     override fun ignition() = play(cueSamples[Cue.IGNITION], CUE_VOLUME)
 
+    // Under the bang that follows it, on purpose: this one has two and a half seconds to make
+    // its point and the explosion has none.
+    override fun collapse() = play(cueSamples[Cue.COLLAPSE], CUE_VOLUME * 0.8f)
+
     private fun play(sample: Int?, volume: Float) {
         if (sample == null || sample !in ready) return
         pool.play(sample, volume, volume, PRIORITY, 0, 1f)

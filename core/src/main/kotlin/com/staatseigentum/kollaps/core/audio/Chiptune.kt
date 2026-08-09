@@ -2,6 +2,7 @@ package com.staatseigentum.kollaps.core.audio
 
 import kotlin.math.PI
 import kotlin.math.exp
+import kotlin.math.pow
 import kotlin.math.sin
 
 /** A sound the game needs to make, beyond the click that ships as a recording. */
@@ -42,6 +43,16 @@ enum class Cue {
      * installer that already bundles a Java runtime.
      */
     CLICK,
+
+    /**
+     * The interface being dragged into the hole.
+     *
+     * The odd one out in every respect: two and a half seconds where the rest are fractions of
+     * one, no notes, and it ends in silence rather than in a decay. It is not a reaction to
+     * anything the player did — it runs alongside the collapse sequence and is over when the
+     * screen is empty. The silence at the end is the point: what follows it is the bang.
+     */
+    COLLAPSE,
 }
 
 /**
@@ -156,6 +167,9 @@ object Chiptune {
             Note(G5, 0.30, 0.40),
             Note(C6, 0.32, 0.38, gain = 0.6),
         )
+
+        // Not a list of notes at all — see [renderCollapse].
+        Cue.COLLAPSE -> emptyList()
     }
 
     /** The cue as a playable WAV file. */
@@ -163,6 +177,8 @@ object Chiptune {
 
     /** Raw samples, exposed so a test can look at the waveform without parsing a header. */
     fun render(cue: Cue): ShortArray {
+        if (cue == Cue.COLLAPSE) return Wav.normalise(renderCollapse(), PEAK)
+
         val notes = notesOf(cue)
         val totalSeconds = notes.maxOf { it.startSeconds + it.seconds } + TAIL_SECONDS
         val out = DoubleArray((totalSeconds * SAMPLE_RATE).toInt())
@@ -192,6 +208,68 @@ object Chiptune {
     }
 
     /**
+     * The collapse: a rising rumble that stops dead.
+     *
+     * Written by hand rather than as notes, because everything the note renderer is good at is
+     * wrong here. A note has a pitch, an attack and a decay; this has a pitch that slides for two
+     * and a half seconds, no attack worth the name, and no decay at all. It also has to be
+     * *noise* as much as tone — a collapse is not a chord.
+     *
+     * Three layers, all following the same curve the picture follows:
+     *
+     * - a low voice sliding from 38 to 116 Hz on `p²`, the same acceleration the elements fall on,
+     *   so the sound speeds up exactly when the screen does;
+     * - a fifth above it that drifts sharp as it goes, so the two beat against each other harder
+     *   and harder — the sound of something being pulled out of tune rather than played;
+     * - filtered noise that only arrives in the second half, growing on `p²` like the sky's warp.
+     *
+     * And then it simply stops, thirty-four hundredths of a second before the bang. The silence is
+     * doing the work: a rumble that swells into the explosion sounds like volume, a rumble that is
+     * cut off sounds like the air being taken out of the room.
+     */
+    private fun renderCollapse(): DoubleArray {
+        val rumble = (COLLAPSE_RUMBLE_SECONDS * SAMPLE_RATE).toInt()
+        val total = ((COLLAPSE_RUMBLE_SECONDS + COLLAPSE_SILENCE_SECONDS) * SAMPLE_RATE).toInt()
+        val out = DoubleArray(total)
+
+        var lowPhase = 0.0
+        var fifthPhase = 0.0
+        var filtered = 0.0
+
+        // Its own counter rather than `Random`: the cue is rendered once and cached, and a test
+        // insists that two renders are byte for byte the same file. A seeded sequence written out
+        // here is the cheapest way to be certain of that on every platform.
+        var seed = 0x9E3779B97F4A7C15uL.toLong()
+
+        // Long enough not to click, short enough to still be a cut rather than a fade.
+        val cutSamples = 0.05 * SAMPLE_RATE
+
+        for (i in 0 until rumble) {
+            val p = i.toDouble() / rumble
+
+            val low = 38.0 + 78.0 * p * p
+            lowPhase += 2.0 * PI * low / SAMPLE_RATE
+            // The fifth goes sharp as it climbs: 1.5 is in tune, 1.56 is audibly not.
+            fifthPhase += 2.0 * PI * (low * (1.5 + 0.06 * p)) / SAMPLE_RATE
+
+            seed = seed * 6_364_136_223_846_793_005L + 1_442_695_040_888_963_407L
+            val white = ((seed ushr 40).toDouble() / (1 shl 23).toDouble()) - 1.0
+            // One pole of low pass. White noise on its own is a hiss; this is wind.
+            filtered += (white - filtered) * 0.05
+
+            val square = if (sin(lowPhase) >= 0.0) 1.0 else -1.0
+            val voice = square * 0.5 + sin(lowPhase) * 0.5
+            val fifth = sin(fifthPhase) * 0.35 * p
+
+            val swell = p.pow(1.4)
+            val cut = ((rumble - i) / cutSamples).coerceAtMost(1.0)
+
+            out[i] = (voice + fifth + filtered * 1.2 * p * p) * swell * cut
+        }
+        return out
+    }
+
+    /**
      * A fast attack and an exponential decay.
      *
      * The attack is a fixed number of milliseconds rather than a share of the note, because the
@@ -211,4 +289,14 @@ object Chiptune {
     private const val ATTACK_SECONDS = 0.006
     private const val DECAY = 4.5
     private const val PEAK = 26_000.0
+
+    /**
+     * How long the collapse rumble runs, and how long the hole in the sound is after it.
+     *
+     * The first number is the length of the sequence's pull phase and has to stay that way: the
+     * sound stopping is what tells the player the screen is about to be empty. The second is the
+     * gap before the bang.
+     */
+    const val COLLAPSE_RUMBLE_SECONDS = 2.6
+    private const val COLLAPSE_SILENCE_SECONDS = 0.34
 }

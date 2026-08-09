@@ -43,6 +43,16 @@ interface Sounds {
 
     /** The core catching light. */
     fun ignition() = Unit
+
+    /**
+     * The whole screen being dragged into the hole.
+     *
+     * Fired once when the collapse sequence starts and then left alone — it is two and a half
+     * seconds long and ends in silence of its own accord, so nothing has to stop it. That also
+     * means an app closed halfway through takes the sound with it, which is correct: it is part
+     * of the picture, not part of the game.
+     */
+    fun collapse() = Unit
 }
 
 /**

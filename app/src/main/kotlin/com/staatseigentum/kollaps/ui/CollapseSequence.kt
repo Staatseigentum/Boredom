@@ -31,12 +31,18 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * Which of the two things an element is, for the pull.
+ * How deep in the interface an element sits, which decides when and how hard it is pulled.
  *
- * The interface is nested — lines sit inside cards, cards sit inside the screen — and everything
- * falling at one rate would look like a photograph being scaled down. Two rates make it read as
- * collapse: the contents implode into their card first, and the card follows into the hole a
- * quarter of a second later.
+ * The interface is nested — lines sit inside cards, cards sit inside panels — and everything
+ * falling at one rate would look like a photograph being scaled down. Three rates make it read as
+ * a collapse working its way outwards: the lines implode into their card, the cards into their
+ * panel, and the panel itself goes into the hole last.
+ *
+ * The three levels are not just taste. A card lives inside a scrolling list, and a scrolling list
+ * clips whatever leaves it — so a card that flew the whole way to the body would be cut off at
+ * the edge of the shop. Cards therefore mostly implode where they stand and break into blocks,
+ * which are drawn on the canvas over everything and are clipped by nothing; the panel around them,
+ * which nothing clips, is what actually makes the journey.
  */
 enum class SogDepth(
     /** How much of the distance to the centre is closed at full strength. */
@@ -50,26 +56,46 @@ enum class SogDepth(
     /** Share of grid points that become a block. */
     val debrisChance: Float,
 ) {
-    /** A line of text, a bar, a button. */
+    /** A line of text, a bar, a button. Goes first, and goes nowhere: into its own card. */
     CONTENT(pull = 0.62f, spin = 0.6f, shrink = 0.75f, delayMillis = 0f, debrisChance = 0.55f),
 
-    /** A card, a tab strip, a row of chips. */
-    CONTAINER(pull = 1.0f, spin = 1.0f, shrink = 0.96f, delayMillis = 260f, debrisChance = 0.34f),
+    /**
+     * A card, a tab strip, a row of chips.
+     *
+     * Pulled only halfway, because most of these sit in a list that clips them. What sells it is
+     * the shrink and the debris, not the travel.
+     */
+    CONTAINER(pull = 0.55f, spin = 1.1f, shrink = 0.9f, delayMillis = 340f, debrisChance = 0.5f),
+
+    /** The header, the whole shop panel. Nothing clips these, so they go all the way in. */
+    SHELL(pull = 1.0f, spin = 1.0f, shrink = 0.96f, delayMillis = 1_000f, debrisChance = 0.3f),
 }
 
 /** Where the sequence is on its one clock. */
 enum class CollapsePhase { SOG, CRUSH, BLAST, RETURN }
 
-private const val SOG_END = 1_500f
-private const val CRUSH_END = 1_750f
-private const val RETURN_START = 2_390f
-private const val TOTAL = 4_350f
+/*
+ * The clock, in milliseconds.
+ *
+ * The pull runs the full length of the rumble that plays under it — [Chiptune.COLLAPSE_RUMBLE_SECONDS] —
+ * because the sound stopping is what announces that the screen is about to be empty. Change one
+ * without the other and the rumble either dies in the middle of the fall or plays over the bang.
+ */
+private const val SOG_END = 2_600f
+private const val CRUSH_END = 3_000f
+private const val RETURN_START = 3_760f
+private const val TOTAL = 6_000f
 
-/** How long one element takes to fall, once its own delay has run out. */
-private const val FALL_MILLIS = 820f
+/**
+ * How long one element takes to fall, once its own delay has run out.
+ *
+ * Longer than the delays it stacks on top of, so the three levels overlap rather than taking
+ * turns: while the panel is still gathering itself the cards inside it are already gone.
+ */
+private const val FALL_MILLIS = 1_150f
 
 /** And to fly back. */
-private const val RETURN_MILLIS = 520f
+private const val RETURN_MILLIS = 620f
 
 /** Positions are snapped to this many pixels, so nothing lands between blocks. */
 private const val SNAP = 3f
@@ -147,7 +173,7 @@ class CollapseSequence {
                 val p = pullProgress
                 return p * p
             }
-            val back = ((now - CRUSH_END) / 700f).coerceIn(0f, 1f)
+            val back = ((now - CRUSH_END) / 900f).coerceIn(0f, 1f)
             return 1f - back
         }
 
@@ -160,10 +186,10 @@ class CollapseSequence {
     val bodyScale: Float
         get() {
             val now = elapsed ?: return 1f
-            if (now <= SOG_END) return 1f + pullProgress * 0.22f
+            if (now <= SOG_END) return 1f + pullProgress * 0.30f
             if (now < CRUSH_END) {
                 val k = crushProgress
-                return 1.22f * (1f - k) * (1f - k)
+                return 1.30f * (1f - k) * (1f - k)
             }
             return 1f
         }
@@ -248,12 +274,12 @@ class CollapseSequence {
 
     private fun advance(deltaMillis: Float) {
         // The body's own rotation is left alone; this is the extra piled on top, so the accretion
-        // disc runs up to twenty-seven times its usual speed and comes back down without a jump.
+        // disc runs up to thirty-five times its usual speed and comes back down without a jump.
         // Accumulated rather than set, because a rate that changes cannot be turned into a phase
         // any other way — and a phase that jumped would show as the disc skipping a beat.
         if (phase == CollapsePhase.SOG) {
             val p = pullProgress
-            extraSpin += deltaMillis / SPIN_REFERENCE * (p * p * 26f)
+            extraSpin += deltaMillis / SPIN_REFERENCE * (p * p * 34f)
         }
 
         // Each element breaks apart once, on its own way past the point of no return, so the blocks
@@ -302,12 +328,18 @@ class CollapseSequence {
      * one picture instead of two.
      */
     fun drawDebris(scope: DrawScope) {
+        // Whatever is still in the air when the body is crushed goes with it. The timeline says
+        // the screen is empty before the bang, and that has to be true rather than nearly true —
+        // a couple of stray blocks over an empty screen read as a bug, not as debris.
+        val fade = 1f - crushProgress
+        if (fade <= 0f) return
+
         for (block in debris) {
             val x = centre.x + cos(block.angle) * block.radius
             val y = centre.y + sin(block.angle) * block.radius
             val side = block.side
             scope.drawRect(
-                color = block.color.copy(alpha = block.alpha),
+                color = block.color.copy(alpha = block.alpha * fade),
                 topLeft = Offset(floor(x / side) * side, floor(y / side) * side),
                 size = Size(side, side),
             )
@@ -327,9 +359,16 @@ private class Block(
     val alpha: Float get() = min(1f, radius / 90f)
 
     fun advance(step: Float) {
-        // Faster the closer it gets: the last stretch is the part that should look like falling in
-        // rather than drifting.
-        radius -= fall * (2.2f + (300f - min(300f, radius)) / 22f) * step
+        /*
+         * Three terms, and the first one is not decoration.
+         *
+         * A rate that depends only on how close a block is leaves the ones that came off the far
+         * edge of the screen crawling: eight hundred pixels at a couple of pixels a frame is
+         * eleven seconds, and the sequence is over in three. So the distance itself drives the
+         * first term — far blocks come streaming in — while the last term keeps the original
+         * idea, that the final stretch into the horizon is the fastest part of the trip.
+         */
+        radius -= fall * (radius * 0.03f + 3.0f + (300f - min(300f, radius)) / 18f) * step
         angle += spin * 0.035f * step
     }
 }

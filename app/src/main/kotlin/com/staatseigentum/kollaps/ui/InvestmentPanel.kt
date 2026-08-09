@@ -66,7 +66,10 @@ fun InvestmentPanel(
 
     var step by rememberSaveable { mutableIntStateOf(STEPS.first()) }
 
-    PixelPanel(modifier = modifier.fillMaxWidth(), border = Nebula) {
+    PixelPanel(
+        modifier = modifier.fillMaxWidth().sog(SogDepth.CONTAINER, Nebula),
+        border = Nebula,
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

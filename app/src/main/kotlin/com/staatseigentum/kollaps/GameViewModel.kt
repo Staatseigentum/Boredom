@@ -71,6 +71,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private var lastSaveUptime = 0L
     private var restored = false
 
+    /**
+     * Set while the collapse sequence is on screen.
+     *
+     * Plain rather than a flow: nothing draws it, the loop below simply asks each time round.
+     */
+    private var paused = false
+
     init {
         viewModelScope.launch {
             store.load()?.let { _state.value = it }
@@ -92,6 +99,13 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 val now = SystemClock.elapsedRealtime()
                 val seconds = (now - previous).coerceAtLeast(0L) / 1_000.0
                 previous = now
+
+                // Dropped rather than banked, and that is the whole difference between pausing
+                // and stalling: `previous` has already moved on, so when the collapse sequence is
+                // over the game carries on from now instead of paying out the three seconds it
+                // spent being swallowed.
+                if (paused) continue
+
                 // The lab and two of the automation rules run on the wall clock rather than on
                 // elapsed play time, so they are settled next to the tick rather than inside it.
                 _state.value = GameEngine.onWallClock(
@@ -303,6 +317,17 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun dismissTutorial() {
         _state.value = GameEngine.dismissTutorial(_state.value)
         persist()
+    }
+
+    /**
+     * Holds production still while the collapse plays out.
+     *
+     * Not persisted, and deliberately so: it describes what is on screen, not what the save is.
+     * A game closed while paused reopens running, which is the only sane outcome — the sequence
+     * that switched it on is long gone by then.
+     */
+    fun setPaused(on: Boolean) {
+        paused = on
     }
 
     fun setStatus(on: Boolean) {

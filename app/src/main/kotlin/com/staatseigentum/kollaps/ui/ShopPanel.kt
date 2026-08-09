@@ -115,7 +115,10 @@ fun ShopPanel(
         ?.takeIf { it in tabs }
         ?: ShopTab.COLLECTORS
 
-    Column(modifier = modifier.background(SpaceElevated)) {
+    // The outermost of the three levels. Nothing clips this one, which is exactly why the whole
+    // panel is what makes the journey into the hole — the cards inside it live in a scrolling
+    // list that would cut them off at its own edge.
+    Column(modifier = modifier.background(SpaceElevated).sog(SogDepth.SHELL, Nebula)) {
         // A hard rule instead of an elevation shadow.
         Box(
             Modifier

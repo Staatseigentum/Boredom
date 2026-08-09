@@ -87,24 +87,30 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **Getroffen werden will der Körper**, nicht der Bildschirm: daneben tippen bringt nichts — und
   genau einen Erfolg
 - **Klang** für Stufenaufstieg, vorbeiziehenden, gefangenen und verpassten Kometen, Kauf, Zündung,
-  fertige Forschung, neuen Erfolg und bestandene Herausforderung, alles im Code aus Rechteckwellen synthetisiert statt
-  als Audiodatei mitgeliefert
+  fertige Forschung, neuen Erfolg, bestandene Herausforderung und den Kollaps, alles im Code aus
+  Rechteckwellen synthetisiert statt als Audiodatei mitgeliefert. Ein Schalter in den
+  Einstellungen deckt alle davon ab
 - **Musik**, ebenfalls gerechnet: sieben sechzehnsekündige Schleifen, eine je Art von Körper, aus
   Bordunstimme und einer Melodie aus sechzehn Schritten. Der Bordun ist auf ganze Schwingungen
   pro Schleife gerundet und Noten laufen über den Anfang weiter, damit die Naht nicht knackt
 - **Eine Chronik**: eine Zeile Geschichte je Stufe, je Kollaps und je Urknall — siebenunddreißig
   Fragmente, die zusammen etwas erzählen. Sie stehen im Erfolge-Reiter und tauchen beim Aufstieg
   einzeln auf
-- **Die Kollaps-Sequenz**: beim Kollaps wird nicht nur der Körper verschluckt, sondern die ganze
-  Oberfläche. Kopfzeile, Reiter, Kosmos-Chips und die Kollaps-Karte spiralen auf Gravitationsbahnen
-  nach innen, zerfallen unterwegs in Pixelblöcke, die im Horizont verglühen; der Sternenhimmel wird
-  mitgezogen, die Akkretionsscheibe dreht sich auf das Siebenundzwanzigfache hoch, dann wird der
-  Körper in einem Viertelsekunde zerdrückt. Erst über dem leeren Bild knallt es, und der neue
-  Durchlauf fliegt als Meteorit aus dem Zentrum zurück an seinen Platz. Zwei Sog-Ebenen sorgen
-  dafür, dass es nach Kollaps aussieht und nicht nach einem Bild, das kleiner skaliert wird: der
-  Inhalt implodiert zuerst in seine Karte, die Karte danach ins Loch. Das Ganze ist reine
-  Darstellung — der Kollaps selbst ist längst passiert, wer die App mittendrin schließt, hat
-  trotzdem korrekt kollabiert. Wer Systemanimationen abgeschaltet hat, bekommt direkt den Knall
+- **Die Kollaps-Sequenz**, sechs Sekunden lang: beim Kollaps wird nicht nur der Körper
+  verschluckt, sondern die ganze Oberfläche. **Drei Sog-Ebenen**, damit es nach Zusammenbruch
+  aussieht und nicht nach einem Bild, das kleiner skaliert wird — die Textzeilen implodieren
+  zuerst in ihre Karte, die Karten in ihr Panel, und das Panel geht zuletzt ins Loch. Unterwegs
+  zerfällt jedes Element einmalig in Pixelblöcke, die auf eigenen Spiralen im Horizont verglühen;
+  der Sternenhimmel wird mitgewickelt, die Akkretionsscheibe dreht auf das Fünfunddreißigfache
+  hoch. Dazu ein **gerechnetes Grollen**: eine Bassstimme, die auf `p²` von 38 auf 116 Hz steigt,
+  eine Quinte darüber, die dabei immer schiefer wird, und gefiltertes Rauschen, das erst in der
+  zweiten Hälfte dazukommt. Es bricht eine Drittelsekunde vor dem Knall ab — die Stille macht die
+  Arbeit. Dann wird der Körper zerdrückt, es knallt über dem leeren Bild, und der neue Durchlauf
+  fliegt als Meteorit aus dem Zentrum zurück an seinen Platz. **Das Spiel steht solange still**:
+  keine Produktion, keine Eingabe — was die Sekunden kosten, wird verworfen und nicht nachgezahlt,
+  und der Bildschirm zeigt den Durchlauf, der gerade zu Ende ging. Der Kollaps selbst ist zu dem
+  Zeitpunkt längst in den Regeln passiert, wer die App mittendrin schließt, hat also trotzdem
+  korrekt kollabiert. Wer Systemanimationen abgeschaltet hat, bekommt direkt den Knall
 - **Produktionsverlauf** als Kurve über die letzte halbe Stunde, logarithmisch, weil eine lineare
   Achse in einem Idle-Spiel neunundzwanzig Minuten flach und dann senkrecht wäre
 - **Zweispaltig im Querformat** und auf Tablets: Körper links, Shop rechts

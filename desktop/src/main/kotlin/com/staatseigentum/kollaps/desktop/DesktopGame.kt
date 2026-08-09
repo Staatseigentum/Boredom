@@ -34,6 +34,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
 
     var offlineReport by mutableStateOf<OfflineReport?>(null)
 
+    /** Set while the collapse sequence is on screen. Never saved: it describes a picture. */
+    var paused = false
+        private set
+
     val stats: Stats get() = GameEngine.stats(state)
 
     fun tick(seconds: Double) {
@@ -212,6 +216,16 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
 
     override fun dismissTutorial() {
         state = GameEngine.dismissTutorial(state)
+    }
+
+    /**
+     * Holds production still while the collapse plays out.
+     *
+     * Read by the frame loop in `Main.kt`, which keeps advancing its own clock while this is on —
+     * so the seconds spent watching the screen fall in are dropped rather than paid out at the end.
+     */
+    override fun setPaused(on: Boolean) {
+        paused = on
     }
 
     override fun setNumberFormat(format: NumberFormat) {

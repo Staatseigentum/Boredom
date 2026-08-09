@@ -87,7 +87,10 @@ fun RunningGame(game: DesktopGame, modifier: Modifier = Modifier) {
         var sinceSave = 0.0
         while (true) {
             withFrameNanos { now ->
-                if (previous != 0L) {
+                // The clock keeps running while the game is paused for the collapse sequence, and
+                // only the tick is skipped — so those seconds are lost rather than banked up and
+                // paid out in one lump the moment the animation ends.
+                if (previous != 0L && !game.paused) {
                     val seconds = (now - previous) / 1_000_000_000.0
                     game.tick(seconds)
                     game.settleWallClock()

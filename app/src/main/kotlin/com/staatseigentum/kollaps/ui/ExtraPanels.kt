@@ -231,7 +231,10 @@ fun AchievementList(
 @Composable
 fun PrestigeShop(state: GameState, onBuy: (String) -> Unit) {
     val offered = PrestigeUpgrades.offered(state)
-    PixelPanel(modifier = Modifier.fillMaxWidth(), border = Nebula) {
+    PixelPanel(
+        modifier = Modifier.fillMaxWidth().sog(SogDepth.CONTAINER, Nebula),
+        border = Nebula,
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

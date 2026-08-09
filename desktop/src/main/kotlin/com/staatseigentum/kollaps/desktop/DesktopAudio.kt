@@ -87,6 +87,10 @@ private class DesktopSounds : Sounds {
 
     override fun ignition() = play(Cue.IGNITION, CUE_VOLUME)
 
+    // Under the bang that follows it, on purpose: this one has two and a half seconds to make
+    // its point and the explosion has none.
+    override fun collapse() = play(Cue.COLLAPSE, CUE_VOLUME * 0.8f)
+
     private fun play(cue: Cue, volume: Float) {
         val clip = synchronized(clips) { clips[cue] } ?: return
         runCatching {

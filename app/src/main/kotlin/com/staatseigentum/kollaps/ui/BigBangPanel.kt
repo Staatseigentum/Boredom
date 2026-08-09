@@ -55,7 +55,10 @@ fun BigBangPanel(
 ) {
     var confirming by remember { mutableStateOf(false) }
 
-    PixelPanel(modifier = Modifier.fillMaxWidth(), border = Nebula) {
+    PixelPanel(
+        modifier = Modifier.fillMaxWidth().sog(SogDepth.CONTAINER, Nebula),
+        border = Nebula,
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

@@ -44,7 +44,10 @@ class ChiptuneTest {
 
     @Test
     fun `cues are short enough to fire during play`() {
-        for (cue in Cue.entries) {
+        // The collapse is exempt and only that one: it does not answer an action, it runs
+        // alongside the sequence that swallows the interface. Everything else here fires while
+        // the player is doing something, and a cue longer than a moment turns into a queue.
+        for (cue in Cue.entries - Cue.COLLAPSE) {
             val seconds = Chiptune.render(cue).size.toDouble() / Chiptune.SAMPLE_RATE
             assertTrue(seconds > 0.05, "$cue ist mit $seconds s zu kurz zum Hören")
             assertTrue(seconds < 1.2, "$cue blockiert mit $seconds s zu lange")
@@ -54,6 +57,36 @@ class ChiptuneTest {
             Chiptune.render(Cue.PURCHASE).size < Chiptune.render(Cue.LEVEL_UP).size / 3,
             "Der Kaufton ist nicht deutlich kürzer als der Stufenaufstieg",
         )
+    }
+
+    @Test
+    fun `the collapse rumble lasts exactly as long as the pull it accompanies`() {
+        val seconds = Chiptune.render(Cue.COLLAPSE).size.toDouble() / Chiptune.SAMPLE_RATE
+        // The rumble plus the gap before the bang. If the sequence's timing is ever changed
+        // without this, the sound stops in the middle of the screen still being pulled in.
+        assertTrue(
+            seconds > Chiptune.COLLAPSE_RUMBLE_SECONDS,
+            "Das Grollen endet mit $seconds s vor dem Sog",
+        )
+        assertTrue(seconds < Chiptune.COLLAPSE_RUMBLE_SECONDS + 0.6, "Zu viel Stille: $seconds s")
+    }
+
+    @Test
+    fun `the collapse rumble stops before it ends, so the bang lands in silence`() {
+        val samples = Chiptune.render(Cue.COLLAPSE)
+        val peak = samples.maxOf { abs(it.toInt()) }
+        val lastQuarterSecond = (0.25 * Chiptune.SAMPLE_RATE).toInt()
+        val ending = samples.takeLast(lastQuarterSecond).maxOf { abs(it.toInt()) }
+        assertTrue(ending < peak / 50, "Das Grollen läuft mit $ending von $peak in den Knall hinein")
+    }
+
+    @Test
+    fun `the collapse rumble grows rather than starting loud`() {
+        val samples = Chiptune.render(Cue.COLLAPSE)
+        val third = samples.size / 3
+        val early = samples.take(third).maxOf { abs(it.toInt()) }
+        val late = samples.drop(third).maxOf { abs(it.toInt()) }
+        assertTrue(early < late / 2, "Das Grollen schwillt nicht an: $early gegen $late")
     }
 
     @Test

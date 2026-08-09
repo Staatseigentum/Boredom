@@ -45,6 +45,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -151,6 +152,20 @@ interface GameActions {
 
     /** Sends the first-steps nudge away for good. */
     fun dismissTutorial()
+
+    /**
+     * Holds the game still while the collapse plays out.
+     *
+     * The three seconds it costs are not the point — the point is that the screen is showing the
+     * run that just ended, and a game that went on earning behind that picture would be lying
+     * about where the player is. Time spent paused is dropped rather than banked, so nothing is
+     * owed when it starts again.
+     *
+     * The collapse itself has already been applied to the save by the time this is switched on,
+     * so a phone locked mid-sequence loses the animation and the pause together, and keeps the
+     * collapse.
+     */
+    fun setPaused(on: Boolean)
 
     /** Picks how the very large numbers are written. */
     fun setNumberFormat(format: NumberFormat)
@@ -263,11 +278,19 @@ fun GameScreen(
             return@LaunchedEffect
         }
 
-        // In a `finally` so that a screen torn down mid-fall still hands recording back: were it
-        // not, the next composition would go on showing a game that ended four seconds ago.
+        // Fired once and then left alone. The rumble is exactly as long as the pull and ends in
+        // silence of its own accord, so there is nothing to stop and nothing to keep in step —
+        // and an app closed halfway through simply takes it along.
+        blastSfx?.collapse()
+
+        // In a `finally` so that a screen torn down mid-fall still hands the game back: were it
+        // not, the next composition would go on showing a run that ended six seconds ago, and the
+        // one after that would find the game still paused.
+        actions.setPaused(true)
         try {
             collapse.run(detonate)
         } finally {
+            actions.setPaused(false)
             held.collapses = state.collapses
         }
     }
@@ -398,6 +421,35 @@ fun GameScreen(
                 )
             }
 
+            /*
+             * Nothing gets through while the collapse is playing.
+             *
+             * Pausing the tick is only half of holding the game still: the shop is on screen and
+             * every row in it is a button, and the body being pulled into the hole is still a tap
+             * target. Worse, the screen is showing the run that just ended — a purchase made
+             * against those numbers would be charged against a game the player cannot see.
+             *
+             * Every event is consumed on the initial pass, before anything below has a chance to
+             * look at it. Derived rather than read straight off the clock, so this appears and
+             * disappears once instead of on every frame.
+             */
+            val blocking by remember(collapse) { derivedStateOf { collapse.running } }
+            if (blocking) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    awaitPointerEvent(PointerEventPass.Initial)
+                                        .changes
+                                        .forEach { it.consume() }
+                                }
+                            }
+                        },
+                )
+            }
+
             // Higher still, because the pieces come off things that are themselves above the
             // sky — and because they are drawn in window coordinates, which is what this box is.
             CollapseDebris(sequence = collapse, modifier = Modifier.fillMaxSize())
@@ -423,7 +475,10 @@ private fun Header(state: GameState, stats: Stats) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            // The lines inside go first and go into this column; a second later the column itself
+            // goes into the hole, carrying whatever is left of them.
+            .sog(SogDepth.SHELL, Ember),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
