@@ -32,6 +32,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
     val actions = remember(model) {
         object : GameActions {
             override fun tap(): Double = model.tap()
+            override fun tapEmpty() = model.tapEmpty()
             override fun setBuyAmount(amount: BuyAmount) = model.setBuyAmount(amount)
             override fun buyCollector(id: String) = model.buyCollector(id)
             override fun cycleRole(id: String) = model.cycleRole(id)

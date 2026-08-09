@@ -516,6 +516,16 @@ object GameEngine {
         return award(credit(state.copy(taps = state.taps + 1), gained))
     }
 
+    /**
+     * A tap that landed on the sky rather than on the body.
+     *
+     * Pays nothing, on purpose — that is the joke the achievement is built on. It is recorded all
+     * the same, because something that happens and is not written down anywhere cannot be noticed
+     * later, and this one wants to be noticed exactly once.
+     */
+    fun tapEmpty(state: GameState): GameState =
+        award(state.copy(missedTaps = state.missedTaps + 1))
+
     /** How much a single tap would yield right now, for the floating number. */
     fun tapValue(state: GameState): Double = massPerTap(state)
 
@@ -606,6 +616,7 @@ object GameEngine {
                 singularities = state.singularities + earned,
                 collapses = state.collapses + 1,
                 taps = state.taps,
+                missedTaps = state.missedTaps,
                 totalMass = state.totalMass,
                 bestTier = maxOf(state.bestTier, tierOf(state).index),
                 bestRunMass = maxOf(state.bestRunMass, state.runMass),
@@ -673,6 +684,7 @@ object GameEngine {
                 startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
                 // Kept: everything that is a record rather than a possession.
                 taps = state.taps,
+                missedTaps = state.missedTaps,
                 totalMass = state.totalMass,
                 bestTier = maxOf(state.bestTier, tierOf(state).index),
                 bestRunMass = maxOf(state.bestRunMass, state.runMass),
@@ -948,6 +960,7 @@ object GameEngine {
         singularities = state.singularities,
         collapses = state.collapses,
         taps = state.taps,
+        missedTaps = state.missedTaps,
         totalMass = state.totalMass,
         bestTier = maxOf(state.bestTier, tierOf(state).index),
         bestRunMass = maxOf(state.bestRunMass, state.runMass),

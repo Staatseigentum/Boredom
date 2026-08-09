@@ -36,8 +36,8 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   trifft: geschenkte Produktion, ein Schub, eine Minute mit hundertfachem Tippwert — und zwei mit
   Kruste, die zwei bis drei Treffer brauchen und entsprechend mehr bringen. Die Farbe des Kopfes
   verrät, was drin ist
-- **62 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
-  gerade wie viel liefert
+- **63 Erfolge**, jeder +1 % auf alles, dazu ein Statistik-Tab, der zeigt, welcher Kollektor
+  gerade wie viel liefert. Ein neuer meldet sich mit einer Karte oben am Bildschirm und einem Ton
 - **Meilensteine**: alle 25 Stück einer Sorte liefert dieser Kollektor 15 % mehr, dauerhaft und
   ohne Zusatzkosten — der Zähler in der Shop-Zeile zählt jetzt auf etwas zu
 - **Acht Herausforderungen**: freiwillige Läufe unter einer Regel, die dir etwas wegnimmt — ohne
@@ -84,8 +84,10 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **Drei Spielstände**, auf Handy und PC. Beim Wechseln wird zuerst gespeichert
 - **Sechs Farbpaletten**, verdient über Erfolge, plus **wählbares Zahlenformat** (deutsche Namen,
   wissenschaftlich oder Kurzform)
-- **Klang** für Stufenaufstieg, gefangenen und verpassten Kometen, Kauf, Zündung, fertige
-  Forschung und bestandene Herausforderung, alles im Code aus Rechteckwellen synthetisiert statt
+- **Getroffen werden will der Körper**, nicht der Bildschirm: daneben tippen bringt nichts — und
+  genau einen Erfolg
+- **Klang** für Stufenaufstieg, vorbeiziehenden, gefangenen und verpassten Kometen, Kauf, Zündung,
+  fertige Forschung, neuen Erfolg und bestandene Herausforderung, alles im Code aus Rechteckwellen synthetisiert statt
   als Audiodatei mitgeliefert
 - **Musik**, ebenfalls gerechnet: sieben sechzehnsekündige Schleifen, eine je Art von Körper, aus
   Bordunstimme und einer Melodie aus sechzehn Schritten. Der Bordun ist auf ganze Schwingungen

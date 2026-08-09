@@ -130,6 +130,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     // ------------------------------------------------------------------ player actions
 
     /** Taps the body and returns how much mass that yielded, for the floating number. */
+    fun tapEmpty() {
+        _state.value = GameEngine.tapEmpty(_state.value)
+    }
+
     fun tap(): Double {
         val current = _state.value
         val gained = GameEngine.tapValue(current)

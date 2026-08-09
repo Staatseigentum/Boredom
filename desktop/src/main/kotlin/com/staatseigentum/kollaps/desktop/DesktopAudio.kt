@@ -75,6 +75,10 @@ private class DesktopSounds : Sounds {
 
     override fun missed() = play(Cue.MISSED, CUE_VOLUME * 0.45f)
 
+    override fun flyby() = play(Cue.FLYBY, CUE_VOLUME * 0.55f)
+
+    override fun unlock() = play(Cue.UNLOCK, CUE_VOLUME)
+
     override fun purchase() = play(Cue.PURCHASE, CUE_VOLUME * 0.7f)
 
     override fun success() = play(Cue.SUCCESS, CUE_VOLUME)

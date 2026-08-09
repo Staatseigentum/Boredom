@@ -26,6 +26,12 @@ interface Sounds {
     /** A comet gone by uncaught. */
     fun missed() = Unit
 
+    /** Something crossing the sky, right now. */
+    fun flyby() = Unit
+
+    /** An achievement earned. */
+    fun unlock() = Unit
+
     /** Something bought. */
     fun purchase() = Unit
 

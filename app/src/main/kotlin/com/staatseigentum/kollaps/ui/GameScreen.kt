@@ -71,6 +71,8 @@ import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Space
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.staatseigentum.kollaps.core.pixel.PixelPlanet
+import kotlin.math.min
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -79,6 +81,9 @@ import kotlin.math.sin
 interface GameActions {
     /** Returns the mass the tap produced, for the floating number. */
     fun tap(): Double
+
+    /** A tap that landed on the sky rather than on the body. Pays nothing, counts once. */
+    fun tapEmpty()
     fun setBuyAmount(amount: BuyAmount)
     fun buyCollector(id: String)
 
@@ -513,6 +518,7 @@ private fun TapArea(
     val sfx by rememberUpdatedState(LocalSfx.current)
     val hapticsOn by rememberUpdatedState(state.hapticsOn)
     val tap by rememberUpdatedState(actions::tap)
+    val empty by rememberUpdatedState(actions::tapEmpty)
 
     // A ring thrown off the body every time it climbs a rung. Only upwards: a collapse drops the
     // tier by twenty-four steps at once and already has a blast of its own.
@@ -523,9 +529,34 @@ private fun TapArea(
         lastTier.intValue = tier.index
     }
 
+    /*
+     * The body has to be hit, not merely the screen it is on.
+     *
+     * The radius is worked out the same way [CelestialBody] works out how large to draw: the
+     * shorter side of the area times the tier's sprite fraction, halved. Deriving it rather than
+     * picking a number is the whole point — the bodies range from a quarter of the area to all of
+     * it, and a fixed radius would make the meteorite unhittable and the black hole hittable from
+     * the corners.
+     *
+     * A little larger than what is drawn, because the sprite is a circle inside a square buffer
+     * and a thumb is not a pixel. Missing the body you clearly aimed at is a worse feeling than
+     * hitting one you nearly missed.
+     */
     Box(
         modifier = modifier.pointerInput(Unit) {
             detectTapGestures { position ->
+                val centre = Offset(size.width / 2f, size.height / 2f)
+                val radius = min(size.width, size.height) / 2f *
+                    PixelPlanet.spriteFraction(tier) * HIT_FORGIVENESS
+
+                if ((position - centre).getDistance() > radius) {
+                    // The sky. Pays nothing and says so — but it is counted, because exactly one
+                    // achievement is waiting for somebody to do it.
+                    empty()
+                    sfx?.missed()
+                    return@detectTapGestures
+                }
+
                 val gained = tap()
                 effects += TapEffect(nextId++, position, Numbers.format(gained))
                 sfx?.click()
@@ -577,6 +608,14 @@ private fun TapArea(
                 )
             }
         }
+
+        // Along the top, where nothing else is: the header sits above this box, not in it.
+        AchievementToast(
+            earned = state.achievements,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 12.dp),
+        )
 
         // Along the bottom of the body, out of the way of the thumb that is tapping it.
         TutorialHint(
@@ -657,3 +696,12 @@ private const val TWO_PI = 6.2831855f
  * window two rows tall.
  */
 private val WIDE_THRESHOLD = 600.dp
+
+/**
+ * How much larger the tap target is than the body drawn inside it.
+ *
+ * A tenth. Enough that the edge of a planet is not a trap, small enough that the empty half of
+ * the screen stays empty — which it has to, because one achievement depends on somebody being
+ * able to tap it on purpose.
+ */
+private const val HIT_FORGIVENESS = 1.1f

@@ -74,6 +74,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         return gained
     }
 
+    override fun tapEmpty() {
+        state = GameEngine.tapEmpty(state)
+    }
+
     override fun setBuyAmount(amount: BuyAmount) {
         currentBuyAmount = amount
     }

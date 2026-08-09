@@ -63,6 +63,9 @@ fun CometOverlay(
                 toTop = 0.15f + random.nextFloat() * 0.5f,
                 leftToRight = random.nextBoolean(),
             )
+            // Said as it enters, not as it is caught: the whole difficulty of a comet is
+            // noticing one at all, and the screen is usually not what the player is looking at.
+            sfx?.flyby()
             travel.snapTo(0f)
             // Crossing the screen is the whole window in which it can be caught.
             travel.animateTo(1f, animationSpec = androidx.compose.animation.core.tween(

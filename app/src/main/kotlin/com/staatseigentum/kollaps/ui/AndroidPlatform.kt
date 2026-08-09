@@ -110,6 +110,10 @@ private class AndroidSounds(context: Context) : Sounds {
     // that should stay in the background can only get there here.
     override fun missed() = play(cueSamples[Cue.MISSED], CUE_VOLUME * 0.45f)
 
+    override fun flyby() = play(cueSamples[Cue.FLYBY], CUE_VOLUME * 0.55f)
+
+    override fun unlock() = play(cueSamples[Cue.UNLOCK], CUE_VOLUME)
+
     override fun purchase() = play(cueSamples[Cue.PURCHASE], CUE_VOLUME * 0.7f)
 
     override fun success() = play(cueSamples[Cue.SUCCESS], CUE_VOLUME)

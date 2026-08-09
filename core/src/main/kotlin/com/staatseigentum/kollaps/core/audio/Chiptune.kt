@@ -27,6 +27,12 @@ enum class Cue {
     /** A comet that drifted off the screen uncaught. */
     MISSED,
 
+    /** Something crossing the sky. Quiet, and the only cue nobody has to react to. */
+    FLYBY,
+
+    /** An achievement earned. */
+    UNLOCK,
+
     /**
      * Any tap.
      *
@@ -105,6 +111,23 @@ object Chiptune {
             Note(hertz = G4, startSeconds = 0.00, seconds = 0.30, toHertz = C5),
             Note(hertz = C5, startSeconds = 0.14, seconds = 0.34, gain = 0.6, toHertz = G5),
             Note(hertz = E5, startSeconds = 0.28, seconds = 0.30, gain = 0.4),
+        )
+
+        // A long slide downward, quiet: something passing overhead that was never coming to you.
+        // The one cue whose job is to make the player *look*, so it has to be noticeable without
+        // being an alarm — it fires every few minutes whether or not anybody wants it to.
+        Cue.FLYBY -> listOf(
+            Note(hertz = E6, startSeconds = 0.00, seconds = 0.34, toHertz = C5, gain = 0.55),
+            Note(hertz = G5, startSeconds = 0.06, seconds = 0.26, toHertz = G4, gain = 0.30),
+        )
+
+        // Up a fourth and held, with the octave under it. Shorter than the tier fanfare, because
+        // an achievement is a nod and a new body is an event — and a player can earn three of
+        // these inside a second, so it must not queue up into a chord.
+        Cue.UNLOCK -> listOf(
+            Note(G5, 0.00, 0.10),
+            Note(C6, 0.08, 0.26),
+            Note(C5, 0.08, 0.24, gain = 0.4),
         )
 
         // One note and gone. Fired more often than everything else put together, so it is the one

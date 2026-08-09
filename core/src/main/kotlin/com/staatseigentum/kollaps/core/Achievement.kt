@@ -33,6 +33,14 @@ object Achievements {
         add(tier("a_tier_loch", "Ende der Leiter", "Ab hier kommt nichts mehr zurück.", "Schwarzes Loch"))
 
         // ---- tapping
+        // The one achievement in the list that rewards doing nothing at all, which is the joke.
+        add(
+            Achievement(
+                "a_leer",
+                "Was war dat jetze?",
+                "Das war genau so wenig wert wie eh und je",
+            ) { it.missedTaps >= 1 },
+        )
         add(taps("a_taps_100", "Angefasst", "Hundert Mal auf einen Stein.", 100))
         add(taps("a_taps_1k", "Hartnäckig", "Tausend Mal. Der Stein merkt nichts.", 1_000))
         add(taps("a_taps_10k", "Zwanghaft", "Zehntausend. Vielleicht mal Pause?", 10_000))

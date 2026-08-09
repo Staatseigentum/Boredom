@@ -55,16 +55,22 @@ object SpriteCache {
     private const val KEEP = 2
 
     private val lock = Mutex()
-    private val sheets = LinkedHashMap<String, SpriteSheet>()
+    private val sheets = LinkedHashMap<Key, SpriteSheet>()
 
     /**
-     * Keyed by tier *and* colour scheme.
+     * What identifies a rendered sheet: the rung and the colour scheme baked into its pixels.
      *
-     * The scheme is baked into the pixels, so keying by tier alone would hand back the body in
-     * whatever palette happened to be chosen when it was first drawn — and switching the palette
-     * would change nothing until the next rung.
+     * A data class rather than a formatted string, and that is not a matter of taste. This was a
+     * string once, and a mangled escape turned the interpolation into a literal — so every tier
+     * and every palette shared one key. The cache then handed back whichever sheet it happened to
+     * hold: switching palette appeared to do nothing, and climbing a rung could leave the previous
+     * body on screen. Neither failed loudly; both just looked wrong.
+     *
+     * Two fields the compiler checks cannot be got wrong that way.
      */
-    private fun keyOf(tier: CelestialTier, skin: Skin) = "\${tier.index}/\${skin.id}"
+    private data class Key(val tier: Int, val skin: String)
+
+    private fun keyOf(tier: CelestialTier, skin: Skin) = Key(tier.index, skin.id)
 
     /** The sheet if it has already been built, for showing a body without a blank frame first. */
     fun ready(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): SpriteSheet? =

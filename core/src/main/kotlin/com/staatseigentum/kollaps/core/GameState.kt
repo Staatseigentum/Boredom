@@ -42,6 +42,15 @@ data class GameState(
     /** Total taps, across all runs. */
     val taps: Long = 0,
 
+    /**
+     * Taps that hit the sky instead of the body, across all runs.
+     *
+     * Counted rather than ignored purely so that one achievement can notice. Nothing else reads
+     * it, and it is deliberately not part of [taps] — a miss produced nothing, and rolling it into
+     * the tap counter would make every tapping achievement claimable by flailing at the background.
+     */
+    val missedTaps: Long = 0,
+
     /** Highest tier index ever reached, across all runs. */
     val bestTier: Int = 0,
 
