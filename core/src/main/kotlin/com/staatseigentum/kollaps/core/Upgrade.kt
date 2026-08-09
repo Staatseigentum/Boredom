@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /** What buying an upgrade changes. */
 sealed interface UpgradeEffect {
     /** Adds a flat amount to the base mass per tap. */
@@ -66,12 +68,22 @@ enum class UpgradeGroup(val label: String) {
 
 data class Upgrade(
     val id: String,
-    val name: String,
-    val flavor: String,
+    val germanName: String,
+    val germanFlavor: String,
     val cost: Double,
     val effect: UpgradeEffect,
     val unlock: UnlockCondition,
 ) {
+    /**
+     * What the shop row says.
+     *
+     * Translated here rather than at the call site so that no screen has to remember to — and,
+     * unlike a tier's name, an upgrade's name is only ever text: everything that refers to one
+     * refers to its [id].
+     */
+    val name: String get() = Lang.t(germanName)
+    val flavor: String get() = Lang.t(germanFlavor)
+
     /** Which shelf this belongs on, read straight off the effect. */
     val group: UpgradeGroup
         get() = when (effect) {
@@ -181,32 +193,32 @@ object Upgrades {
     private val synergyUpgrades: List<Upgrade> = listOf(
         Upgrade(
             id = "synergy_1",
-            name = "Seismische Resonanz",
-            flavor = "Dein Tippen bringt die ganze Anlage zum Mitschwingen.",
+            germanName = "Seismische Resonanz",
+            germanFlavor = "Dein Tippen bringt die ganze Anlage zum Mitschwingen.",
             cost = 50_000.0,
             effect = UpgradeEffect.TapFromProduction(0.01),
             unlock = UnlockCondition.CollectorsOwned("drone", 10),
         ),
         Upgrade(
             id = "synergy_2",
-            name = "Harmonischer Kollaps",
-            flavor = "Ein Tipp im richtigen Takt und alles arbeitet doppelt.",
+            germanName = "Harmonischer Kollaps",
+            germanFlavor = "Ein Tipp im richtigen Takt und alles arbeitet doppelt.",
             cost = 10_000_000.0,
             effect = UpgradeEffect.TapFromProduction(0.04),
             unlock = UnlockCondition.CollectorsOwned("driver", 25),
         ),
         Upgrade(
             id = "synergy_3",
-            name = "Singularitätsecho",
-            flavor = "Jeder Tipp hallt durch jede Maschine, die du besitzt.",
+            germanName = "Singularitätsecho",
+            germanFlavor = "Jeder Tipp hallt durch jede Maschine, die du besitzt.",
             cost = 50_000_000_000.0,
             effect = UpgradeEffect.TapFromProduction(0.10),
             unlock = atTier("Roter Zwerg"),
         ),
         Upgrade(
             id = "synergy_4",
-            name = "Gezeitenkraft",
-            flavor = "Der Körper zerrt selbst an dem, was ihn abbaut. Du hältst nur noch dagegen.",
+            germanName = "Gezeitenkraft",
+            germanFlavor = "Der Körper zerrt selbst an dem, was ihn abbaut. Du hältst nur noch dagegen.",
             cost = 1_500_000_000_000_000.0,
             effect = UpgradeEffect.TapFromProduction(0.22),
             unlock = atTier("Hyperriese"),
@@ -216,72 +228,72 @@ object Upgrades {
     private val cosmicUpgrades: List<Upgrade> = listOf(
         Upgrade(
             id = "cosmic_1",
-            name = "Kosmische Ausrichtung",
-            flavor = "Alle Bahnen in einer Reihe. Der Rest ist Logistik.",
+            germanName = "Kosmische Ausrichtung",
+            germanFlavor = "Alle Bahnen in einer Reihe. Der Rest ist Logistik.",
             cost = 1_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(2.0),
             unlock = atTier("Venus"),
         ),
         Upgrade(
             id = "cosmic_2",
-            name = "Dunkle-Materie-Verdichter",
-            flavor = "Presst das Unsichtbare zu etwas, das man wiegen kann.",
+            germanName = "Dunkle-Materie-Verdichter",
+            germanFlavor = "Presst das Unsichtbare zu etwas, das man wiegen kann.",
             cost = 1_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(2.0),
             unlock = atTier("Saturn"),
         ),
         Upgrade(
             id = "cosmic_3",
-            name = "Vakuumfluktuation",
-            flavor = "Das Nichts ist erstaunlich ergiebig, wenn man es schüttelt.",
+            germanName = "Vakuumfluktuation",
+            germanFlavor = "Das Nichts ist erstaunlich ergiebig, wenn man es schüttelt.",
             cost = 1_000_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(2.0),
             unlock = atTier("Sonne"),
         ),
         Upgrade(
             id = "cosmic_4",
-            name = "Entropieumkehr",
-            flavor = "Du räumst auf, was das Universum seit 13 Milliarden Jahren verstreut.",
+            germanName = "Entropieumkehr",
+            germanFlavor = "Du räumst auf, was das Universum seit 13 Milliarden Jahren verstreut.",
             cost = 100_000_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(3.0),
             unlock = atTier("Roter Überriese"),
         ),
         Upgrade(
             id = "cosmic_5",
-            name = "Raumzeitgefälle",
-            flavor = "Du legst das Universum leicht schräg und lässt den Rest herunterrollen.",
+            germanName = "Raumzeitgefälle",
+            germanFlavor = "Du legst das Universum leicht schräg und lässt den Rest herunterrollen.",
             cost = 4_000_000_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(3.0),
             unlock = atTier("Weißer Zwerg"),
         ),
         Upgrade(
             id = "cosmic_6",
-            name = "Letzte Symmetrie",
-            flavor = "Die eine Regel, aus der alle anderen folgen. Du hast sie umgestellt.",
+            germanName = "Letzte Symmetrie",
+            germanFlavor = "Die eine Regel, aus der alle anderen folgen. Du hast sie umgestellt.",
             cost = 22_000_000_000_000_000.0,
             effect = UpgradeEffect.GlobalMultiplier(4.0),
             unlock = atTier("Magnetar"),
         ),
         Upgrade(
             id = "offline_1",
-            name = "Autonome Drohnen",
-            flavor = "Sie arbeiten auch weiter, wenn du das Handy weglegst.",
+            germanName = "Autonome Drohnen",
+            germanFlavor = "Sie arbeiten auch weiter, wenn du das Handy weglegst.",
             cost = 500_000.0,
             effect = UpgradeEffect.OfflineEfficiency(1.0),
             unlock = atTier("Erde"),
         ),
         Upgrade(
             id = "offline_2",
-            name = "Kryostase-Puffer",
-            flavor = "Lagert die Ausbeute ein, bis du wiederkommst.",
+            germanName = "Kryostase-Puffer",
+            germanFlavor = "Lagert die Ausbeute ein, bis du wiederkommst.",
             cost = 500_000_000.0,
             effect = UpgradeEffect.OfflineCapHours(24.0),
             unlock = atTier("Jupiter"),
         ),
         Upgrade(
             id = "offline_3",
-            name = "Trägheitsspeicher",
-            flavor = "Was die Anlage nachts fördert, wartet jetzt zwei Tage auf dich.",
+            germanName = "Trägheitsspeicher",
+            germanFlavor = "Was die Anlage nachts fördert, wartet jetzt zwei Tage auf dich.",
             cost = 8_000_000_000_000.0,
             effect = UpgradeEffect.OfflineCapHours(48.0),
             unlock = atTier("Blauer Riese"),
@@ -327,8 +339,8 @@ object Upgrades {
             val target = Collectors.byId(synergy.targetId)!!
             Upgrade(
                 id = "syn_${synergy.sourceId}_${synergy.targetId}",
-                name = synergy.name,
-                flavor = synergy.flavor,
+                germanName = synergy.name,
+                germanFlavor = synergy.flavor,
                 cost = target.baseCost * 120.0,
                 effect = UpgradeEffect.CollectorSynergy(
                     synergy.sourceId,
@@ -341,8 +353,8 @@ object Upgrades {
             val source = Collectors.byId(sourceId)!!
             Upgrade(
                 id = "syn_${sourceId}_alle",
-                name = words.first,
-                flavor = words.second,
+                germanName = words.first,
+                germanFlavor = words.second,
                 cost = source.baseCost * 900.0,
                 effect = UpgradeEffect.FleetSynergy(sourceId, perUnit),
                 unlock = UnlockCondition.CollectorsOwned(sourceId, 20),
@@ -361,8 +373,8 @@ object Upgrades {
         COLLECTOR_UPGRADE_STEPS.map { (required, priceFactor, suffix) ->
             Upgrade(
                 id = "${collector.id}_${required}",
-                name = "${collector.name} $suffix",
-                flavor = "Doppelte Leistung aus jedem ${collector.name}.",
+                germanName = "${collector.name} $suffix",
+                germanFlavor = "Doppelte Leistung aus jedem ${collector.name}.",
                 cost = collector.baseCost * priceFactor,
                 effect = UpgradeEffect.CollectorMultiplier(collector.id, 2.0),
                 unlock = UnlockCondition.CollectorsOwned(collector.id, required),
@@ -390,8 +402,8 @@ object Upgrades {
         unlockMass: Double,
     ) = Upgrade(
         id = id,
-        name = name,
-        flavor = flavor,
+        germanName = name,
+        germanFlavor = flavor,
         cost = cost,
         effect = UpgradeEffect.TapMultiplier(2.0),
         unlock = UnlockCondition.MassCollected(unlockMass),

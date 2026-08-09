@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.pow
@@ -10,11 +12,15 @@ import kotlin.math.pow
  */
 data class Collector(
     val id: String,
-    val name: String,
-    val flavor: String,
+    val germanName: String,
+    val germanFlavor: String,
     val baseCost: Double,
     val baseRate: Double,
 ) {
+    /** What the shop row says. Translated here so no call site has to remember to. */
+    val name: String get() = Lang.t(germanName)
+    val flavor: String get() = Lang.t(germanFlavor)
+
     /** Price of the next copy when [owned] are already built. */
     fun costAt(owned: Int): Double = baseCost * COST_GROWTH.pow(owned)
 
@@ -42,120 +48,120 @@ object Collectors {
     val all: List<Collector> = listOf(
         Collector(
             id = "dust",
-            name = "Staubfänger",
-            flavor = "Ein Netz aus Folie, das im Vakuum treibt und Krümel einsammelt.",
+            germanName = "Staubfänger",
+            germanFlavor = "Ein Netz aus Folie, das im Vakuum treibt und Krümel einsammelt.",
             baseCost = 15.0,
             baseRate = 0.1,
         ),
         Collector(
             id = "net",
-            name = "Asteroidennetz",
-            flavor = "Wirf es aus, warte, zieh es ein. Weltraumfischen eben.",
+            germanName = "Asteroidennetz",
+            germanFlavor = "Wirf es aus, warte, zieh es ein. Weltraumfischen eben.",
             baseCost = 100.0,
             baseRate = 1.0,
         ),
         Collector(
             id = "drone",
-            name = "Bergbaudrohne",
-            flavor = "Bohrt, kaut, spuckt Gestein aus. Fragt nie nach Pause.",
+            germanName = "Bergbaudrohne",
+            germanFlavor = "Bohrt, kaut, spuckt Gestein aus. Fragt nie nach Pause.",
             baseCost = 1_100.0,
             baseRate = 8.0,
         ),
         Collector(
             id = "refinery",
-            name = "Orbitalraffinerie",
-            flavor = "Trennt Wertvolles von Schotter, direkt im Orbit.",
+            germanName = "Orbitalraffinerie",
+            germanFlavor = "Trennt Wertvolles von Schotter, direkt im Orbit.",
             baseCost = 12_000.0,
             baseRate = 47.0,
         ),
         Collector(
             id = "driver",
-            name = "Massetreiber",
-            flavor = "Eine Kanone, die ganze Berge in deine Umlaufbahn schießt.",
+            germanName = "Massetreiber",
+            germanFlavor = "Eine Kanone, die ganze Berge in deine Umlaufbahn schießt.",
             baseCost = 130_000.0,
             baseRate = 260.0,
         ),
         Collector(
             id = "comet",
-            name = "Kometenfänger",
-            flavor = "Fängt Eisbrocken ein, bevor sie irgendwo einschlagen.",
+            germanName = "Kometenfänger",
+            germanFlavor = "Fängt Eisbrocken ein, bevor sie irgendwo einschlagen.",
             baseCost = 1_400_000.0,
             baseRate = 1_400.0,
         ),
         Collector(
             id = "dyson",
-            name = "Dyson-Schwarm",
-            flavor = "Millionen Spiegel, die einem Stern die Energie abknöpfen.",
+            germanName = "Dyson-Schwarm",
+            germanFlavor = "Millionen Spiegel, die einem Stern die Energie abknöpfen.",
             baseCost = 20_000_000.0,
             baseRate = 7_800.0,
         ),
         Collector(
             id = "forge",
-            name = "Sternenschmiede",
-            flavor = "Fusioniert leichte Kerne zu schweren. Laut. Sehr laut.",
+            germanName = "Sternenschmiede",
+            germanFlavor = "Fusioniert leichte Kerne zu schweren. Laut. Sehr laut.",
             baseCost = 330_000_000.0,
             baseRate = 44_000.0,
         ),
         Collector(
             id = "quantum",
-            name = "Quantenkollektor",
-            flavor = "Schöpft Teilchen direkt aus dem Nichts. Ist erlaubt, wenn man schnell ist.",
+            germanName = "Quantenkollektor",
+            germanFlavor = "Schöpft Teilchen direkt aus dem Nichts. Ist erlaubt, wenn man schnell ist.",
             baseCost = 5_100_000_000.0,
             baseRate = 260_000.0,
         ),
         Collector(
             id = "extractor",
-            name = "Singularitätsextraktor",
-            flavor = "Zapft den Rand eines Ereignishorizonts an. Vorsichtig.",
+            germanName = "Singularitätsextraktor",
+            germanFlavor = "Zapft den Rand eines Ereignishorizonts an. Vorsichtig.",
             baseCost = 75_000_000_000.0,
             baseRate = 1_600_000.0,
         ),
         Collector(
             id = "dilator",
-            name = "Zeitdilatator",
-            flavor = "Draußen vergeht eine Sekunde, drinnen eine Woche Schichtarbeit.",
+            germanName = "Zeitdilatator",
+            germanFlavor = "Draußen vergeht eine Sekunde, drinnen eine Woche Schichtarbeit.",
             baseCost = 1_000_000_000_000.0,
             baseRate = 10_000_000.0,
         ),
         Collector(
             id = "echo",
-            name = "Urknall-Echo",
-            flavor = "Fängt den Nachhall des ersten Augenblicks ein und presst ihn zu Materie.",
+            germanName = "Urknall-Echo",
+            germanFlavor = "Fängt den Nachhall des ersten Augenblicks ein und presst ihn zu Materie.",
             baseCost = 14_000_000_000_000.0,
             baseRate = 65_000_000.0,
         ),
         Collector(
             id = "vakuum",
-            name = "Vakuumdestillat",
-            flavor = "Destilliert das Nichts, bis unten etwas übrig bleibt. Fragt nicht, was.",
+            germanName = "Vakuumdestillat",
+            germanFlavor = "Destilliert das Nichts, bis unten etwas übrig bleibt. Fragt nicht, was.",
             baseCost = 200_000_000_000_000.0,
             baseRate = 420_000_000.0,
         ),
         Collector(
             id = "faltwerk",
-            name = "Faltwerk",
-            flavor = "Legt den Raum in Falten und schüttelt aus, was zwischen ihnen hängt.",
+            germanName = "Faltwerk",
+            germanFlavor = "Legt den Raum in Falten und schüttelt aus, was zwischen ihnen hängt.",
             baseCost = 2_800_000_000_000_000.0,
             baseRate = 2_700_000_000.0,
         ),
         Collector(
             id = "weber",
-            name = "Kausalitätsweber",
-            flavor = "Knüpft Ursache an Wirkung, bis Materie der kürzeste Weg zwischen beiden ist.",
+            germanName = "Kausalitätsweber",
+            germanFlavor = "Knüpft Ursache an Wirkung, bis Materie der kürzeste Weg zwischen beiden ist.",
             baseCost = 40_000_000_000_000_000.0,
             baseRate = 17_500_000_000.0,
         ),
         Collector(
             id = "urgrund",
-            name = "Urgrund-Anzapfung",
-            flavor = "Unter allem liegt noch etwas. Von dort holt sie es hoch.",
+            germanName = "Urgrund-Anzapfung",
+            germanFlavor = "Unter allem liegt noch etwas. Von dort holt sie es hoch.",
             baseCost = 550_000_000_000_000_000.0,
             baseRate = 115_000_000_000.0,
         ),
         Collector(
             id = "omega",
-            name = "Omega-Kollektor",
-            flavor = "Sammelt ein, was übrig sein wird. Rückwärts, vom Ende her.",
+            germanName = "Omega-Kollektor",
+            germanFlavor = "Sammelt ein, was übrig sein wird. Rückwärts, vom Ende her.",
             baseCost = 7_500_000_000_000_000_000.0,
             baseRate = 750_000_000_000.0,
         ),
