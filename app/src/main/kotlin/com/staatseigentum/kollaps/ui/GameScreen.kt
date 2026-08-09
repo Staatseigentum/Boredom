@@ -347,7 +347,7 @@ fun GameScreen(
     // The palette is settled once, here, so every body on screen agrees on it — and it is
     // resolved rather than taken raw, so a scheme that is not actually earned falls back. Off the
     // shown state, so the body being pulled in keeps the colours it had.
-    val skin = Skins.current(shownState.skinId, shownState.achievements.size)
+    val skin = Skins.current(shownState.skinId, shownState.achievements)
 
     // The number format likewise, and for the same reason: one place decides, everything below
     // reads the same thing. Applied on every change rather than once, because a save imported
@@ -444,20 +444,38 @@ fun GameScreen(
                 }
             }
 
-            offlineReport?.let { report ->
-                OfflineDialog(report = report, onDismiss = actions::dismissOfflineReport)
+            /*
+             * Nothing pops up over a sequence.
+             *
+             * The new run climbs the first rungs of the ladder within a second of a collapse — the
+             * starting mass alone is enough — so the tier celebration was landing on top of the
+             * screen being pulled into the hole, over a body it was not describing. The same goes
+             * for an event coming due and for an offline report on a save reopened mid-animation.
+             *
+             * Held rather than dropped: `hasUncelebratedTier` stays true, the prompt stays in the
+             * state and the report stays in its flow, so all three arrive the moment the picture
+             * is over. Deferring is the whole fix; none of them is worth skipping.
+             */
+            val quiet by remember(collapse, bigBang) {
+                derivedStateOf { collapse.running || bigBang.running }
             }
 
-            if (GameEngine.hasUncelebratedTier(state)) {
-                TierCelebration(tier = stats.tier, onDismiss = actions::acknowledgeTier)
-            }
+            if (!quiet) {
+                offlineReport?.let { report ->
+                    OfflineDialog(report = report, onDismiss = actions::dismissOfflineReport)
+                }
 
-            state.prompt?.let { prompt ->
-                EventDialog(
-                    prompt = prompt,
-                    onChoose = actions::chooseEvent,
-                    onDismiss = actions::dismissEvent,
-                )
+                if (GameEngine.hasUncelebratedTier(state)) {
+                    TierCelebration(tier = stats.tier, onDismiss = actions::acknowledgeTier)
+                }
+
+                state.prompt?.let { prompt ->
+                    EventDialog(
+                        prompt = prompt,
+                        onChoose = actions::chooseEvent,
+                        onDismiss = actions::dismissEvent,
+                    )
+                }
             }
 
             // Over everything, including the dialogs: the blast is the loudest thing that can
@@ -843,6 +861,9 @@ private fun TapArea(
         // Along the top, where nothing else is: the header sits above this box, not in it.
         AchievementToast(
             earned = state.achievements,
+            // Collected as normal, shown afterwards: a collapse earns two or three of these at
+            // once and a card sliding in over the explosion is the same mistake as a dialog.
+            hold = collapse?.running == true || bigBang?.running == true,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 12.dp),

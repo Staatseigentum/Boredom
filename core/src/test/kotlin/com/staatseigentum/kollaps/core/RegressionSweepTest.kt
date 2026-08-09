@@ -3,6 +3,7 @@ package com.staatseigentum.kollaps.core
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -226,4 +227,107 @@ class RegressionSweepTest {
         assertEquals(1000.0, loaded.mass)
         assertFalse(loaded.tutorialDone, "Ein neues Feld kam nicht auf seinem Standard an")
     }
+    // ---------------------------------------------------------------- the collector cap
+
+    /**
+     * Five hundred is a limit, not a suggestion.
+     *
+     * Checked through every door rather than only through [GameEngine.buyCollector], because the
+     * shop row, the Max button and the automation rule all reach the count by different routes and
+     * a cap that only holds on one of them is not a cap.
+     */
+    @Test
+    fun `no collector can be bought past the cap, whichever way it is asked`() {
+        val collector = Collectors.all.first()
+        val rich = GameState.new(0).copy(
+            mass = 1e300,
+            collectors = mapOf(collector.id to Collector.MAX_OWNED),
+        )
+
+        for (amount in BuyAmount.entries) {
+            assertEquals(
+                0,
+                GameEngine.resolveAmount(collector, Collector.MAX_OWNED, rich.mass, amount),
+                "$amount bietet noch etwas an, obwohl voll",
+            )
+            val after = GameEngine.buyCollector(rich, collector.id, amount)
+            assertEquals(
+                Collector.MAX_OWNED,
+                after.ownedOf(collector.id),
+                "$amount hat über den Deckel hinaus gekauft",
+            )
+            assertEquals(rich.mass, after.mass, "$amount hat Masse für nichts genommen")
+        }
+    }
+
+    /** A bulk purchase stops exactly at the cap rather than overshooting and being refused. */
+    @Test
+    fun `a bulk purchase is trimmed to what is left rather than refused`() {
+        val collector = Collectors.all.first()
+        val nearly = GameState.new(0).copy(
+            mass = 1e300,
+            collectors = mapOf(collector.id to Collector.MAX_OWNED - 3),
+        )
+
+        val after = GameEngine.buyCollector(nearly, collector.id, BuyAmount.HUNDRED)
+        assertEquals(Collector.MAX_OWNED, after.ownedOf(collector.id))
+    }
+
+    /**
+     * A save from before the cap keeps what it has.
+     *
+     * Taking copies away would be the rules reaching backwards into a game already played, and a
+     * negative amount on offer would be worse still.
+     */
+    @Test
+    fun `a save from over the cap keeps its collectors and is simply offered nothing`() {
+        val collector = Collectors.all.first()
+        val over = Collector.MAX_OWNED + 120
+        val legacy = GameState.new(0).copy(
+            mass = 1e300,
+            collectors = mapOf(collector.id to over),
+        )
+
+        val after = GameEngine.buyCollector(legacy, collector.id, BuyAmount.MAX)
+        assertEquals(over, after.ownedOf(collector.id))
+
+        val offer = GameEngine.collectorOffers(legacy, BuyAmount.MAX)
+            .first { it.collector.id == collector.id }
+        assertEquals(0, offer.amount)
+        assertFalse(offer.affordable)
+    }
+
+    /** The last milestone lands on the last copy, so nothing points past the end. */
+    @Test
+    fun `the cap is a whole number of milestones and stops pointing forward`() {
+        assertEquals(
+            0,
+            Collector.MAX_OWNED % Milestones.STEP,
+            "Der Deckel liegt zwischen zwei Meilensteinen",
+        )
+
+        val collector = Collectors.all.first()
+        val full = GameState.new(0).copy(collectors = mapOf(collector.id to Collector.MAX_OWNED))
+        val offer = GameEngine.collectorOffers(full, BuyAmount.ONE)
+            .first { it.collector.id == collector.id }
+        assertNull(offer.nextMilestoneAt, "Der Shop zeigt einen Meilenstein hinter dem Deckel")
+    }
+
+    /** And the achievement behind the new palette only lands when every last one is full. */
+    @Test
+    fun `the full house achievement needs every collector, not just one`() {
+        val id = "a_alle_voll"
+        val one = Collectors.all.first()
+
+        val partly = GameState.new(0).copy(
+            collectors = mapOf(one.id to Collector.MAX_OWNED),
+        )
+        assertFalse(id in Achievements.newlyEarned(partly))
+
+        val everything = GameState.new(0).copy(
+            collectors = Collectors.all.associate { it.id to Collector.MAX_OWNED },
+        )
+        assertTrue(id in Achievements.newlyEarned(everything))
+    }
+
 }

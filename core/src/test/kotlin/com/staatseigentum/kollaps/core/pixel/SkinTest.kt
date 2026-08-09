@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core.pixel
 
+import com.staatseigentum.kollaps.core.Achievements
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Tiers
@@ -93,28 +94,53 @@ class SkinTest {
         assertTrue(spread < 40, "Der Monokanal lässt $spread Stufen Farbe stehen")
     }
 
+    /** A set of ids that is only as long as it needs to be, for the count-based thresholds. */
+    private fun earned(count: Int): Set<String> = (0 until count).map { "a_$it" }.toSet()
+
     @Test
-    fun `the plain scheme is free and the rest are not`() {
+    fun `the plain scheme is free and the rest cost something`() {
         assertEquals(0, Skins.ORIGINAL.requiredAchievements)
+        assertEquals(null, Skins.ORIGINAL.requiredAchievement)
         for (skin in Skins.all) {
             if (skin.id == Skins.ORIGINAL.id) continue
-            assertTrue(skin.requiredAchievements > 0, skin.id)
+            // Either kind of lock will do, but a scheme with neither is one nobody had to earn.
+            assertTrue(
+                skin.requiredAchievements > 0 || skin.requiredAchievement != null,
+                skin.id,
+            )
+        }
+    }
+
+    @Test
+    fun `a scheme that names an achievement needs that one and no other`() {
+        val named = Skins.all.filter { it.requiredAchievement != null }
+        assertTrue(named.isNotEmpty(), "Keine Palette hängt an einem bestimmten Erfolg")
+
+        for (skin in named) {
+            val id = skin.requiredAchievement!!
+            assertTrue(
+                Achievements.byId(id) != null,
+                "$skin.id verlangt den Erfolg $id, den es nicht gibt",
+            )
+            // A hundred other achievements are not a substitute for the one it asks for.
+            assertFalse(Skins.isUnlocked(earned(100), skin), skin.id)
+            assertTrue(Skins.isUnlocked(setOf(id), skin), skin.id)
         }
     }
 
     @Test
     fun `nothing is unlocked before it is earned`() {
         val locked = Skins.all.maxBy { it.requiredAchievements }
-        assertFalse(Skins.isUnlocked(0, locked))
-        assertTrue(Skins.isUnlocked(locked.requiredAchievements, locked))
-        assertEquals(listOf(Skins.ORIGINAL), Skins.unlocked(0))
+        assertFalse(Skins.isUnlocked(emptySet(), locked))
+        assertTrue(Skins.isUnlocked(earned(locked.requiredAchievements), locked))
+        assertEquals(listOf(Skins.ORIGINAL), Skins.unlocked(emptySet()))
     }
 
     @Test
     fun `an unearned scheme falls back instead of showing`() {
         val locked = Skins.all.maxBy { it.requiredAchievements }
-        assertEquals(Skins.ORIGINAL, Skins.current(locked.id, achievements = 0))
-        assertEquals(locked, Skins.current(locked.id, locked.requiredAchievements))
+        assertEquals(Skins.ORIGINAL, Skins.current(locked.id, emptySet()))
+        assertEquals(locked, Skins.current(locked.id, earned(locked.requiredAchievements)))
     }
 
     @Test

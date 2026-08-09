@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.Automation
 import com.staatseigentum.kollaps.core.BuyAmount
+import com.staatseigentum.kollaps.core.Collector
 import com.staatseigentum.kollaps.core.CollectorOffer
 import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
@@ -359,12 +360,19 @@ private fun CollectorRow(
             Spacer(Modifier.width(8.dp))
 
             Column(horizontalAlignment = Alignment.End) {
+                // A price of zero for something that cannot be bought would read as free. At the
+                // cap the row says so instead, the same way a full investment does.
+                val full = offer.owned >= Collector.MAX_OWNED
                 PixelLabel(
-                    text = Numbers.formatMass(offer.cost),
-                    color = if (enabled) Positive else Muted,
+                    text = if (full) "voll" else Numbers.formatMass(offer.cost),
+                    color = when {
+                        full -> Nebula
+                        enabled -> Positive
+                        else -> Muted
+                    },
                     size = 12,
                 )
-                if (offer.amount > 1) {
+                if (!full && offer.amount > 1) {
                     Text(
                         text = "×${offer.amount}",
                         style = MaterialTheme.typography.bodySmall,

@@ -1125,7 +1125,7 @@ object GameEngine {
      */
     fun setSkin(state: GameState, skinId: String): GameState {
         val skin = Skins.byId(skinId)
-        if (!Skins.isUnlocked(state.achievements.size, skin)) return state
+        if (!Skins.isUnlocked(state.achievements, skin)) return state
         return state.copy(skinId = skin.id)
     }
 
@@ -1241,7 +1241,10 @@ object GameEngine {
                     0.0
                 },
                 milestones = Milestones.reached(owned),
-                nextMilestoneAt = Milestones.nextAt(owned),
+                // Nothing to count towards once the cap is reached: the twentieth milestone lands
+                // on the last copy that can be built, and pointing at a twenty-first would be the
+                // shop promising something it will never sell.
+                nextMilestoneAt = Milestones.nextAt(owned)?.takeIf { it <= Collector.MAX_OWNED },
                 affordable = count > 0 && cost <= state.mass,
                 everBought = owned > 0,
                 visible = visible,
@@ -1357,21 +1360,33 @@ object GameEngine {
         is UnlockCondition.TapsMade -> state.taps >= u.count
     }
 
-    /** How many copies [amount] resolves to for this collector right now. */
+    /**
+     * How many copies [amount] resolves to for this collector right now.
+     *
+     * The one place the cap is applied, and on purpose: every way of buying a collector — the shop
+     * row, the Max button, the automation rule — asks this question first, so clamping the answer
+     * closes all three at once. A check inside [buyCollector] alone would leave the shop happily
+     * offering a purchase it then refused.
+     */
     fun resolveAmount(
         collector: Collector,
         owned: Int,
         mass: Double,
         amount: BuyAmount,
         costFactor: Double = 1.0,
-    ): Int =
-        if (amount == BuyAmount.MAX) {
+    ): Int {
+        // Never negative, so a save from before the cap that holds more than the limit simply has
+        // nothing left to buy rather than being offered a purchase of minus twelve.
+        val room = (Collector.MAX_OWNED - owned).coerceAtLeast(0)
+        val wanted = if (amount == BuyAmount.MAX) {
             // Divided rather than multiplied: a cheaper role means the same mass reaches further,
             // and asking the collector how far is the same question with a bigger purse.
             collector.affordableCount(owned, mass / costFactor).coerceAtMost(MAX_BULK)
         } else {
             amount.count
         }
+        return wanted.coerceAtMost(room)
+    }
 
     // ---------------------------------------------------------------- internals
 

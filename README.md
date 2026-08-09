@@ -127,6 +127,10 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   Stufe 1/25 und dem gewählten Pfad da, wo vorher der Name des Himmelskörpers stand. Auch der Ton
   ist gespiegelt: das Grollen des Kollapses fällt, dieses Heulen **steigt** und reißt genau da ab,
   wo die Linie zum Punkt wird
+- **Kollektoren enden bei 500 Stück** je Sorte — exakt zwanzig Meilensteine, damit der Zähler beim
+  letzten Bonus und beim Deckel im selben Kauf ankommt statt irgendwo dazwischen auszulaufen. Wer
+  jede Sorte voll hat, bekommt den Erfolg **Ausgebaut** und damit die einzige Palette, die nicht an
+  einer Anzahl hängt, sondern an genau dieser einen Sache
 - **Produktionsverlauf** als Kurve über die letzte halbe Stunde, logarithmisch, weil eine lineare
   Achse in einem Idle-Spiel neunundzwanzig Minuten flach und dann senkrecht wäre
 - **Zweispaltig im Querformat** und auf Tablets: Körper links, Shop rechts

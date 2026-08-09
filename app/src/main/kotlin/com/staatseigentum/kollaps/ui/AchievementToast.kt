@@ -59,6 +59,14 @@ private const val MOST_AT_ONCE = 4
 fun AchievementToast(
     earned: Set<String>,
     modifier: Modifier = Modifier,
+    /**
+     * True while something else owns the screen — a collapse or a big bang playing out.
+     *
+     * Holds the *showing*, never the collecting: what was earned still goes into the queue, and
+     * the card appears once the sequence is over. Skipping it instead would quietly swallow the
+     * two or three achievements a reset hands out, which are exactly the ones worth seeing.
+     */
+    hold: Boolean = false,
 ) {
     // Read fresh on every use rather than captured: a long-lived effect keeps whatever it closed
     // over on the first composition, and switching the sound off would otherwise go unnoticed here.
@@ -101,10 +109,14 @@ fun AchievementToast(
      * so the `delay` that takes the card down again never ran, and it stayed up for good. A single
      * loop that waits for work has no such state to get wrong.
      */
+    // Read fresh rather than captured, for the same reason the sound is: the loop below outlives
+    // the sequence that sets it.
+    val holding by rememberUpdatedState(hold)
+
     LaunchedEffect(Unit) {
-        snapshotFlow { queue.isNotEmpty() }.collect { waiting ->
-            if (!waiting) return@collect
-            while (queue.isNotEmpty()) {
+        snapshotFlow { queue.isNotEmpty() && !holding }.collect { ready ->
+            if (!ready) return@collect
+            while (queue.isNotEmpty() && !holding) {
                 showing = queue.removeAt(0)
                 sfx?.unlock()
                 delay(SHOWN_MILLIS)

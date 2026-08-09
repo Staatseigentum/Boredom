@@ -586,7 +586,7 @@ private fun Sparkline(samples: List<Double>, modifier: Modifier = Modifier) {
  */
 @Composable
 private fun SkinPicker(state: GameState, onPick: (String) -> Unit) {
-    val earned = state.achievements.size
+    val earned = state.achievements
     val current = Skins.current(state.skinId, earned)
     val sfx = LocalSfx.current
 
@@ -607,6 +607,9 @@ private fun SkinPicker(state: GameState, onPick: (String) -> Unit) {
         for (skin in Skins.all) {
             val unlocked = Skins.isUnlocked(earned, skin)
             val chosen = skin.id == current.id
+            // Read into a local: the property lives in another module, so the compiler will not
+            // carry a null check into the branches below on its own.
+            val needs = skin.requiredAchievement
 
             PixelPanel(
                 modifier = Modifier
@@ -627,10 +630,20 @@ private fun SkinPicker(state: GameState, onPick: (String) -> Unit) {
                             color = if (unlocked) Starlight else Muted,
                         )
                         Text(
-                            text = if (unlocked) {
-                                skin.flavor
-                            } else {
-                                "Ab ${skin.requiredAchievements} Erfolgen. Du hast $earned."
+                            // A locked scheme says what it wants, and the two kinds of lock want
+                            // different sentences: a count is progress, a named achievement is an
+                            // errand. Saying "ab 0 Erfolgen" for the second would be nonsense.
+                            // Bound to a local: the property lives in another module, so the
+                            // compiler will not carry a null check across the branch on its own.
+                            text = when {
+                                unlocked -> skin.flavor
+                                needs != null ->
+                                    "Braucht den Erfolg: " +
+                                        (Achievements.byId(needs)?.name ?: "noch unbekannt") + "."
+
+                                else ->
+                                    "Ab ${skin.requiredAchievements} Erfolgen. " +
+                                        "Du hast ${earned.size}."
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = Muted,

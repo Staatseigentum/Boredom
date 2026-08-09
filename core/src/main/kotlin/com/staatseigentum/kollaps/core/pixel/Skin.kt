@@ -20,6 +20,13 @@ data class Skin(
     val flavor: String,
     /** Achievements needed before it can be picked. Zero for the one everybody starts with. */
     val requiredAchievements: Int,
+    /**
+     * One particular achievement that has to be among them, or null for "any of them will do".
+     *
+     * A count says "keep playing"; a named one says "do *that*". Both are worth having, and the
+     * second is the only way to hang a palette on something specific enough to be a goal.
+     */
+    val requiredAchievement: String? = null,
     /** How far towards grey the colours go first, in `0f..1f`. */
     val desaturation: Float = 0f,
     /** What is left is pulled towards this, by [tintStrength]. */
@@ -110,6 +117,16 @@ object Skins {
             tintStrength = 0.18f,
         ),
         Skin(
+            id = "skin_vollzaehlig",
+            name = "Vollzählig",
+            flavor = "Als hätte jemand jeden einzelnen Fänger vergolden lassen. Hat auch jemand.",
+            requiredAchievements = 0,
+            requiredAchievement = "a_alle_voll",
+            desaturation = 0.55f,
+            tint = 0xFFFFC24D.toInt(),
+            tintStrength = 0.42f,
+        ),
+        Skin(
             id = "skin_monochrom",
             name = "Ein Kanal",
             flavor = "Ein Bildschirm, der nur eine Farbe konnte, und es hat gereicht.",
@@ -129,11 +146,19 @@ object Skins {
     /** The scheme an id names, or the plain one — an unknown id is never a reason to fail. */
     fun byId(id: String?): Skin = index[id] ?: ORIGINAL
 
-    fun isUnlocked(achievements: Int, skin: Skin): Boolean =
-        achievements >= skin.requiredAchievements
+    /**
+     * Whether a scheme can be picked yet.
+     *
+     * Takes the ids rather than how many there are, because a scheme may now name one it needs.
+     * Both conditions have to hold: a named achievement does not excuse the count, and the count
+     * does not stand in for the named one.
+     */
+    fun isUnlocked(earned: Set<String>, skin: Skin): Boolean =
+        earned.size >= skin.requiredAchievements &&
+            (skin.requiredAchievement == null || skin.requiredAchievement in earned)
 
     /** Everything earned so far, in threshold order. */
-    fun unlocked(achievements: Int): List<Skin> = all.filter { isUnlocked(achievements, it) }
+    fun unlocked(earned: Set<String>): List<Skin> = all.filter { isUnlocked(earned, it) }
 
     /**
      * The scheme actually in force.
@@ -141,12 +166,12 @@ object Skins {
      * A scheme that was chosen and is no longer unlocked — which nothing in the game does today,
      * but a save edited by hand can — falls back rather than showing something unearned.
      *
-     * Takes the two numbers rather than a state: this package draws pictures and has managed to
-     * know nothing about the game's state so far, which is what lets the renderer be exercised on
-     * its own.
+     * Takes an id and a set of ids rather than a state: this package draws pictures and has
+     * managed to know nothing about the game's state so far, which is what lets the renderer be
+     * exercised on its own.
      */
-    fun current(skinId: String?, achievements: Int): Skin {
+    fun current(skinId: String?, earned: Set<String>): Skin {
         val chosen = byId(skinId)
-        return if (isUnlocked(achievements, chosen)) chosen else ORIGINAL
+        return if (isUnlocked(earned, chosen)) chosen else ORIGINAL
     }
 }

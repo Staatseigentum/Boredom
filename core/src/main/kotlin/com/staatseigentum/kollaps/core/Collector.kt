@@ -40,6 +40,21 @@ data class Collector(
 
     companion object {
         const val COST_GROWTH = 1.15
+
+        /**
+         * The most copies of any one collector that can be built.
+         *
+         * There was no limit at all before this, and the only thing stopping anybody was the price
+         * curve — which is not a design, it is arithmetic that happens to look like one. Five
+         * hundred is a number the player can see coming and aim at: it is exactly twenty
+         * milestones, so the counter arrives at the cap and at its last bonus in the same purchase
+         * rather than trailing off between two of them.
+         *
+         * A save from before the cap that somehow holds more keeps every copy it has. Taking them
+         * away would be the rules reaching backwards into a game already played; refusing to sell
+         * a five hundred and first is enough.
+         */
+        const val MAX_OWNED = 500
     }
 }
 

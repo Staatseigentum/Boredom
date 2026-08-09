@@ -58,6 +58,17 @@ object Achievements {
         add(collector("a_drone_50", "Schwarm", "Fünfzig Drohnen, die nie schlafen.", "drone", 50))
         add(collector("a_dyson_10", "Halber Ring", "Zehn Spiegel um einen Stern.", "dyson", 10))
         add(collector("a_echo_1", "Nachhall", "Der erste Augenblick, eingefangen.", "echo", 1))
+        // Every sort at the cap: the one achievement that cannot be stumbled into, and the only
+        // one a palette hangs on by name rather than by counting how many are ticked.
+        add(
+            Achievement(
+                "a_alle_voll",
+                "Ausgebaut",
+                "Jede Sorte fünfhundert Mal. Es passt buchstäblich nichts mehr rein.",
+            ) { state ->
+                Collectors.all.all { state.ownedOf(it.id) >= Collector.MAX_OWNED }
+            },
+        )
         add(collector("a_weber_5", "Verwoben", "Fünf Weber an derselben Kausalkette.", "weber", 5))
         add(collector("a_omega_1", "Das letzte Gerät", "Sammelt ein, was übrig sein wird.", "omega", 1))
         add(
