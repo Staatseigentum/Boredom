@@ -56,11 +56,14 @@ fun BigBangPanel(
     var confirming by remember { mutableStateOf(false) }
 
     PixelPanel(
-        modifier = Modifier.fillMaxWidth().sog(SogDepth.CONTAINER, Nebula),
+        modifier = Modifier
+            .fillMaxWidth()
+            .sog(SogDepth.CONTAINER, Nebula)
+            .urknall(Nebula),
         border = Nebula,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().urknall(Nebula),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             PixelLabel("Urknall", color = Nebula, size = 16)
@@ -70,62 +73,70 @@ fun BigBangPanel(
         }
         Spacer(Modifier.height(8.dp))
 
-        Text(
-            text = "Wirf alles weg, was deine Kollapse aufgebaut haben: Singularitäten, " +
-                "Prestige-Upgrades, den Zähler selbst. Was bleibt, sind Erfolge, bestandene " +
-                "Herausforderungen — und Äonen.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Muted,
-        )
-        Spacer(Modifier.height(10.dp))
-
-        if (state.bigBangs > 0) {
-            Text(
-                text = "Bisher ${state.bigBangs}× ausgelöst.",
-                style = MaterialTheme.typography.bodySmall,
-                color = Muted,
-            )
-            Spacer(Modifier.height(6.dp))
-        }
-
-        Text(
-            text = if (stats.canBigBang) {
-                "Jetzt zu holen: ${Numbers.format(stats.pendingAeons)} Äonen"
-            } else {
-                "Ab ${BigBang.REQUIRED_COLLAPSES} Kollapsen. Du bist bei ${state.collapses}."
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (stats.canBigBang) Positive else Muted,
-        )
-        Path.of(state)?.let { running ->
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Dieses Universum: ${running.label}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Ember,
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-
+        /*
+         * The long description steps aside while the choice is open.
+         *
+         * Four cards, each with a name, a line of flavour and up to three effects, is already
+         * more than fits on a phone; a paragraph explaining what a big bang is on top of that
+         * pushes the last card off the bottom. And by the time the picker is open the paragraph
+         * has done its job — the player has read it and pressed the button.
+         */
         if (!confirming) {
-            PixelButton(
-                label = if (stats.canBigBang) "Urknall auslösen" else "Noch nicht so weit",
-                onClick = { confirming = true },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = stats.canBigBang,
-                accent = Ember,
+            Text(
+                text = "Wirf alles weg, was deine Kollapse aufgebaut haben: Singularitäten, " +
+                    "Prestige-Upgrades, den Zähler selbst. Was bleibt, sind Erfolge, bestandene " +
+                    "Herausforderungen — und Äonen.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Muted,
+                modifier = Modifier.urknall(Muted),
             )
+            Spacer(Modifier.height(10.dp))
+
+            if (state.bigBangs > 0) {
+                Text(
+                    text = "Bisher ${state.bigBangs}× ausgelöst.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Muted,
+                    modifier = Modifier.urknall(Muted),
+                )
+                Spacer(Modifier.height(6.dp))
+            }
+
+            Text(
+                text = if (stats.canBigBang) {
+                    "Jetzt zu holen: ${Numbers.format(stats.pendingAeons)} Äonen"
+                } else {
+                    "Ab ${BigBang.REQUIRED_COLLAPSES} Kollapsen. Du bist bei ${state.collapses}."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (stats.canBigBang) Positive else Muted,
+                modifier = Modifier.urknall(if (stats.canBigBang) Positive else Muted),
+            )
+            Path.of(state)?.let { running ->
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Dieses Universum: ${running.label}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Ember,
+                    modifier = Modifier.urknall(Ember),
+                )
+            }
         } else {
             // The confirmation *is* the choice. A separate "really?" followed by a picker would
             // be two dialogs for one decision, and picking a universe to live in is a better
             // second thought than a yes-or-no about a button already pressed once.
-            PixelLabel("Was für ein Universum?", color = Ember, size = 13)
+            PixelLabel(
+                "Was für ein Universum?",
+                color = Ember,
+                size = 13,
+                modifier = Modifier.urknall(Ember),
+            )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = "Die Ausrichtung gilt, bis du das nächste Mal alles wegwirfst.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
+                modifier = Modifier.urknall(Muted),
             )
             Spacer(Modifier.height(8.dp))
 
@@ -133,19 +144,33 @@ fun BigBangPanel(
                 PathChoice(
                     path = path,
                     onChoose = {
-                        onBigBang(path.id)
+                        // Closed in the same frame the sequence starts, with no transition of its
+                        // own: whatever is on screen at that moment is what gets pressed flat, and
+                        // a picker fading out through the flattening would be two animations
+                        // arguing over the same pixels.
                         confirming = false
+                        onBigBang(path.id)
                     },
                 )
                 Spacer(Modifier.height(6.dp))
             }
-
-            PixelButton(
-                label = "Doch nicht",
-                onClick = { confirming = false },
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
+
+        Spacer(Modifier.height(12.dp))
+
+        // One button that changes what it says, rather than a second one below the cards. The
+        // way back out of a decision belongs where the way in was.
+        PixelButton(
+            label = when {
+                confirming -> "Doch nicht"
+                stats.canBigBang -> "Urknall auslösen"
+                else -> "Noch nicht so weit"
+            },
+            onClick = { confirming = !confirming },
+            modifier = Modifier.fillMaxWidth().urknall(Nebula),
+            enabled = stats.canBigBang,
+            accent = Ember,
+        )
     }
 
     // The tree belongs to the universe that is running, so it only appears once one is aligned.
@@ -318,7 +343,8 @@ private fun PathChoice(path: Path, onChoose: () -> Unit) {
                 sfx?.purchase()
                 onChoose()
             }
-            .padding(10.dp),
+            .padding(10.dp)
+            .urknall(Nebula),
     ) {
         Column {
             Text(

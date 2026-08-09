@@ -236,14 +236,25 @@ fun GameScreen(
     val reduceMotion = LocalReduceMotion.current
 
     /*
+     * The big bang, as a picture, on the same terms and none of the same movements.
+     *
+     * A second sequence rather than a mode of the first, and deliberately: the two resets sit in
+     * the same tab, and if they shared a class they would end up sharing a shape. The collapse
+     * spirals inward and never stops; this one presses the whole screen flat, squeezes the line to
+     * a pixel, and then does nothing at all for half a second before it detonates.
+     */
+    val bigBang = remember { BigBangSequence() }
+
+    /*
      * Recorded here in the composition rather than from an effect, because effects run on the frame
      * that already carries the reset state — anything written from one would be the new run, which
      * is precisely the screen the sequence is not supposed to show. While the counter still agrees
      * this is simply the current screen; the frame it stops agreeing, the sequence is about to take
      * over and this is what it inherits. Recording resumes when the sequence hands it back.
      */
-    val held = remember { HeldScreen(state, stats, state.collapses) }
-    if (state.collapses == held.collapses) {
+    val resets = state.collapses + state.bigBangs
+    val held = remember { HeldScreen(state, stats, resets) }
+    if (resets == held.resets) {
         held.state = state
         held.stats = stats
     }
@@ -256,7 +267,9 @@ fun GameScreen(
      * shop, every row in it — on every frame of the sequence, at exactly the moment the game most
      * needs the frames. The derived value changes twice in four seconds; that is what recomposes.
      */
-    val showingOld by remember(collapse) { derivedStateOf { collapse.showingOld } }
+    val showingOld by remember(collapse, bigBang) {
+        derivedStateOf { collapse.showingOld || bigBang.showingOld }
+    }
     val shownState = if (showingOld) held.state else state
     val shownStats = if (showingOld) held.stats else stats
 
@@ -274,7 +287,7 @@ fun GameScreen(
         // politer spiral, they want it over with.
         if (reduceMotion) {
             detonate()
-            held.collapses = state.collapses
+            held.resets = resets
             return@LaunchedEffect
         }
 
@@ -291,7 +304,7 @@ fun GameScreen(
             collapse.run(detonate)
         } finally {
             actions.setPaused(false)
-            held.collapses = state.collapses
+            held.resets = resets
         }
     }
 
@@ -310,9 +323,24 @@ fun GameScreen(
 
     val bangsAtStart = remember { state.bigBangs }
     LaunchedEffect(state.bigBangs) {
-        if (state.bigBangs > bangsAtStart) {
+        if (state.bigBangs <= bangsAtStart) return@LaunchedEffect
+
+        val detonate: () -> Unit = {
             blast = -state.bigBangs to BlastKind.URKNALL
             blastSfx?.explosion()
+        }
+
+        // The whine that runs under the flattening, fired once. It stops of its own accord at the
+        // moment the line becomes a point — and the four hundred and sixty milliseconds of nothing
+        // that follow are the reason the bang after them lands.
+        blastSfx?.flatten()
+
+        actions.setPaused(true)
+        try {
+            bigBang.run(detonate)
+        } finally {
+            actions.setPaused(false)
+            held.resets = resets
         }
     }
 
@@ -332,17 +360,37 @@ fun GameScreen(
         LocalSfx provides sfx.takeIf { state.soundOn },
         LocalSkin provides skin,
         LocalCollapse provides collapse,
+        LocalBigBang provides bigBang,
     ) {
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(Space),
+                .background(Space)
+                // How wide the screen is and where its middle is, which is what the line the
+                // interface becomes is measured against.
+                .bigBangStage()
+                /*
+                 * The shake, on everything at once.
+                 *
+                 * Applied out here rather than per element so the sky, the interface and the
+                 * canvas move as one picture — a screen where only some of it shook would read
+                 * as a rendering fault rather than as an impact. The offset is already snapped
+                 * to the block grid inside the sequence: a smooth shake would blur every hard
+                 * edge on screen for half a second, which is the whole style undone.
+                 */
+                .graphicsLayer {
+                    translationX = bigBang.shake.x
+                    translationY = bigBang.shake.y
+                },
         ) {
             Starfield(
                 tint = Color(shownStats.tier.glowColor),
                 depth = shownStats.tier.index / (Tiers.all.size - 1f).coerceAtLeast(1f),
                 warp = { collapse.warp },
                 warpCentre = { collapse.centre },
+                crush = { bigBang.skyCrush },
+                pinch = { bigBang.skyPinch },
+                birth = { bigBang.skyBirth },
                 modifier = Modifier.fillMaxSize(),
             )
 
@@ -357,8 +405,9 @@ fun GameScreen(
                         stats = shownStats,
                         actions = actions,
                         // The one thing that does not move: it is what everything else moves
-                        // towards, and the sprite in the middle of it is the hole itself.
-                        modifier = modifier.collapseCentre(),
+                        // towards, and the sprite in the middle of it is the hole itself — and,
+                        // for the big bang, the line the universe is pressed onto.
+                        modifier = modifier.collapseCentre().bigBangCentre(),
                     )
                 }
                 val shop = @Composable { modifier: Modifier ->
@@ -417,6 +466,13 @@ fun GameScreen(
                 Blast(
                     trigger = trigger,
                     kind = kind,
+                    // From the point the universe was squeezed onto, not from the middle of the
+                    // screen — on a phone those are two very different places.
+                    centre = if (kind == BlastKind.URKNALL && bigBang.running) {
+                        bigBang.centre
+                    } else {
+                        Offset.Unspecified
+                    },
                     onFinished = { blast = null },
                 )
             }
@@ -433,7 +489,9 @@ fun GameScreen(
              * look at it. Derived rather than read straight off the clock, so this appears and
              * disappears once instead of on every frame.
              */
-            val blocking by remember(collapse) { derivedStateOf { collapse.running } }
+            val blocking by remember(collapse, bigBang) {
+                derivedStateOf { collapse.running || bigBang.running }
+            }
             if (blocking) {
                 Box(
                     Modifier
@@ -454,6 +512,10 @@ fun GameScreen(
             // sky — and because they are drawn in window coordinates, which is what this box is.
             CollapseDebris(sequence = collapse, modifier = Modifier.fillMaxSize())
 
+            // The big bang's own layer: the shards on the way in, the line, the point, and the
+            // matter thrown back out. One canvas, because they are drawn in that order.
+            BigBangCanvas(sequence = bigBang, modifier = Modifier.fillMaxSize())
+
             updateDialog()
         }
     }
@@ -466,7 +528,7 @@ fun GameScreen(
  * snapshot write there would either be discarded or start the composition over. Nothing observes
  * it — what reads it is already recomposing on the sequence's clock.
  */
-private class HeldScreen(var state: GameState, var stats: Stats, var collapses: Int)
+private class HeldScreen(var state: GameState, var stats: Stats, var resets: Int)
 
 // ---------------------------------------------------------------------- header
 
@@ -482,7 +544,10 @@ private fun Header(state: GameState, stats: Stats) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().sog(SogDepth.CONTENT, Muted),
+            modifier = Modifier
+                .fillMaxWidth()
+                .sog(SogDepth.CONTENT, Muted)
+                .urknall(Muted),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -506,14 +571,14 @@ private fun Header(state: GameState, stats: Stats) {
             text = Numbers.formatMass(state.mass),
             style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.sog(SogDepth.CONTENT, Starlight),
+            modifier = Modifier.sog(SogDepth.CONTENT, Starlight).urknall(Starlight),
         )
 
         Text(
             text = "${Numbers.formatRate(stats.massPerSecond)}  ·  ${Numbers.format(stats.massPerTap)} pro Tipp",
             style = MaterialTheme.typography.bodyMedium,
             color = Muted,
-            modifier = Modifier.sog(SogDepth.CONTENT, Muted),
+            modifier = Modifier.sog(SogDepth.CONTENT, Muted).urknall(Muted),
         )
 
         val buff = stats.buff
@@ -559,7 +624,7 @@ private fun Header(state: GameState, stats: Stats) {
             },
             style = MaterialTheme.typography.titleLarge,
             color = glow,
-            modifier = Modifier.sog(SogDepth.CONTENT, glow),
+            modifier = Modifier.sog(SogDepth.CONTENT, glow).urknall(glow),
         )
 
         Spacer(Modifier.height(6.dp))
@@ -570,7 +635,8 @@ private fun Header(state: GameState, stats: Stats) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(10.dp)
-                .sog(SogDepth.CONTENT, glow),
+                .sog(SogDepth.CONTENT, glow)
+                .urknall(Ember),
         )
 
         if (next != null) {
@@ -579,7 +645,7 @@ private fun Header(state: GameState, stats: Stats) {
                 text = "noch ${Numbers.formatMass(next.threshold - state.runMass)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
-                modifier = Modifier.sog(SogDepth.CONTENT, Muted),
+                modifier = Modifier.sog(SogDepth.CONTENT, Muted).urknall(Muted),
             )
         }
     }
@@ -727,16 +793,26 @@ private fun TapArea(
         // is crushed to nothing, and comes back as the meteorite of the new run. Its share of the
         // sequence is read straight off the clock rather than going through [sog].
         val collapse = LocalCollapse.current
+        val bigBang = LocalBigBang.current
         CelestialBody(
             tier = tier,
-            extraTurns = { collapse?.extraSpin ?: 0f },
+            // Only one of the two can be running, so the sum is whichever it is.
+            extraTurns = { (collapse?.extraSpin ?: 0f) + (bigBang?.extraSpin ?: 0f) },
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    val swell = collapse?.bodyScale ?: 1f
+                    val swell = when {
+                        bigBang?.running == true -> bigBang.bodyScale
+                        collapse != null -> collapse.bodyScale
+                        else -> 1f
+                    }
                     scaleX = squash.value * swell
                     scaleY = squash.value * swell
-                    alpha = collapse?.bodyAlpha ?: 1f
+                    alpha = when {
+                        bigBang?.running == true -> bigBang.bodyAlpha
+                        collapse != null -> collapse.bodyAlpha
+                        else -> 1f
+                    }
                 },
         )
 

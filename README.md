@@ -115,6 +115,18 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   und der Bildschirm zeigt den Durchlauf, der gerade zu Ende ging. Der Kollaps selbst ist zu dem
   Zeitpunkt längst in den Regeln passiert, wer die App mittendrin schließt, hat also trotzdem
   korrekt kollabiert. Wer Systemanimationen abgeschaltet hat, bekommt direkt den Knall
+- **Die Urknall-Sequenz**, und sie ist mit Absicht das Gegenteil des Kollapses. Dort spiralt alles;
+  hier dreht sich **nichts**. Die ganze Oberfläche wird senkrecht auf eine Linie gedrückt und dabei
+  weiß ausgewaschen — Sättigung raus, Helligkeit rein, sonst sähe es aus wie ein Fenster, das
+  zugeht, statt wie etwas, das ausbrennt. Der Himmel kippt mit: erst in Y auf dieselbe Linie, dann
+  in X, bis alles auf **einem Pixel** sitzt. Und dann passiert **460 Millisekunden lang gar nichts**
+  — ein Sechs-Pixel-Block, der um genau ein Blockmaß zittert, auf schwarzem Grund. Diese Pause ist
+  der ganze Punkt: der Knall danach trifft nur, weil vorher nichts war. Dann Blitz, sechs Ringe,
+  Screenshake auf dem 3-px-Raster und 260 Materiebrocken geradlinig nach außen, während der Himmel
+  sich aus demselben Punkt wieder ausdehnt und das neue Universum aus der Linie aufklappt — mit
+  Stufe 1/25 und dem gewählten Pfad da, wo vorher der Name des Himmelskörpers stand. Auch der Ton
+  ist gespiegelt: das Grollen des Kollapses fällt, dieses Heulen **steigt** und reißt genau da ab,
+  wo die Linie zum Punkt wird
 - **Produktionsverlauf** als Kurve über die letzte halbe Stunde, logarithmisch, weil eine lineare
   Achse in einem Idle-Spiel neunundzwanzig Minuten flach und dann senkrecht wäre
 - **Zweispaltig im Querformat** und auf Tablets: Körper links, Shop rechts

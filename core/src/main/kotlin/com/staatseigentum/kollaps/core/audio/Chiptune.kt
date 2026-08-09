@@ -62,6 +62,16 @@ enum class Cue {
      * it lands in the silence the rumble leaves behind, and silence is what makes it loud.
      */
     EXPLOSION,
+
+    /**
+     * The universe being pressed flat, under the first phase of the big bang.
+     *
+     * The opposite of [COLLAPSE] in every way that can be heard. That one falls: it slides *down*
+     * from thirty-eight hertz and gets thicker as it goes. This one rises — a whine climbing out
+     * of the top of its range, thinning rather than thickening — and then stops dead, leaving the
+     * four hundred and sixty milliseconds of nothing that the bang goes off in.
+     */
+    FLATTEN,
 }
 
 /**
@@ -180,6 +190,7 @@ object Chiptune {
         // Neither of these is a list of notes — see [renderCollapse] and [renderExplosion].
         Cue.COLLAPSE -> emptyList()
         Cue.EXPLOSION -> emptyList()
+        Cue.FLATTEN -> emptyList()
     }
 
     /** The cue as a playable WAV file. */
@@ -189,6 +200,7 @@ object Chiptune {
     fun render(cue: Cue): ShortArray {
         if (cue == Cue.COLLAPSE) return Wav.normalise(renderCollapse(), PEAK)
         if (cue == Cue.EXPLOSION) return Wav.normalise(renderExplosion(), PEAK)
+        if (cue == Cue.FLATTEN) return Wav.normalise(renderFlatten(), PEAK)
 
         val notes = notesOf(cue)
         val totalSeconds = notes.maxOf { it.startSeconds + it.seconds } + TAIL_SECONDS
@@ -281,6 +293,59 @@ object Chiptune {
     }
 
     /**
+     * The flattening: a whine climbing out of the top of its range, cut off at the point.
+     *
+     * Written against [renderCollapse] rather than alongside it. The two resets are half a screen
+     * apart in the same tab, and if they sounded alike the player would stop hearing which one
+     * they had triggered. So every choice here is the other one's mirror: the pitch climbs where
+     * the collapse's falls, from 210 up past 2000 hertz; the noise *thins* over time instead of
+     * growing, filtered harder and harder until only a hiss is left; and the two voices converge
+     * on the same note rather than drifting apart, so it tightens instead of souring.
+     *
+     * It ends where the line becomes a point, and nothing follows it for almost half a second.
+     * That gap is the loudest thing in the sequence.
+     */
+    private fun renderFlatten(): DoubleArray {
+        val body = (FLATTEN_SECONDS * SAMPLE_RATE).toInt()
+        val total = ((FLATTEN_SECONDS + TAIL_SECONDS) * SAMPLE_RATE).toInt()
+        val out = DoubleArray(total)
+
+        var risePhase = 0.0
+        var beatPhase = 0.0
+        var filtered = 0.0
+        var seed = 0x0DDB1A5E5BAD5EEDuL.toLong()
+
+        for (i in 0 until body) {
+            val p = i.toDouble() / body
+
+            // Accelerating upward: a linear climb sounds like a siren, which is a warning. This
+            // is something being forced, and forcing gets harder the further it goes.
+            val rise = 210.0 + 1_900.0 * p.pow(1.8)
+            risePhase += 2.0 * PI * rise / SAMPLE_RATE
+            // Starts a fifth below and closes on the main voice, so the interval narrows to
+            // nothing exactly as the picture narrows to a line.
+            beatPhase += 2.0 * PI * (rise * (0.66 + 0.34 * p)) / SAMPLE_RATE
+
+            seed = seed * 6_364_136_223_846_793_005L + 1_442_695_040_888_963_407L
+            val white = ((seed ushr 40).toDouble() / (1 shl 23).toDouble()) - 1.0
+            filtered += (white - filtered) * (0.02 + 0.5 * p)
+
+            val square = if (sin(risePhase) >= 0.0) 1.0 else -1.0
+            val voice = square * 0.35 + sin(risePhase) * 0.65
+            val beat = sin(beatPhase) * 0.4 * (1.0 - p * 0.5)
+
+            // Six milliseconds in, and out over the last forty: enough not to click at either
+            // end, far too little to sound like a fade.
+            val attack = (i / (0.006 * SAMPLE_RATE)).coerceAtMost(1.0)
+            val release = ((body - i) / (0.04 * SAMPLE_RATE)).coerceAtMost(1.0)
+            val swell = 0.25 + 0.75 * p
+
+            out[i] = (voice + beat + filtered * 0.5 * (1.0 - p)) * swell * attack * release
+        }
+        return out
+    }
+
+    /**
      * The bang: noise that starts bright and goes dull, over a sub that falls away.
      *
      * An explosion is not a chord, so this is not notes either. Two things make it read as one
@@ -365,4 +430,13 @@ object Chiptune {
 
     /** How long the bang rings out. Short: it is an impact, not a wash. */
     private const val EXPLOSION_SECONDS = 1.0
+
+    /**
+     * How long the flattening whine runs.
+     *
+     * The big bang sequence presses the interface flat for 980 ms and then squeezes the line to a
+     * point over another 340. The sound covers both and stops with the point, which is what makes
+     * the silence after it land as an event rather than as a gap.
+     */
+    const val FLATTEN_SECONDS = 1.32
 }

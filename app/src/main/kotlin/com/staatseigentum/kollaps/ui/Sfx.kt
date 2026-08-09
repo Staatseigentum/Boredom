@@ -62,6 +62,14 @@ interface Sounds {
      * purpose — it arrives in silence, and silence is what makes it an event.
      */
     fun explosion() = Unit
+
+    /**
+     * The universe being pressed flat, under the first phase of the big bang.
+     *
+     * Fired once when a path is chosen. Like [collapse] it ends on its own — and it has to, since
+     * what it ends *into* is the silence the bang goes off in.
+     */
+    fun flatten() = Unit
 }
 
 /**

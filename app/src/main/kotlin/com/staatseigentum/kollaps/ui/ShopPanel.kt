@@ -135,7 +135,8 @@ fun ShopPanel(
                 .horizontalScroll(rememberScrollState())
                 // As one piece: a tab strip whose six tabs each fell in on their own would read as
                 // the interface coming apart before it is pulled, which is the next phase's job.
-                .sog(SogDepth.CONTAINER, Nebula),
+                .sog(SogDepth.CONTAINER, Nebula)
+                .urknall(Nebula),
         ) {
             tabs.forEach { entry ->
                 PixelTab(
@@ -622,7 +623,8 @@ private fun CosmosPanel(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(SpaceCard)
-                .sog(SogDepth.CONTAINER, Nebula),
+                .sog(SogDepth.CONTAINER, Nebula)
+                .urknall(Nebula),
         ) {
             sections.forEach { entry ->
                 CosmosChip(

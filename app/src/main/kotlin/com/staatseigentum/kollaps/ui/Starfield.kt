@@ -58,6 +58,17 @@ fun Starfield(
     warp: () -> Float = { 0f },
     /** Where it is being wound into. Unspecified means the middle of the canvas. */
     warpCentre: () -> Offset = { Offset.Unspecified },
+    /**
+     * The big bang's three, and the reason it does not look like the collapse.
+     *
+     * [crush] squashes the sky onto the horizontal line through the centre, [pinch] then squeezes
+     * that line sideways onto a single point, and [birth] is how much of the sky exists at all —
+     * zero through the silence, then opening back out of the point. Nothing here turns: the
+     * collapse winds the sky up, this one folds it in half and then in half again.
+     */
+    crush: () -> Float = { 0f },
+    pinch: () -> Float = { 0f },
+    birth: () -> Float = { 1f },
 ) {
     val stars = remember { Sky.stars() }
     // Rebuilt when the body changes rung, which is a few times an hour.
@@ -89,6 +100,13 @@ fun Starfield(
         val centre = warpCentre()
         val eye = if (centre.isSpecified) centre else Offset(size.width / 2f, size.height / 2f)
 
+        val flat = crush().coerceIn(0f, 1f)
+        val squeeze = pinch().coerceIn(0f, 1f)
+        val born = birth().coerceIn(0f, 1f)
+        // Nothing to draw at all, which is what the silence before the bang is made of.
+        if (born <= 0f) return@Canvas
+        val fold = Fold(eye, flat, squeeze, born)
+
         // Furthest first, so a near star is never hidden behind something that is behind it.
         for (cloud in clouds) {
             drawBlock(
@@ -100,8 +118,9 @@ fun Starfield(
                     pull,
                     eye,
                 ),
+                fold = fold,
                 size = block * if (cloud.wide) 3f else 2f,
-                color = lerp(tint, accent, cloud.warmth).copy(alpha = cloud.alpha),
+                color = lerp(tint, accent, cloud.warmth).copy(alpha = cloud.alpha * born),
             )
         }
 
@@ -115,8 +134,9 @@ fun Starfield(
                     pull,
                     eye,
                 ),
+                fold = fold,
                 size = block,
-                color = DustColor.copy(alpha = grain.alpha),
+                color = DustColor.copy(alpha = grain.alpha * born),
             )
         }
 
@@ -145,8 +165,9 @@ fun Starfield(
                     pull,
                     eye,
                 ),
+                fold = fold,
                 size = block * layer.blocks,
-                color = (if (star.warm) WarmStar else Color.White).copy(alpha = alpha),
+                color = (if (star.warm) WarmStar else Color.White).copy(alpha = alpha * born),
             )
         }
     }
@@ -168,10 +189,39 @@ private fun wound(point: Offset, warp: Float, centre: Offset): Offset {
     return Offset(centre.x + cos(angle) * radius, centre.y + sin(angle) * radius)
 }
 
+/**
+ * How the big bang folds the sky, as one small object rather than four loose numbers.
+ *
+ * Y first and X second, in that order and never together: the sky is pressed onto a horizontal
+ * line, and only once it is a line is the line squeezed sideways onto a point. Doing both at once
+ * would give a diagonal collapse into the middle, which is a different — and much duller — event.
+ * [born] runs the whole thing backwards out of the point afterwards.
+ */
+private class Fold(
+    val centre: Offset,
+    val crush: Float,
+    val pinch: Float,
+    val born: Float,
+) {
+    val idle: Boolean get() = crush <= 0f && pinch <= 0f && born >= 1f
+
+    operator fun invoke(point: Offset): Offset {
+        if (idle) return point
+        var x = centre.x + (point.x - centre.x) * (1f - pinch)
+        var y = centre.y + (point.y - centre.y) * (1f - crush)
+        if (born < 1f) {
+            x = centre.x + (x - centre.x) * born
+            y = centre.y + (y - centre.y) * born
+        }
+        return Offset(x, y)
+    }
+}
+
 /** Snaps to the pixel grid so every block sits whole. */
-private fun DrawScope.drawBlock(point: Offset, size: Float, color: Color) {
-    val snappedX = floor(point.x / size) * size
-    val snappedY = floor(point.y / size) * size
+private fun DrawScope.drawBlock(point: Offset, fold: Fold, size: Float, color: Color) {
+    val placed = fold(point)
+    val snappedX = floor(placed.x / size) * size
+    val snappedY = floor(placed.y / size) * size
     drawRect(color = color, topLeft = Offset(snappedX, snappedY), size = Size(size, size))
 }
 

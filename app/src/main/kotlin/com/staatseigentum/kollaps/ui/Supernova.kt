@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -64,6 +65,14 @@ fun Blast(
     trigger: Any?,
     kind: BlastKind,
     modifier: Modifier = Modifier,
+    /**
+     * Where it goes off. Unspecified means the middle of the screen.
+     *
+     * The big bang squeezes the universe onto the middle of the *tap area*, which on a phone sits
+     * well above the middle of the screen — and rings that then bloomed from somewhere else would
+     * say the explosion had nothing to do with the point the player had just been staring at.
+     */
+    centre: Offset = Offset.Unspecified,
     onFinished: () -> Unit = {},
 ) {
     if (trigger == null) return
@@ -82,7 +91,7 @@ fun Blast(
         val block = BLOCK.toPx()
         // Far enough to clear a corner from the middle of the screen, whatever the shape.
         val reach = sqrt(size.width * size.width + size.height * size.height) / 2f
-        val centre = Offset(size.width / 2f, size.height / 2f)
+        val origin = if (centre.isSpecified) centre else Offset(size.width / 2f, size.height / 2f)
 
         // The flash first and underneath: it is the light, the rings are what the light is made of.
         val flash = kind.flash * (1f - time * FLASH_FADE).coerceAtLeast(0f)
@@ -108,8 +117,8 @@ fun Blast(
             for (index in 0 until count) {
                 val angle = index.toFloat() / count * TWO_PI + ring * 0.4f
                 drawBlock(
-                    x = centre.x + cos(angle) * radius,
-                    y = centre.y + sin(angle) * radius,
+                    x = origin.x + cos(angle) * radius,
+                    y = origin.y + sin(angle) * radius,
                     size = side,
                     color = colour.copy(alpha = alpha * 0.9f),
                 )

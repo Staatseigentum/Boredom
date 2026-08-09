@@ -15,6 +15,15 @@ import kotlin.test.assertTrue
  */
 class ChiptuneTest {
 
+    /**
+     * The two that run alongside a sequence rather than answering an action.
+     *
+     * They are seconds long where every other cue is a fraction of one, so the length rule below
+     * cannot apply to them. Everything else it checks — the header, the level, the attack, the
+     * ending — still does.
+     */
+    private val SEQUENCE_CUES = setOf(Cue.COLLAPSE, Cue.FLATTEN)
+
     private fun header(wav: ByteArray, at: Int, length: Int): String =
         wav.copyOfRange(at, at + length).map { it.toInt().toChar() }.joinToString("")
 
@@ -47,7 +56,7 @@ class ChiptuneTest {
         // The collapse is exempt and only that one: it does not answer an action, it runs
         // alongside the sequence that swallows the interface. Everything else here fires while
         // the player is doing something, and a cue longer than a moment turns into a queue.
-        for (cue in Cue.entries - Cue.COLLAPSE) {
+        for (cue in Cue.entries - SEQUENCE_CUES) {
             val seconds = Chiptune.render(cue).size.toDouble() / Chiptune.SAMPLE_RATE
             assertTrue(seconds > 0.05, "$cue ist mit $seconds s zu kurz zum Hören")
             assertTrue(seconds < 1.2, "$cue blockiert mit $seconds s zu lange")
