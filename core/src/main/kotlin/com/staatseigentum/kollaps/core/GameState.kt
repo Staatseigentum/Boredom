@@ -180,6 +180,15 @@ data class GameState(
     val numberFormat: String? = null,
 
     /**
+     * Whether the first-five-minutes nudge has been sent away for good.
+     *
+     * Only ever set by the player pressing the button on it. Finishing the last step hides it
+     * without setting this, because the two are different things: one is "there is nothing left
+     * to say", the other is "do not talk to me".
+     */
+    val tutorialDone: Boolean = false,
+
+    /**
      * Id of whatever is waiting for an answer, if anything.
      *
      * Either a [CosmicEvent] id or, while a chain is running, the id of the [ChainStation] on the

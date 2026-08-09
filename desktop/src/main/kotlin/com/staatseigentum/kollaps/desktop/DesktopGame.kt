@@ -206,6 +206,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.setStatus(state, on)
     }
 
+    override fun dismissTutorial() {
+        state = GameEngine.dismissTutorial(state)
+    }
+
     override fun setNumberFormat(format: NumberFormat) {
         state = GameEngine.setNumberFormat(state, format)
     }

@@ -629,6 +629,7 @@ object GameEngine {
                 remindersOn = state.remindersOn,
                 statusOn = state.statusOn,
                 numberFormat = state.numberFormat,
+                tutorialDone = state.tutorialDone,
                 eventsAnswered = state.eventsAnswered,
                 // A story does not un-happen because the body did. The chain keeps the station it
                 // reached, so a collapse three answers in picks the fourth question back up.
@@ -691,6 +692,7 @@ object GameEngine {
                 remindersOn = state.remindersOn,
                 statusOn = state.statusOn,
                 numberFormat = state.numberFormat,
+                tutorialDone = state.tutorialDone,
                 eventsAnswered = state.eventsAnswered,
                 // The point of pressing it.
                 aeons = state.aeons + earned,
@@ -967,6 +969,7 @@ object GameEngine {
         remindersOn = state.remindersOn,
         statusOn = state.statusOn,
         numberFormat = state.numberFormat,
+        tutorialDone = state.tutorialDone,
         eventsAnswered = state.eventsAnswered,
         challengesDone = state.challengesDone,
         challengeDuos = state.challengeDuos,
@@ -1128,6 +1131,9 @@ object GameEngine {
     fun setReminders(state: GameState, on: Boolean): GameState = state.copy(remindersOn = on)
 
     fun setStatus(state: GameState, on: Boolean): GameState = state.copy(statusOn = on)
+
+    /** Sends the first-steps nudge away. There is deliberately no way to bring it back. */
+    fun dismissTutorial(state: GameState): GameState = state.copy(tutorialDone = true)
 
     /**
      * Picks how numbers are written.

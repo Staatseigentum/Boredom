@@ -296,6 +296,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun dismissTutorial() {
+        _state.value = GameEngine.dismissTutorial(_state.value)
+        persist()
+    }
+
     fun setStatus(on: Boolean) {
         _state.value = GameEngine.setStatus(_state.value, on)
         persist()

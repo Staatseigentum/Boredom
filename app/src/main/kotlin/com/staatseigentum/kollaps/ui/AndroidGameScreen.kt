@@ -65,6 +65,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun setAutoBuy(on: Boolean) = model.setAutoBuy(on)
             override fun setReminders(on: Boolean) = model.setReminders(on)
             override fun setStatus(on: Boolean) = model.setStatus(on)
+            override fun dismissTutorial() = model.dismissTutorial()
             override fun setNumberFormat(format: NumberFormat) = model.setNumberFormat(format)
             override fun importSave(block: String): Boolean = model.importSave(block)
             override fun exportSave(): String = model.exportSave()

@@ -141,6 +141,9 @@ interface GameActions {
     /** Whether a quiet line stays in the shade while the game is closed. */
     fun setStatus(on: Boolean)
 
+    /** Sends the first-steps nudge away for good. */
+    fun dismissTutorial()
+
     /** Picks how the very large numbers are written. */
     fun setNumberFormat(format: NumberFormat)
 
@@ -557,6 +560,15 @@ private fun TapArea(
                 )
             }
         }
+
+        // Along the bottom of the body, out of the way of the thumb that is tapping it.
+        TutorialHint(
+            state = state,
+            onDismiss = actions::dismissTutorial,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 12.dp),
+        )
 
         // Last, so a comet is never covered by the body it drifts past.
         CometOverlay(
