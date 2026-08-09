@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -31,6 +32,15 @@ import kotlinx.coroutines.delay
 
 /** How long one card stays up before the next is shown. */
 private const val SHOWN_MILLIS = 2_600L
+
+/**
+ * How many cards one moment may produce.
+ *
+ * A collapse can cross several thresholds at once and that is worth showing; a slot loaded from a
+ * far more advanced save would otherwise queue forty of them and hold the screen for two minutes.
+ * The rest are still earned and still in the list — they simply do not each get a card.
+ */
+private const val MOST_AT_ONCE = 4
 
 /**
  * A card that appears when an achievement is earned, with a sound.
@@ -50,30 +60,57 @@ fun AchievementToast(
     earned: Set<String>,
     modifier: Modifier = Modifier,
 ) {
-    val sfx = LocalSfx.current
+    // Read fresh on every use rather than captured: a long-lived effect keeps whatever it closed
+    // over on the first composition, and switching the sound off would otherwise go unnoticed here.
+    val sfx by rememberUpdatedState(LocalSfx.current)
 
     // Seeded with what the save already had, so opening the game does not replay a lifetime of
     // achievements at somebody who earned them weeks ago.
-    val seen = remember { mutableStateOf(earned) }
+    var seen by remember { mutableStateOf(earned) }
     val queue = remember { mutableStateListOf<Achievement>() }
     var showing by remember { mutableStateOf<Achievement?>(null) }
 
-    LaunchedEffect(Unit) {
-        snapshotFlow { earned }.collect { now ->
-            val fresh = now - seen.value
-            seen.value = now
-            // In catalogue order rather than set order, so two earned together always appear in
-            // the same order and the list on the achievements tab agrees with what was shown.
-            queue += Achievements.all.filter { it.id in fresh }
-        }
+    /*
+     * Keyed on the set, not on `Unit`.
+     *
+     * The first version read the parameter inside a `snapshotFlow` in an effect keyed on `Unit`.
+     * A parameter is not snapshot state, so the flow saw the value from the first composition and
+     * never emitted again — the card simply never appeared. Keying the effect on the set is what
+     * makes it run when the set actually changes.
+     */
+    LaunchedEffect(earned) {
+        val fresh = earned - seen
+        val replaced = seen.any { it !in earned }
+        seen = earned
+
+        // A save that no longer contains something this one had seen is a *different* save —
+        // another slot, or an imported block. Its achievements were not just earned, so they are
+        // taken as read rather than paraded past somebody who switched tabs.
+        if (fresh.isEmpty() || replaced) return@LaunchedEffect
+
+        // In catalogue order rather than set order, so two earned together always appear in the
+        // same order and the list on the achievements tab agrees with what was shown.
+        queue += Achievements.all.filter { it.id in fresh }.take(MOST_AT_ONCE)
     }
 
-    LaunchedEffect(queue.size, showing) {
-        if (showing != null || queue.isEmpty()) return@LaunchedEffect
-        showing = queue.removeAt(0)
-        sfx?.unlock()
-        delay(SHOWN_MILLIS)
-        showing = null
+    /*
+     * One loop for the whole session rather than an effect keyed on the queue.
+     *
+     * Keying on the queue deadlocked: an achievement earned while a card was up changed the key,
+     * restarted the effect, and the restarted one bailed out because a card was already showing —
+     * so the `delay` that takes the card down again never ran, and it stayed up for good. A single
+     * loop that waits for work has no such state to get wrong.
+     */
+    LaunchedEffect(Unit) {
+        snapshotFlow { queue.isNotEmpty() }.collect { waiting ->
+            if (!waiting) return@collect
+            while (queue.isNotEmpty()) {
+                showing = queue.removeAt(0)
+                sfx?.unlock()
+                delay(SHOWN_MILLIS)
+                showing = null
+            }
+        }
     }
 
     AnimatedVisibility(

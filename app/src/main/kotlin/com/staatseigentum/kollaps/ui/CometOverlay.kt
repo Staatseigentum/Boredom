@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -51,7 +52,9 @@ fun CometOverlay(
     var flight by remember { mutableStateOf<Flight?>(null) }
     val travel = remember { Animatable(0f) }
     val appears = Comets.appearsAt(state)
-    val sfx = LocalSfx.current
+    // Read fresh rather than captured: the loop below outlives many recompositions, and a
+    // captured sound object goes on making noise long after the setting was switched off.
+    val sfx by rememberUpdatedState(LocalSfx.current)
 
     LaunchedEffect(appears, frequency) {
         if (!appears) return@LaunchedEffect

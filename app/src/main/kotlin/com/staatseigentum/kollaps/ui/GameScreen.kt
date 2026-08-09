@@ -520,6 +520,11 @@ private fun TapArea(
     val tap by rememberUpdatedState(actions::tap)
     val empty by rememberUpdatedState(actions::tapEmpty)
 
+    // The body grows as the ladder is climbed — a meteorite fills a quarter of the area and a
+    // black hole all of it. Captured directly, the handler would keep sizing the target to
+    // whatever body was on screen when the game opened.
+    val hitTier by rememberUpdatedState(tier)
+
     // A ring thrown off the body every time it climbs a rung. Only upwards: a collapse drops the
     // tier by twenty-four steps at once and already has a blast of its own.
     val lastTier = remember { mutableIntStateOf(tier.index) }
@@ -547,7 +552,7 @@ private fun TapArea(
             detectTapGestures { position ->
                 val centre = Offset(size.width / 2f, size.height / 2f)
                 val radius = min(size.width, size.height) / 2f *
-                    PixelPlanet.spriteFraction(tier) * HIT_FORGIVENESS
+                    PixelPlanet.spriteFraction(hitTier) * HIT_FORGIVENESS
 
                 if ((position - centre).getDistance() > radius) {
                     // The sky. Pays nothing and says so — but it is counted, because exactly one
