@@ -321,9 +321,25 @@ private fun CollectorRow(
                     style = MaterialTheme.typography.bodyLarge,
                     color = Starlight,
                 )
+                /*
+                 * One line about output, not two.
+                 *
+                 * A row used to be able to reach four lines — name, output, role, milestones —
+                 * and ten of those is a wall of text on a phone with nothing to hold on to. Output
+                 * and the milestone bonus are the same sentence anyway: what this machine makes,
+                 * and why it makes that much. The role stays on its own line, because it is the
+                 * one thing on the row the player set by hand.
+                 */
                 Text(
                     text = if (offer.owned > 0) {
-                        "liefert ${Numbers.formatRate(offer.output)}"
+                        buildString {
+                            append("liefert ${Numbers.formatRate(offer.output)}")
+                            if (offer.milestones > 0) {
+                                append(" · ")
+                                append(Numbers.formatMultiplier(Milestones.factor(offer.owned)))
+                            }
+                            offer.nextMilestoneAt?.let { append(" · nächster bei $it") }
+                        }
                     } else {
                         offer.collector.flavor
                     },
@@ -333,25 +349,6 @@ private fun CollectorRow(
                 if (role != null) {
                     Text(
                         text = "${role.label}: ${role.text}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Nebula,
-                    )
-                }
-                // What the counter is counting towards. Without this the milestone bonus is a
-                // number that changes on its own and never says why.
-                if (offer.owned > 0) {
-                    val next = offer.nextMilestoneAt
-                    Text(
-                        text = buildString {
-                            if (offer.milestones > 0) {
-                                append("${Numbers.formatMultiplier(Milestones.factor(offer.owned))} aus ")
-                                append(if (offer.milestones == 1) "1 Meilenstein" else "${offer.milestones} Meilensteinen")
-                            }
-                            if (next != null) {
-                                if (isNotEmpty()) append(" · ")
-                                append("nächster bei $next")
-                            }
-                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = Nebula,
                     )

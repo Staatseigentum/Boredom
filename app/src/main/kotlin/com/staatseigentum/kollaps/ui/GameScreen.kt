@@ -432,14 +432,18 @@ fun GameScreen(
                 if (maxWidth >= WIDE_THRESHOLD && maxWidth > maxHeight) {
                     Row(modifier = Modifier.fillMaxSize()) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Header(state = shownState, stats = shownStats)
+                            Header(state = shownState, stats = shownStats, compact = false)
                             body(Modifier.fillMaxWidth().weight(1f))
                         }
                         shop(Modifier.fillMaxHeight().weight(1f))
                     }
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        Header(state = shownState, stats = shownStats)
+                        // Compact on anything that is not the two-column layout, which in
+                        // practice means every phone. There is a screen's worth of difference
+                        // between a window and a phone held in one hand, and the same header
+                        // filling half of the second one is what made it unreadable.
+                        Header(state = shownState, stats = shownStats, compact = true)
                         body(Modifier.fillMaxWidth().weight(1f))
                         shop(Modifier.fillMaxWidth().weight(1.15f))
                     }
@@ -553,11 +557,25 @@ private class HeldScreen(var state: GameState, var stats: Stats, var resets: Int
 // ---------------------------------------------------------------------- header
 
 @Composable
-private fun Header(state: GameState, stats: Stats) {
+private fun Header(state: GameState, stats: Stats, compact: Boolean) {
+    /*
+     * Seven rows became four.
+     *
+     * The header had grown a line at a time — rung, singularities, mass, rate, per tap, lab, tier
+     * name, bar, remaining — and every one of them was justified on its own. Together they filled
+     * half of a phone before anything happened, and the thing the screen is actually about, the
+     * body, was pushed into a strip.
+     *
+     * Nothing is deleted. What changes on a narrow screen is that lines which belong together
+     * share a row: the rung sits with the singularities, and what is left to the next body sits
+     * on the same line as which body that is. Both pairs were always one thought printed twice.
+     */
+    val gap = if (compact) 4.dp else 6.dp
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = if (compact) 8.dp else 12.dp)
             // The lines inside go first and go into this column; a second later the column itself
             // goes into the hole, carrying whatever is left of them.
             .sog(SogDepth.SHELL, Ember),
@@ -585,11 +603,17 @@ private fun Header(state: GameState, stats: Stats) {
             }
         }
 
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(gap))
 
         Text(
             text = Numbers.formatMass(state.mass),
-            style = MaterialTheme.typography.displayMedium,
+            // A rung smaller on a phone: "1,43 Qua kg" in displayMedium wraps on a narrow screen,
+            // and a headline that wraps is two rows pretending to be one.
+            style = if (compact) {
+                MaterialTheme.typography.displaySmall
+            } else {
+                MaterialTheme.typography.displayMedium
+            },
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.sog(SogDepth.CONTENT, Starlight).urknall(Starlight),
         )
@@ -603,7 +627,7 @@ private fun Header(state: GameState, stats: Stats) {
 
         val buff = stats.buff
         if (buff != null) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(if (compact) 6.dp else 8.dp))
             PixelPanel(
                 modifier = Modifier.fillMaxWidth(),
                 border = Ember,
@@ -632,41 +656,79 @@ private fun Header(state: GameState, stats: Stats) {
         // looking at it.
         ResearchTicker(state = state)
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(if (compact) 8.dp else 12.dp))
 
         val next = stats.nextTier
         val glow = Color(stats.tier.glowColor)
-        Text(
-            text = if (next != null) {
-                "${stats.tier.label} > ${next.label}"
-            } else {
-                "${stats.tier.label} — das Ende der Leiter"
-            },
-            style = MaterialTheme.typography.titleLarge,
-            color = glow,
-            modifier = Modifier.sog(SogDepth.CONTENT, glow).urknall(glow),
-        )
+        val climb = if (next != null) {
+            "${stats.tier.label} > ${next.label}"
+        } else {
+            "${stats.tier.label} — das Ende der Leiter"
+        }
+        val remaining = next?.let { "noch ${Numbers.formatMass(it.threshold - state.runMass)}" }
 
-        Spacer(Modifier.height(6.dp))
-
-        PixelBar(
-            progress = stats.tierProgress,
-            color = glow,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(10.dp)
-                .sog(SogDepth.CONTENT, glow)
-                .urknall(Ember),
-        )
-
-        if (next != null) {
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "noch ${Numbers.formatMass(next.threshold - state.runMass)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Muted,
-                modifier = Modifier.sog(SogDepth.CONTENT, Muted).urknall(Muted),
+        if (compact) {
+            // Where you are and how far to the next one, on one line with the bar under it.
+            // Two facts about the same climb do not need two rows and a spacer between them.
+            Row(
+                modifier = Modifier.fillMaxWidth().sog(SogDepth.CONTENT, glow).urknall(glow),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = climb,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = glow,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (remaining != null) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = remaining,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Muted,
+                    )
+                }
+            }
+            Spacer(Modifier.height(gap))
+            PixelBar(
+                progress = stats.tierProgress,
+                color = glow,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .sog(SogDepth.CONTENT, glow)
+                    .urknall(Ember),
             )
+        } else {
+            Text(
+                text = climb,
+                style = MaterialTheme.typography.titleLarge,
+                color = glow,
+                modifier = Modifier.sog(SogDepth.CONTENT, glow).urknall(glow),
+            )
+
+            Spacer(Modifier.height(6.dp))
+
+            PixelBar(
+                progress = stats.tierProgress,
+                color = glow,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .sog(SogDepth.CONTENT, glow)
+                    .urknall(Ember),
+            )
+
+            if (remaining != null) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = remaining,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Muted,
+                    modifier = Modifier.sog(SogDepth.CONTENT, Muted).urknall(Muted),
+                )
+            }
         }
     }
 }
