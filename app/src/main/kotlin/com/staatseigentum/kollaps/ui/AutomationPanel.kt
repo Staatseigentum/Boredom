@@ -138,5 +138,4 @@ private fun lockedReason(rule: AutomationRule): String = when (rule) {
     AutomationRule.COLLECTORS, AutomationRule.UPGRADES -> "noch nicht freigeschaltet"
     AutomationRule.FUSION -> "erst, wenn der Kern brennt"
     AutomationRule.RESEARCH -> "erst mit dem Labor"
-    AutomationRule.COLLAPSE -> "erst nach dem ersten Kollaps"
 }

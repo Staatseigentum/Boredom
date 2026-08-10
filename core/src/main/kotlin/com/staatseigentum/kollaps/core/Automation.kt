@@ -66,19 +66,20 @@ enum class AutomationRule(
             AutomationOption("das teuerste leistbare", 1.0),
         ),
     ),
-    COLLAPSE(
-        id = "au_collapse",
-        label = "Kollabieren",
-        flavor = "Lässt das Schwarze Loch fallen, sobald genug dabei herausspringt.",
-        setting = "Ab",
-        options = listOf(
-            AutomationOption("1 Singularität", 1.0),
-            AutomationOption("25", 25.0),
-            AutomationOption("100", 100.0),
-            AutomationOption("500", 500.0),
-        ),
-    ),
     ;
+
+    /*
+     * There was a sixth rule here that collapsed for you.
+     *
+     * It is gone, and not because it worked badly. The other five buy things: they take a decision
+     * the player has already made a hundred times and stop asking. This one *ended the run* — the
+     * single moment the whole game builds to, the one with four hours behind it and a sequence in
+     * front of it, handed to a background loop while nobody was looking. An idle game may play
+     * itself; it should not finish itself.
+     *
+     * Saves that still carry `au_collapse` in their automation map are unaffected: an id no rule
+     * answers to is simply never read.
+     */
 
     fun optionAt(index: Int): AutomationOption = options[index.coerceIn(options.indices)]
 
@@ -114,7 +115,6 @@ object Automation {
             AutomationRule.UPGRADES -> true
             AutomationRule.FUSION -> Fusion.isUnlocked(state)
             AutomationRule.RESEARCH -> ResearchTree.isUnlocked(state)
-            AutomationRule.COLLAPSE -> state.collapses > 0
         }
     }
 

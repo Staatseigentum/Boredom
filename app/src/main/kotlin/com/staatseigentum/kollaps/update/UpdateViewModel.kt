@@ -10,7 +10,10 @@ import com.staatseigentum.kollaps.core.update.ReleaseFeed
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -55,6 +58,34 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
     /** Set when an automatic check found something, so the game can put a dialog in front. */
     private val _prompt = MutableStateFlow(false)
     val prompt: StateFlow<Boolean> = _prompt.asStateFlow()
+
+    /**
+     * Whether the waiting update is one that has to be installed rather than merely offered.
+     *
+     * True for a new major or minor version, false for a patch. What makes the difference is what
+     * the release *did*: a patch fixes something invisible, a feature release changes the save and
+     * the screen — and a save written by one and read by the other is the kind of fault nobody can
+     * reproduce because both people are running "Kollaps".
+     *
+     * Deliberately answered from the version numbers rather than from a flag in the release, so
+     * there is nothing to forget to set. The number already carries the meaning; this reads it.
+     */
+    val mandatory: StateFlow<Boolean> = _state
+        .map { current ->
+            val update = when (current) {
+                is UpdateState.Available -> current.update
+                is UpdateState.Downloading -> current.update
+                is UpdateState.Ready -> current.update
+                is UpdateState.NeedsPermission -> current.update
+                // A failure must never lock anybody out: if the update cannot be fetched or
+                // installed, the game has to stay playable. Blocking on something that is not
+                // working is how an update turns into a brick.
+                else -> null
+            } ?: return@map false
+            val installed = installedVersion ?: return@map false
+            update.version.isBigStepFrom(installed)
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private var work: Job? = null
 

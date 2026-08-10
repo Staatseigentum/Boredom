@@ -150,8 +150,7 @@ fun main(args: Array<String>) {
         cycleAutomation(AutomationRule.COLLECTORS.id)
         cycleAutomation(AutomationRule.COLLECTORS.id)
         cycleAutomation(AutomationRule.UPGRADES.id)
-        cycleAutomation(AutomationRule.COLLAPSE.id)
-        cycleAutomation(AutomationRule.COLLAPSE.id)
+        cycleAutomation(AutomationRule.RESEARCH.id)
     }
     shoot("28-automatik", automated, tab = 3, section = 2, note = "(Tablet, Regeln)", wide = true)
 

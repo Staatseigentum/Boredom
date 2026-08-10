@@ -1,6 +1,7 @@
 package com.staatseigentum.kollaps.core.update
 
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -52,4 +53,33 @@ class AppVersionTest {
     }
 
     private fun version(text: String) = AppVersion.parse(text)!!
+    /**
+     * Which steps are big enough to insist on.
+     *
+     * The rule decides whether a player can put an update off, so it is worth pinning: a patch is
+     * optional, a minor or major is not, and something that is not newer at all is never either.
+     */
+    @Test
+    fun `a new minor or major is a big step, a patch is not`() {
+        fun step(from: String, to: String): Boolean =
+            AppVersion.parse(to)!!.isBigStepFrom(AppVersion.parse(from)!!)
+
+        assertTrue(step("2.5.1", "2.6.0"), "neue Minor")
+        assertTrue(step("2.6.3", "3.0.0"), "neue Major")
+        assertTrue(step("2.5", "2.6"), "auch ohne dritte Zahl")
+
+        assertFalse(step("2.6.0", "2.6.1"), "Patch")
+        assertFalse(step("2.6.0", "2.6.0"), "dieselbe")
+        assertFalse(step("2.6.0", "2.5.9"), "rückwärts ist nie groß")
+        assertFalse(step("2.6.1", "2.6.0"), "auch nicht als Patch rückwärts")
+    }
+
+    /** The `v` prefix and a build suffix must not change the answer. */
+    @Test
+    fun `how the version is written down does not decide whether it is mandatory`() {
+        val installed = AppVersion.parse("2.5.1-debug")!!
+        assertTrue(AppVersion.parse("v2.6.0")!!.isBigStepFrom(installed))
+        assertFalse(AppVersion.parse("v2.5.2")!!.isBigStepFrom(installed))
+    }
+
 }

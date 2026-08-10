@@ -76,9 +76,11 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 - **Ein Labor mit vierzehn Projekten**, die mit Masse bezahlt und auf der *echten* Uhr abgewartet
   werden — von drei Minuten bis zu acht Stunden. Ein Projekt läuft weiter, während das Handy in
   der Tasche steckt, und es gibt nur eine Bank. Was fertig wird, überlebt Kollaps und Urknall
-- **Fünf Automatisierungs-Regeln** mit je einem Wert: Kollektoren nachkaufen, Upgrades mitnehmen,
-  die Fusionskette ausbauen, die Laborbank füllen, kollabieren. Eine Zeile, ein Tipp — der dreht
-  weiter und nach der letzten Stufe wieder aus
+- **Vier Automatisierungs-Regeln** mit je einem Wert: Kollektoren nachkaufen, Upgrades mitnehmen,
+  die Fusionskette ausbauen, die Laborbank füllen. Eine Zeile, ein Tipp — der dreht weiter und
+  nach der letzten Stufe wieder aus. Alle vier *kaufen* etwas; keine beendet den Durchlauf. Es gab
+  einmal eine fünfte, die kollabiert hat — ein Idle-Spiel darf sich selbst spielen, aber nicht
+  sich selbst beenden
 - **Ereignisketten**: aus einer Frage werden drei, und die erste Antwort entscheidet, welche
   zweite es überhaupt gibt. Drei Geschichten, die nicht zweimal gleich ausgehen
 - **Ein Tutorial für die ersten fünf Minuten** — ein Streifen unten am Körper, der weiterzählt,
@@ -168,7 +170,12 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
   einen Decoder wartet, und lässt mehrere Instanzen überlappen, weil in einem Idle-Spiel
   schneller getippt wird als die Probe lang ist
 - **Eingebauter Updater**: die App sieht selbst nach, ob eine neuere Version veröffentlicht
-  wurde, lädt sie herunter und übergibt sie an den System-Installer
+  wurde, lädt sie herunter und übergibt sie an den System-Installer. Bei einem **großen Update**
+  — neue Major- oder Minor-Nummer — gibt es kein „Später": ein solches Release ändert, was im
+  Spielstand steht, und zwei Fassungen nebeneinander vertragen sich dabei nicht. Ein Patch bleibt
+  aufschiebbar. Und sobald das Update *nicht installierbar* ist — kein Netz, Download gescheitert,
+  Berechtigung verweigert — kommt „Später" zurück: auf etwas zu blockieren, das nicht
+  funktioniert, macht aus einem Update einen Ziegelstein
 
 ## Aufbau
 

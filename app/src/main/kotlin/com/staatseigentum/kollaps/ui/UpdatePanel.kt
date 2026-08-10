@@ -136,6 +136,7 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
 @Composable
 fun UpdateDialog(model: UpdateViewModel) {
     val state by model.state.collectAsStateWithLifecycle()
+    val mandatory by model.mandatory.collectAsStateWithLifecycle()
     val update = when (val current = state) {
         is UpdateState.Available -> current.update
         is UpdateState.Downloading -> current.update
@@ -145,16 +146,43 @@ fun UpdateDialog(model: UpdateViewModel) {
     } ?: return
 
     AlertDialog(
-        onDismissRequest = model::dismissPrompt,
+        /*
+         * A big update has no way past it.
+         *
+         * No back gesture, no tap outside, no "later" — because a save written by 2.6 and read by
+         * 2.5 is a fault report nobody can reproduce, since both people are running "Kollaps".
+         *
+         * The escape hatch is deliberate and lives one level up: [UpdateViewModel.mandatory] is
+         * false the moment the update stops being installable. A failed download, a missing
+         * network, a refused permission — anything that means the update cannot actually happen —
+         * puts the "Später" button back. Blocking on something that is not working is how an
+         * update becomes a brick, and that is a worse outcome than an old version.
+         */
+        onDismissRequest = { if (!mandatory) model.dismissPrompt() },
         containerColor = SpaceElevated,
         shape = RectangleShape,
-        title = { PixelLabel("Neue Version verfügbar", size = 16) },
+        title = {
+            PixelLabel(
+                text = if (mandatory) "Diese Version musst du installieren" else "Neue Version verfügbar",
+                size = 16,
+            )
+        },
         text = {
             Column {
                 Text(
                     text = update.title + sizeSuffix(update),
                     style = MaterialTheme.typography.bodyLarge,
                 )
+                if (mandatory) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Ein großes Update ändert, was im Spielstand steht. Zwei " +
+                            "Fassungen nebeneinander vertragen sich dabei nicht — deshalb geht " +
+                            "es hier nur vorwärts.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Muted,
+                    )
+                }
                 if (update.notes.isNotBlank()) {
                     Spacer(Modifier.height(10.dp))
                     Notes(update.notes, maxHeight = 200)
@@ -186,7 +214,11 @@ fun UpdateDialog(model: UpdateViewModel) {
             }
         },
         dismissButton = {
-            PixelButton(label = "Später", onClick = model::dismissPrompt)
+            // Absent while the update is both big and installable. It comes back the moment
+            // either of those stops being true.
+            if (!mandatory) {
+                PixelButton(label = "Später", onClick = model::dismissPrompt)
+            }
         },
     )
 }

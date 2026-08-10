@@ -170,36 +170,23 @@ class AutomationTest {
         assertEquals(started.researchDoneAt, again.researchDoneAt)
     }
 
+    /**
+     * Nothing in the automation catalogue may end a run.
+     *
+     * There used to be a rule that collapsed for you, and two tests here that checked it waited
+     * for a worthwhile payout and never interrupted a challenge. Both are gone with it — but the
+     * reason it was removed is worth keeping as a rule of its own: the five that remain all *buy*
+     * things. An automation that reaches the one moment the whole run builds towards is a
+     * different kind of feature, and if one is ever added again it should be a decision rather
+     * than something that slipped in next to "buy the cheapest upgrade".
+     */
     @Test
-    fun `the collapse rule waits for the payout it was told to wait for`() {
-        val ready = automated().copy(
-            runMass = Tiers.last.threshold,
-            bestTier = Tiers.last.index,
-            collapses = 1,
-        )
-        assertTrue(GameEngine.canCollapse(ready))
-        assertTrue(GameEngine.pendingSingularities(ready) < 500.0)
-
-        val patient = on(ready, AutomationRule.COLLAPSE, 3)
-        assertEquals(0, GameEngine.onWallClock(patient, now).collapses - 1)
-
-        val eager = on(ready, AutomationRule.COLLAPSE, 0)
-        assertEquals(2, GameEngine.onWallClock(eager, now).collapses)
-    }
-
-    @Test
-    fun `the collapse rule never interrupts a challenge`() {
-        val challenge = Challenge.entries.first()
-        val running = automated().copy(
-            runMass = Tiers.last.threshold,
-            bestTier = Tiers.last.index,
-            collapses = 1,
-            activeChallenge = challenge.id,
-        )
-        val state = on(running, AutomationRule.COLLAPSE, 0)
-
-        assertEquals(1, GameEngine.onWallClock(state, now).collapses)
-        assertEquals(challenge.id, GameEngine.onWallClock(state, now).activeChallenge)
+    fun `no automation rule ends a run`() {
+        val ending = AutomationRule.entries.filter {
+            it.label.contains("kollab", ignoreCase = true) ||
+                it.label.contains("urknall", ignoreCase = true)
+        }
+        assertEquals(emptyList(), ending, "Eine Regel beendet wieder den Durchlauf von allein")
     }
 
     // ------------------------------------------------------------------ persistence

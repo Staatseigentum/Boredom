@@ -455,17 +455,15 @@ object GameEngine {
     }
 
     /**
-     * Everything that has to know what time it actually is: the lab, and the two rules that act
+     * Everything that has to know what time it actually is: the lab, and the rule that acts
      * on it.
      *
      * Kept apart from [tick] for the same reason [settleResearch] is — the tick counts elapsed
      * play time and has no business holding a wall clock. The caller has one; it passes it here.
      */
     fun onWallClock(state: GameState, nowMillis: Long): GameState {
-        var next = settleResearch(state, nowMillis)
-        next = autoResearch(next, nowMillis)
-        next = autoCollapse(next, nowMillis)
-        return next
+        val settled = settleResearch(state, nowMillis)
+        return autoResearch(settled, nowMillis)
     }
 
     /** Puts something on the bench whenever it is free. */
@@ -481,22 +479,6 @@ object GameEngine {
         return startResearch(state, (pick ?: return state).id, nowMillis)
     }
 
-    /**
-     * Collapses once the payout is worth the reset.
-     *
-     * The threshold is the point of the rule. Collapsing the moment it becomes possible is almost
-     * always wrong — the singularities scale with the square root of the mass overshoot, so
-     * waiting is worth real money — and a rule with no floor would rob the player of that every
-     * single run.
-     */
-    private fun autoCollapse(state: GameState, nowMillis: Long): GameState {
-        if (!Automation.isAvailable(state, AutomationRule.COLLAPSE)) return state
-        val floor = Automation.valueOf(state, AutomationRule.COLLAPSE) ?: return state
-        if (!canCollapse(state)) return state
-        if (pendingSingularities(state) < floor) return state
-
-        return collapse(state, nowMillis)
-    }
 
     /** Counts the running buff down. Only the tick does this, so a closed app does not burn it. */
     private fun expireBuff(state: GameState, seconds: Double): GameState {
