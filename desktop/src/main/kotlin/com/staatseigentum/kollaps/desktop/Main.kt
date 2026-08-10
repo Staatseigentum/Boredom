@@ -67,7 +67,11 @@ fun main(args: Array<String>) = application {
         state = rememberWindowState(size = DpSize(1_100.dp, 760.dp)),
     ) {
         DesktopPlatform {
-            RunningGame(game)
+            // A big update stands in front of the whole window; a patch stays on the card in the
+            // Kosmos tab where it always was.
+            DesktopUpdateGate(onBeforeExit = { DesktopSave.save(game.state) }) {
+                RunningGame(game)
+            }
         }
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -72,7 +74,10 @@ import com.staatseigentum.kollaps.core.audio.Mood
 import com.staatseigentum.kollaps.core.pixel.Skins
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
+import com.staatseigentum.kollaps.ui.theme.Nebula
+import com.staatseigentum.kollaps.ui.theme.Outline
 import com.staatseigentum.kollaps.ui.theme.Space
+import com.staatseigentum.kollaps.ui.theme.SpaceElevated
 import com.staatseigentum.kollaps.ui.theme.Starlight
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -438,14 +443,42 @@ fun GameScreen(
                         shop(Modifier.fillMaxHeight().weight(1f))
                     }
                 } else {
+                    /*
+                     * One thing at a time.
+                     *
+                     * The old phone layout stacked three zones and let them fight over the height:
+                     * a header, the body, and the shop, each getting a third of a screen that was
+                     * never big enough for one of them. The body ended up a strip too small to
+                     * aim at and the shop showed two and a half rows of a list twenty long.
+                     * Squeezing the header helped and did not fix it, because the problem was
+                     * never density — it was that a phone was being asked to be two screens.
+                     *
+                     * So it is two screens. The body gets all of the height when you are tapping
+                     * it, the shop gets all of it when you are building, and a bar along the
+                     * bottom — where the thumb already is — says which. The status stays on top
+                     * of both, because the mass is the one number you want while doing either.
+                     */
+                    var view by rememberSaveable { mutableStateOf(PhoneView.BODY.name) }
+                    val current = PhoneView.entries.firstOrNull { it.name == view }
+                        ?: PhoneView.BODY
+
+                    // A collapse or a big bang pulls the whole interface into the body, and
+                    // watching that happen from the shop tab would be watching the wrong half.
+                    LaunchedEffect(collapse.running, bigBang.running) {
+                        if (collapse.running || bigBang.running) view = PhoneView.BODY.name
+                    }
+
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // Compact on anything that is not the two-column layout, which in
-                        // practice means every phone. There is a screen's worth of difference
-                        // between a window and a phone held in one hand, and the same header
-                        // filling half of the second one is what made it unreadable.
                         Header(state = shownState, stats = shownStats, compact = true)
-                        body(Modifier.fillMaxWidth().weight(1f))
-                        shop(Modifier.fillMaxWidth().weight(1.15f))
+
+                        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                            when (current) {
+                                PhoneView.BODY -> body(Modifier.fillMaxSize())
+                                PhoneView.SHOP -> shop(Modifier.fillMaxSize())
+                            }
+                        }
+
+                        PhoneNav(current = current, onSelect = { view = it.name })
                     }
                 }
             }
@@ -541,6 +574,58 @@ fun GameScreen(
             BigBangCanvas(sequence = bigBang, modifier = Modifier.fillMaxSize())
 
             updateDialog()
+        }
+    }
+}
+
+/**
+ * Which half of the game a phone is showing.
+ *
+ * Two, not seven. A bar with an entry per shop tab would put six pixel labels across 360 dp and
+ * make every one of them unreadable; the shop already has a tab strip that knows how to scroll.
+ * What was missing was one level above that — a way to put the shop away entirely and have the
+ * body to yourself.
+ */
+private enum class PhoneView(val label: String) {
+    BODY("Körper"),
+    SHOP("Aufbau"),
+}
+
+/**
+ * The switch between them, along the bottom.
+ *
+ * At the bottom because that is where a thumb rests, and full width because two targets that each
+ * take half a phone are two targets nobody misses. The selected one is filled rather than
+ * outlined — the same language the shop's own tabs already speak.
+ */
+@Composable
+private fun PhoneNav(current: PhoneView, onSelect: (PhoneView) -> Unit) {
+    val sfx = LocalSfx.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Outline)
+            .padding(top = 2.dp),
+    ) {
+        PhoneView.entries.forEach { entry ->
+            val selected = entry == current
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .background(if (selected) Nebula else SpaceElevated)
+                    .clickable {
+                        sfx?.click()
+                        onSelect(entry)
+                    }
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                PixelLabel(
+                    text = entry.label,
+                    color = if (selected) Starlight else Muted,
+                    size = 13,
+                )
+            }
         }
     }
 }

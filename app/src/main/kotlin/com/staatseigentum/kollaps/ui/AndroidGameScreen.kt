@@ -24,6 +24,23 @@ import androidx.compose.runtime.setValue
  */
 @Composable
 fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
+    /*
+     * Nothing is drawn until the save is back, and that is a bug fix rather than a nicety.
+     *
+     * The view model starts on `GameState.new()` and loads the file in a coroutine, so the first
+     * composition always saw a brand new game: no mass, no collectors, and — the part that showed
+     * — *no collapses*. [GameScreen] takes the counters it sees on that first frame as its
+     * baseline for "has anything happened since". A moment later the real save arrived with
+     * fourteen collapses on it, the counter had gone up by fourteen, and the screen did the only
+     * thing it could reasonably conclude: it played the collapse sequence. On every single launch.
+     *
+     * The same trap was set for the big bang, the research chime and the ignition — all of them
+     * compare against a baseline read before the save exists. Waiting closes all four at once,
+     * which is why this is here rather than four guards further down.
+     */
+    val ready by model.ready.collectAsStateWithLifecycle()
+    if (!ready) return
+
     val state by model.state.collectAsStateWithLifecycle()
     val stats by model.stats.collectAsStateWithLifecycle()
     val buyAmount by model.buyAmount.collectAsStateWithLifecycle()
