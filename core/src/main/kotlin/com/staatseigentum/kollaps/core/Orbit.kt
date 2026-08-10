@@ -131,6 +131,29 @@ object Orbits {
         opened(state).filter { it.index != orbit.index && isResonant(orbit, it) && isOccupied(state, it) }
 
     /**
+     * Every slot this one couples to by ratio alone — open or not, occupied or not.
+     *
+     * The fixed shape of the system, as opposed to what happens to be standing on it. Without this
+     * the rule is only discoverable by trial: a player can see that two bodies resonate *after*
+     * paying for both, and never that slot seven couples to nothing at all while slot two couples
+     * to five others. A mechanic nobody can see the shape of is not a decision, it is a lottery.
+     */
+    fun couplingsOf(orbit: Orbit): List<Orbit> =
+        all.filter { it.index != orbit.index && isResonant(orbit, it) }
+
+    /**
+     * What a body placed on this slot *would* find, counted before it is paid for.
+     *
+     * The whole point of showing it: the choice of where to seed the next body is the only real
+     * decision the system offers, and until now it had to be made blind.
+     */
+    fun wouldResonateWith(state: GameState, orbit: Orbit): List<Orbit> =
+        if (isOccupied(state, orbit)) emptyList() else resonantWith(state, orbit)
+
+    /** What a given number of locked partners multiplies a body's yield by. */
+    fun resonanceFactor(partners: Int): Double = 1.0 + RESONANCE_BONUS * partners
+
+    /**
      * What one body adds to production, before the resonance bonus.
      *
      * Additive rather than multiplicative, for the same reason the investments are: eight bodies

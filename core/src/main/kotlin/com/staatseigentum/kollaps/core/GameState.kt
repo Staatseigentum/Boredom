@@ -88,6 +88,19 @@ data class GameState(
     val lastRunSeconds: Double = 0.0,
     val lastRunMass: Double = 0.0,
 
+    /**
+     * The fastest run ever finished, in seconds of play. Zero until the first collapse.
+     *
+     * The last run is what you are beating right now; this is what you are beating for good. A
+     * prestige loop without it is the same four hours again — with it, it is the same four hours
+     * with a number attached, which is the entire difference between repetition and progress.
+     *
+     * Only runs that actually reached the black hole land here, because only those are
+     * comparable: a collapse is impossible before it, so there is no such thing as a short run
+     * that cheated.
+     */
+    val bestRunSeconds: Double = 0.0,
+
     /** Comets caught, across all runs. */
     val cometsCaught: Long = 0,
 

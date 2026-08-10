@@ -89,6 +89,16 @@ fun OrbitPanel(
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
+                Spacer(Modifier.height(6.dp))
+                // The rule itself, in one line. It was in the code and in the flavour text but
+                // never anywhere the player could act on it.
+                Text(
+                    text = "Bahnen, deren Nummern in einem kleinen Verhältnis stehen — 1:2, 2:3, " +
+                        "1:3, 3:4, 2:5 — koppeln aneinander. Jede gekoppelte Nachbarin gibt " +
+                        "beiden ${Numbers.formatPercent(Orbits.RESONANCE_BONUS)} mehr.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Nebula,
+                )
 
                 if (next != null) {
                     Spacer(Modifier.height(10.dp))
@@ -159,6 +169,9 @@ private fun OrbitRow(
     val occupied = mass > 0.0
     val tier = Orbits.tierOn(state, orbit)
     val partners = remember(state, orbit) { Orbits.resonantWith(state, orbit) }
+    // What this slot couples to by ratio, whether anything is standing there or not — the shape
+    // of the system rather than its current contents.
+    val couplings = remember(orbit) { Orbits.couplingsOf(orbit) }
     val sfx = LocalSfx.current
 
     PixelPanel(
@@ -198,11 +211,38 @@ private fun OrbitRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = if (occupied) Positive else Muted,
                 )
-                if (partners.isNotEmpty()) {
+                /*
+                 * Three sentences, because there are three situations and they used to collapse
+                 * into one that only appeared in the luckiest of them.
+                 *
+                 * An occupied slot says what it *has*. An empty one says what it *would get* —
+                 * the only moment that information is worth anything, because that is when the
+                 * player is deciding whether to pay. And a slot that couples to nothing says so
+                 * outright: seven of the eight do, one does not, and finding that out by spending
+                 * was never a puzzle, only a tax.
+                 */
+                val resonance: Pair<String, Color>? = when {
+                    partners.isNotEmpty() -> {
+                        val list = partners.joinToString { "${it.index + 1}" }
+                        val factor = Numbers.formatMultiplier(Orbits.resonanceFactor(partners.size))
+                        val text = if (occupied) {
+                            "Resonanz mit Bahn $list · $factor"
+                        } else {
+                            "Hier läge Resonanz mit Bahn $list · $factor"
+                        }
+                        text to Ember
+                    }
+
+                    couplings.isEmpty() -> "Koppelt an keine Bahn" to Muted
+
+                    else -> "Koppelt an Bahn ${couplings.joinToString { "${it.index + 1}" }}" to Muted
+                }
+
+                resonance?.let { (text, color) ->
                     Text(
-                        text = "Resonanz mit Bahn ${partners.joinToString { "${it.index + 1}" }}",
+                        text = text,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Ember,
+                        color = color,
                     )
                 }
             }

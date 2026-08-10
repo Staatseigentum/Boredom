@@ -44,7 +44,39 @@ object Statistics {
                     ),
                 )
             }
+            if (state.bestRunSeconds > 0.0) {
+                add(
+                    StatLine(
+                        "Bester Lauf",
+                        Numbers.formatDuration(state.bestRunSeconds.toLong()),
+                    ),
+                )
+            }
             addAll(rest(state, stats))
+        }
+    }
+
+    /**
+     * Where this run stands, for the card the collapse button is on.
+     *
+     * The statistics tab has had a comparison for a while, but a tab is not where the decision is
+     * made — it is made on the collapse card, with the thumb already over the button. This is the
+     * same question asked in the place it matters: is this run worth pushing further, or has it
+     * already beaten what it was going to beat.
+     *
+     * Null before the first collapse, when there is nothing to stand against.
+     */
+    fun standing(state: GameState): String? {
+        if (state.bestRunSeconds <= 0.0) return null
+        val best = Numbers.formatDuration(state.bestRunSeconds.toLong())
+        val now = Numbers.formatDuration(state.runSeconds.toLong())
+
+        // Beating a record is worth saying out loud, and it can only be said while it is still
+        // true — after the collapse the clock is back at zero.
+        return if (state.runSeconds in 1.0..state.bestRunSeconds) {
+            "Dieser Lauf: $now — schneller als dein bester ($best)"
+        } else {
+            "Dieser Lauf: $now · bester bisher: $best"
         }
     }
 

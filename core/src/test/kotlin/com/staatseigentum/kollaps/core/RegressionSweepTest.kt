@@ -367,4 +367,53 @@ class RegressionSweepTest {
         }
     }
 
+    // ---------------------------------------------------------------- the record
+
+    /**
+     * A record is the *smallest* time, and zero means there is none yet.
+     *
+     * Both halves of that get written the wrong way round eventually — a plain `minOf` makes the
+     * first collapse a record of nought seconds, which no run can ever beat.
+     */
+    @Test
+    fun `the best run is the fastest one, and nothing is not a record`() {
+        assertEquals(900.0, GameEngine.bestRunOf(best = 0.0, seconds = 900.0), "erster Lauf")
+        assertEquals(800.0, GameEngine.bestRunOf(best = 900.0, seconds = 800.0), "schneller")
+        assertEquals(800.0, GameEngine.bestRunOf(best = 800.0, seconds = 900.0), "langsamer")
+        assertEquals(800.0, GameEngine.bestRunOf(best = 800.0, seconds = 0.0), "gar kein Lauf")
+    }
+
+    /** And it survives both resets, like every other lifetime number. */
+    @Test
+    fun `the record outlives a collapse and a big bang`() {
+        val done = GameState.new(now).copy(
+            runMass = Tiers.last.threshold * 2,
+            runSeconds = 4_200.0,
+            collapses = 40,
+        )
+
+        val after = GameEngine.collapse(done, now)
+        assertEquals(4_200.0, after.bestRunSeconds)
+        assertEquals(0.0, after.runSeconds, "Die Uhr des neuen Laufs läuft nicht bei null los")
+
+        val banged = GameEngine.bigBang(after.copy(collapses = 40), now, "path_hand")
+        assertEquals(4_200.0, banged.bestRunSeconds, "Der Urknall hat den Rekord vergessen")
+    }
+
+    /** Every slot's couplings are mutual — a one-sided resonance would pay only one of the two. */
+    @Test
+    fun `resonance is symmetric and slot seven really does couple to nothing`() {
+        for (a in Orbits.all) {
+            for (b in Orbits.couplingsOf(a)) {
+                assertTrue(a in Orbits.couplingsOf(b), "Bahn ${a.index + 1} koppelt einseitig")
+            }
+        }
+        val lonely = Orbits.all.filter { Orbits.couplingsOf(it).isEmpty() }
+        assertEquals(
+            listOf(6),
+            lonely.map { it.index },
+            "Andere Bahnen ohne Kopplung als erwartet — die Anzeige verspricht dann etwas Falsches",
+        )
+    }
+
 }

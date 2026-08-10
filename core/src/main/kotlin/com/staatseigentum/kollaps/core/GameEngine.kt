@@ -603,6 +603,19 @@ object GameEngine {
      * Collapses the black hole: the run resets to a meteorite, but the singularities earned
      * stay and speed up every future run.
      */
+    /**
+     * The record after a run of [seconds], given the record [best] before it.
+     *
+     * Its own function because the rule reads backwards: a *smaller* number is better, and zero
+     * means "none yet" rather than "instant". Both of those get written wrong sooner or later
+     * when the expression is inline.
+     */
+    fun bestRunOf(best: Double, seconds: Double): Double = when {
+        seconds <= 0.0 -> best
+        best <= 0.0 -> seconds
+        else -> minOf(best, seconds)
+    }
+
     fun collapse(state: GameState, nowMillis: Long): GameState {
         if (!canCollapse(state)) return state
         val earned = pendingSingularities(state)
@@ -625,6 +638,9 @@ object GameEngine {
                 // What the run that just ended came to, so the next one has something to beat.
                 lastRunSeconds = state.runSeconds,
                 lastRunMass = state.runMass,
+                // Kept when it is the first, or when it beats the record. `minOf` would make
+                // every first collapse a record of zero seconds, which is the wrong direction.
+                bestRunSeconds = bestRunOf(state.bestRunSeconds, state.runSeconds),
                 // Everything below is the point of collapsing: it is what carries over.
                 heavy = forged,
                 prestigeUpgrades = state.prestigeUpgrades,
@@ -695,6 +711,7 @@ object GameEngine {
                 heavy = state.heavy,
                 lastRunSeconds = state.lastRunSeconds,
                 lastRunMass = state.lastRunMass,
+                bestRunSeconds = state.bestRunSeconds,
                 playedSeconds = state.playedSeconds,
                 cometsCaught = state.cometsCaught,
                 soundOn = state.soundOn,
@@ -973,6 +990,7 @@ object GameEngine {
         heavy = state.heavy,
         lastRunSeconds = state.lastRunSeconds,
         lastRunMass = state.lastRunMass,
+        bestRunSeconds = state.bestRunSeconds,
         achievements = state.achievements,
         playedSeconds = state.playedSeconds,
         cometsCaught = state.cometsCaught,

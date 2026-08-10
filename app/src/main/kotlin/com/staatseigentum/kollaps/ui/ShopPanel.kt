@@ -49,6 +49,7 @@ import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.Orbits
 import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Roles
+import com.staatseigentum.kollaps.core.Statistics
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.core.UpgradeGroup
@@ -818,6 +819,18 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
             color = if (stats.canCollapse) Positive else Muted,
             modifier = Modifier.sog(SogDepth.CONTENT, Positive),
         )
+        // Where the run stands, next to the button that ends it. Only after the first collapse:
+        // before that there is nothing to be faster than.
+        Statistics.standing(state)?.let { standing ->
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = standing,
+                style = MaterialTheme.typography.bodySmall,
+                color = Nebula,
+                modifier = Modifier.sog(SogDepth.CONTENT, Nebula).urknall(Nebula),
+            )
+        }
+
         // Only once there is iron in the core. Before that the line would be an empty promise
         // about a system the player has not switched on yet.
         if (forged.isNotEmpty()) {
