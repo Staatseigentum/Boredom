@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -60,6 +61,7 @@ import com.staatseigentum.kollaps.core.Element
 import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.Heat
 import com.staatseigentum.kollaps.core.NumberFormat
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.OfflineReport
@@ -869,14 +871,18 @@ private fun TapArea(
                 .padding(top = 12.dp),
         )
 
-        // Along the bottom of the body, out of the way of the thumb that is tapping it.
-        TutorialHint(
-            state = state,
-            onDismiss = actions::dismissTutorial,
+        // Along the bottom of the body, out of the way of the thumb that is tapping it. Both in
+        // one column, because on a phone they would otherwise sit on top of each other in the
+        // first five minutes, which is exactly when both have something to say.
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 12.dp),
-        )
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            TutorialHint(state = state, onDismiss = actions::dismissTutorial)
+            HeatMeter(heat = state.heat)
+        }
 
         // Last, so a comet is never covered by the body it drifts past.
         CometOverlay(
@@ -933,6 +939,39 @@ private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit)
                     )
                 }
                 .alpha(1f - progress.value * progress.value),
+        )
+    }
+}
+
+/**
+ * What tapping is worth right now, shown only while it is worth anything.
+ *
+ * Next to the body rather than up in the header, and for the reason the whole feature exists: this
+ * is feedback on something the thumb is doing, and feedback belongs where the thumb is. The header
+ * is also the part of the screen with the least room left on a phone.
+ *
+ * Absent at zero rather than empty. A bar showing nought per cent is a permanent reminder of a
+ * bonus you are not getting, which is the opposite of the point.
+ */
+@Composable
+private fun HeatMeter(heat: Double) {
+    if (heat <= 0.0) return
+
+    Spacer(Modifier.height(6.dp))
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        PixelLabel(
+            text = "Überhitzt " + Numbers.formatMultiplier(Heat.factor(heat)),
+            color = Ember,
+            size = 11,
+        )
+        Spacer(Modifier.height(3.dp))
+        PixelBar(
+            progress = heat.toFloat(),
+            color = Ember,
+            cells = 12,
+            modifier = Modifier
+                .width(120.dp)
+                .height(6.dp),
         )
     }
 }

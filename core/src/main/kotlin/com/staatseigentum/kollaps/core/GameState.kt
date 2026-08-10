@@ -84,6 +84,23 @@ data class GameState(
     /** Seconds of play spent in the current run. Reset by anything that resets the run. */
     val runSeconds: Double = 0.0,
 
+    /**
+     * How hot the body is from being tapped, `0.0..1.0`.
+     *
+     * The game is called tapping on celestial bodies, and by the fifteenth rung a tap is worth
+     * nothing against what the collectors make — the central verb quietly stopped mattering
+     * halfway through. This is the answer: tapping does not pay *itself* better, it makes the
+     * whole production faster while it lasts.
+     *
+     * Deliberately small and deliberately short-lived. A heat that doubled output would turn an
+     * idle game into an obligation and punish the player for putting the phone down, which is the
+     * one thing the genre must never do. What this buys is a reason to stay for a minute, not a
+     * reason to feel guilty for leaving.
+     *
+     * Not something that can be banked: it decays in seconds, and time away zeroes it outright.
+     */
+    val heat: Double = 0.0,
+
     /** How long the previous run took and how far it got, so this one has something to beat. */
     val lastRunSeconds: Double = 0.0,
     val lastRunMass: Double = 0.0,

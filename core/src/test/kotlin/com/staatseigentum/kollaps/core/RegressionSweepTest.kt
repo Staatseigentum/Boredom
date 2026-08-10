@@ -416,4 +416,53 @@ class RegressionSweepTest {
         )
     }
 
+    // ---------------------------------------------------------------- heat
+
+    /** Tapping heats it, waiting cools it, and neither can leave the range. */
+    @Test
+    fun `heat builds on taps and decays on its own`() {
+        var heat = 0.0
+        repeat(40) { heat = Heat.afterTap(heat) }
+        assertEquals(1.0, heat, "Vierzig Tipps reichen nicht für volle Hitze")
+
+        // The half-life is the promise the constant makes; a test is the only place it is kept.
+        val half = Heat.cooled(1.0, Heat.HALF_LIFE_SECONDS)
+        assertTrue(half in 0.48..0.52, "Nach einer Halbwertszeit stehen $half statt der Hälfte")
+
+        assertEquals(0.0, Heat.cooled(1.0, 300.0), "Hitze verschwindet nie ganz")
+        assertEquals(0.0, Heat.cooled(0.0, 10.0))
+    }
+
+    /**
+     * Being away is never worth more than being there.
+     *
+     * The one way this feature could be exploited: tap it hot, close the app, and collect hours of
+     * production at a rate the body held for twenty seconds.
+     */
+    @Test
+    fun `time away is credited cold`() {
+        val hot = GameState.new(now).copy(
+            collectors = mapOf(Collectors.all.first().id to 50),
+            heat = 1.0,
+            lastSeenAt = now - 3_600_000L,
+        )
+        val cold = hot.copy(heat = 0.0)
+
+        val fromHot = GameEngine.applyOffline(hot, now)
+        val fromCold = GameEngine.applyOffline(cold, now)
+
+        assertEquals(fromCold.gained, fromHot.gained, "Hitze wurde offline mitbezahlt")
+        assertEquals(0.0, fromHot.state.heat, "Die Hitze hat die Abwesenheit überlebt")
+    }
+
+    /** And it is worth exactly what it says on the tin, which is not much. */
+    @Test
+    fun `full heat is worth less than a third more`() {
+        assertEquals(1.0, Heat.factor(0.0))
+        assertTrue(
+            Heat.factor(1.0) <= 1.35,
+            "Volle Hitze gibt ${Heat.factor(1.0)} — so viel darf Anwesenheit nicht wert sein",
+        )
+    }
+
 }

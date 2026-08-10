@@ -212,6 +212,9 @@ object GameEngine {
         var ticked = credit(state, gained).copy(
             playedSeconds = state.playedSeconds + seconds,
             runSeconds = state.runSeconds + seconds,
+            // Cooled after the mass is credited, not before: the seconds just paid out are
+            // seconds the body actually was that hot.
+            heat = Heat.cooled(state.heat, seconds),
         )
         ticked = autoTap(ticked, seconds)
         ticked = Fusion.advance(ticked, seconds)
@@ -513,7 +516,12 @@ object GameEngine {
     /** Taps the body once. */
     fun tap(state: GameState): GameState {
         val gained = massPerTap(state)
-        return award(credit(state.copy(taps = state.taps + 1), gained))
+        return award(
+            credit(
+                state.copy(taps = state.taps + 1, heat = Heat.afterTap(state.heat)),
+                gained,
+            ),
+        )
     }
 
     /**
@@ -1201,8 +1209,12 @@ object GameEngine {
 
         val mods = modifiersOf(state)
         val capped = min(elapsedSeconds.toDouble(), mods.offlineCapHours * 3_600.0)
-        val gained = massPerSecond(state) * capped * mods.offlineEfficiency
-        val credited = credit(state, gained).copy(lastSeenAt = nowMillis)
+        // Cold first, and that is the whole rule about heat: it is paid for by being present.
+        // Crediting hours of production at a rate the body only held for twenty seconds would
+        // turn a reason to stay into a trick — tap it hot, close the app, come back richer.
+        val cold = state.copy(heat = 0.0)
+        val gained = massPerSecond(cold) * capped * mods.offlineEfficiency
+        val credited = credit(cold, gained).copy(lastSeenAt = nowMillis)
         return OfflineReport(
             state = credited,
             seconds = capped.toLong(),
@@ -1433,7 +1445,8 @@ object GameEngine {
                     Milestones.factor(owned, mods.milestoneFactor)
             }
         }
-        return base * mods.global * tier.productionMultiplier * singularityMultiplier(state, mods)
+        return base * mods.global * tier.productionMultiplier *
+            singularityMultiplier(state, mods) * Heat.factor(state.heat)
     }
 
     private fun massPerTap(
