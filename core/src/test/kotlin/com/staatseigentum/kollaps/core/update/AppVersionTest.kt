@@ -74,6 +74,28 @@ class AppVersionTest {
         assertFalse(step("2.6.1", "2.6.0"), "auch nicht als Patch rückwärts")
     }
 
+    /**
+     * The rule in the words it was asked for: only full releases are compulsory.
+     *
+     * Never a patch, however high the last number climbs — 2.6.9 is still 2.6 and can wait. A new
+     * minor or major is a full release and cannot. Pinned separately from the case above because
+     * this is the requirement itself rather than an example of it, and a patch number in the high
+     * single digits is exactly where somebody would expect the rule to quietly change its mind.
+     */
+    @Test
+    fun `only full releases are compulsory, however far the patch number runs`() {
+        fun step(from: String, to: String): Boolean =
+            AppVersion.parse(to)!!.isBigStepFrom(AppVersion.parse(from)!!)
+
+        for (patch in 1..9) {
+            assertFalse(step("2.6.0", "2.6.$patch"), "2.6.$patch ist kein Voll-Release")
+        }
+
+        assertTrue(step("2.6.9", "2.7.0"), "2.7.0 ist eines")
+        assertTrue(step("2.7.0", "2.8.0"), "2.8.0 auch")
+        assertTrue(step("2.8.9", "3.0.0"), "und eine neue Major erst recht")
+    }
+
     /** The `v` prefix and a build suffix must not change the answer. */
     @Test
     fun `how the version is written down does not decide whether it is mandatory`() {
