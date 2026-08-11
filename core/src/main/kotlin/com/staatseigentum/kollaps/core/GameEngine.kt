@@ -923,8 +923,26 @@ object GameEngine {
             activeChallenges = challenges.map { it.id }.toSet(),
             activeChallenge = null,
             challengeSeconds = 0.0,
+            collectors = headStart(challenges),
         )
     }
+
+    /**
+     * The machines a challenge run begins with, which for seven of the eight is none at all.
+     *
+     * [freshRun] hands over nothing on purpose: the head start bought with singularities is not
+     * meant to reach inside a challenge, and every rule but one is playable from an empty screen
+     * because tapping still earns the first kilogram. [ChallengeRule.NoTaps] takes that away too,
+     * so it — and only it — brings its own opening position along. Deliberately not routed through
+     * `startingCollectors`: this is a fixed part of the rule, not a bonus the player bought, and it
+     * must read the same on the first collapse as on the fortieth.
+     */
+    private fun headStart(challenges: List<Challenge>): Map<String, Int> =
+        if (challenges.none { it.rule is ChallengeRule.NoTaps }) {
+            emptyMap()
+        } else {
+            mapOf(Collectors.all.first().id to ChallengeRule.NoTaps.HEAD_START)
+        }
 
     /** Gives the running challenges up. The run resets, none of them count as done. */
     fun abortChallenge(state: GameState, nowMillis: Long): GameState {
@@ -1506,7 +1524,13 @@ object GameEngine {
         for (challenge in Challenge.running(state)) {
             when (val rule = challenge.rule) {
                 is ChallengeRule.NoCollectors -> mods.collectorsWork = false
-                is ChallengeRule.NoTaps -> mods.tapsWork = false
+                // The only rule that gives something back while it takes: see [ChallengeRule.NoTaps]
+                // for why a run without a finger needs a fleet to start with, and why that fleet is
+                // then made weaker rather than the challenge being made shorter.
+                is ChallengeRule.NoTaps -> {
+                    mods.tapsWork = false
+                    mods.collectorPower *= ChallengeRule.NoTaps.COLLECTOR_POWER
+                }
                 is ChallengeRule.Handicap -> mods.global *= rule.factor
                 is ChallengeRule.NoUpgrades -> mods.upgradesWork = false
                 is ChallengeRule.NoOrbits -> mods.orbitsWork = false
@@ -1645,9 +1669,20 @@ object GameEngine {
         var upgradesWork = true
         var orbitsWork = true
 
+        /**
+         * What the whole fleet is worth, on top of whatever each kind is worth on its own.
+         *
+         * A challenge can switch collectors off entirely; this is the same idea with a dial rather
+         * than a switch, and so far only [ChallengeRule.NoTaps] turns it. It sits in
+         * [collectorFactor] rather than at the three places production is worked out, because two
+         * of those three are what the shop shows and the third is what the shop's numbers are
+         * supposed to add up to.
+         */
+        var collectorPower = 1.0
+
         val collectors = HashMap<String, Double>()
 
-        fun collectorFactor(id: String): Double = collectors[id] ?: 1.0
+        fun collectorFactor(id: String): Double = (collectors[id] ?: 1.0) * collectorPower
     }
 }
 

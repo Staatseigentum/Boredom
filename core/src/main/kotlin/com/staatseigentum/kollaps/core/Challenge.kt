@@ -5,8 +5,27 @@ sealed interface ChallengeRule {
     /** Collectors produce nothing. The run is whatever the player's finger can do. */
     data object NoCollectors : ChallengeRule
 
-    /** Tapping yields nothing. The run is whatever the machines can do without help. */
-    data object NoTaps : ChallengeRule
+    /**
+     * Tapping yields nothing. The run is whatever the machines can do without help.
+     *
+     * This is the one rule that cannot simply take something away. A challenge run starts empty on
+     * purpose — no mass, no fleet, and none of the head start bought with singularities — which
+     * every other rule survives because the finger is still there to earn the first kilogram.
+     * Take the finger away as well and the run produces nothing at all, for ever: an empty fleet
+     * times any multiplier is zero, offline credit is a multiple of that zero, and a comet pays a
+     * span of the same zero. It was not a hard challenge, it was a screen to give up on.
+     *
+     * So this rule hands over [HEAD_START] machines to get the run moving, and takes the fleet
+     * down to [COLLECTOR_POWER] of its usual output to pay for them. The player still cannot help;
+     * they can only choose what gets built, which is what the challenge was always about.
+     */
+    data object NoTaps : ChallengeRule {
+        /** What a collector still makes when nobody is helping it along. */
+        const val COLLECTOR_POWER = 0.25
+
+        /** Copies of the first collector the run begins with, because nothing else can earn one. */
+        const val HEAD_START = 1
+    }
 
     /** Everything is multiplied by [factor], which is below one. */
     data class Handicap(val factor: Double) : ChallengeRule
@@ -54,7 +73,8 @@ enum class Challenge(
     NICHTSTUN(
         id = "c_idle",
         title = "Nichtstun",
-        flavor = "Nimm die Hände weg. Die Maschinen können das auch allein.",
+        flavor = "Nimm die Hände weg. Einen Staubfänger kriegst du geschenkt — der Rest " +
+            "wächst ohne dich.",
         rule = ChallengeRule.NoTaps,
         goal = ChallengeGoal.ReachTier("Saturn"),
         reward = PrestigeEffect.GlobalMultiplier(1.5),
@@ -126,7 +146,9 @@ enum class Challenge(
     val ruleText: String
         get() = when (rule) {
             is ChallengeRule.NoCollectors -> "Kollektoren produzieren nichts"
-            is ChallengeRule.NoTaps -> "Tippen bringt nichts"
+            is ChallengeRule.NoTaps ->
+                "Tippen bringt nichts, Kollektoren nur " +
+                    Numbers.formatPercent(ChallengeRule.NoTaps.COLLECTOR_POWER)
             is ChallengeRule.Handicap ->
                 if (rule.factor >= 1.0) "Keine Einschränkung"
                 else "Alles bringt nur ${Numbers.formatPercent(rule.factor)}"

@@ -172,6 +172,55 @@ class ChallengeAndAutomationTest {
     }
 
     @Test
+    fun `the no tap rule brings its own opening position`() {
+        val started = GameEngine.startChallenge(veteran(), "c_idle", NOW)
+
+        // Without this the run is a dead end rather than a challenge: no fleet, no finger, and
+        // every windfall in the game is a multiple of a production that is zero.
+        assertEquals(
+            mapOf(Collectors.all.first().id to ChallengeRule.NoTaps.HEAD_START),
+            started.collectors,
+        )
+        assertTrue(GameEngine.massPerSecond(started) > 0.0, "Der Lauf kann nie das erste Kilo verdienen")
+        assertTrue(GameEngine.tick(started, 60.0).runMass > 0.0)
+    }
+
+    @Test
+    fun `the no tap rule makes the fleet weaker to pay for the head start`() {
+        val fleet = mapOf("dust" to 100)
+        val plain = veteran().copy(collectors = fleet)
+        // Same rung as well as same fleet: a challenge run starts at zero, and the tier's own
+        // multiplier would otherwise swamp the one being measured.
+        val challenged = GameEngine.startChallenge(veteran(), "c_idle", NOW)
+            .copy(collectors = fleet, runMass = plain.runMass)
+
+        assertEquals(
+            GameEngine.massPerSecond(plain) * ChallengeRule.NoTaps.COLLECTOR_POWER,
+            GameEngine.massPerSecond(challenged),
+            GameEngine.massPerSecond(plain) * 1e-9,
+        )
+        // The shop has to agree with the total, or the player is reading a number that is not the
+        // one being paid out.
+        val row = GameEngine.collectorOffers(challenged, BuyAmount.ONE).first { it.collector.id == "dust" }
+        assertEquals(GameEngine.massPerSecond(challenged), row.output, GameEngine.massPerSecond(challenged) * 1e-9)
+    }
+
+    @Test
+    fun `only the no tap rule gets an opening position`() {
+        for (challenge in Challenge.entries.filter { it.rule !is ChallengeRule.NoTaps }) {
+            val started = GameEngine.startChallenge(
+                veteran().copy(collapses = challenge.requiredCollapses),
+                challenge.id,
+                NOW,
+            )
+            assertTrue(
+                started.collectors.isEmpty(),
+                "${challenge.title} fängt nicht mehr bei null an",
+            )
+        }
+    }
+
+    @Test
     fun `the handicap rule scales everything down`() {
         // Both at the same point of the ladder: starting a challenge resets the run, and the
         // tier multiplier would otherwise swamp the handicap being measured.
