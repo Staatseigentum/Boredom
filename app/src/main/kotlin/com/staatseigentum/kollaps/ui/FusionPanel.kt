@@ -87,7 +87,12 @@ fun FusionPanel(
             }
         }
 
+        // Takes the rest of the height rather than whatever is spare. Without the weight the
+        // list is sized by its content and anything above it that grows pushes it off the
+        // bottom — which is exactly what happened when the strip below went eight hundred
+        // pixels tall and left room for a single machine.
         LazyColumn(
+            modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -169,9 +174,22 @@ private fun ElementStrip(state: GameState) {
 private fun HeavyStrip(state: GameState) {
     if (!Heavy.isUnlocked(state)) return
 
+    /*
+     * Scrolls sideways, for the reason the chain above it always did.
+     *
+     * This row did not, and with three elements in it there was no room left: the last box was
+     * squeezed to about one character wide, its text wrapped a letter per line, and the box grew
+     * to eight hundred pixels tall. The row centres its contents vertically, so the label and the
+     * other two boxes ended up floating in the middle of that — and everything below, the buy
+     * amounts and the whole list of machines, was pushed off the bottom of the screen.
+     *
+     * A row that cannot fit its contents has two honest answers: wrap or scroll. Wrapping breaks
+     * the reading order of a chain, so it scrolls.
+     */
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
             .padding(horizontal = 12.dp)
             .padding(bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -191,16 +209,22 @@ private fun HeavyStrip(state: GameState) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 PixelLabel(text = element.symbol, color = Starlight, size = 14)
+                // Never wrapped. A chip in a scrolling row is entitled to its natural width, and
+                // a wrapping one is how a box becomes a column of single letters.
                 Text(
                     text = Numbers.format(held),
                     style = MaterialTheme.typography.bodySmall,
                     color = Starlight,
+                    maxLines = 1,
+                    softWrap = false,
                 )
                 Text(
                     text = "${Numbers.formatMultiplier(Heavy.factor(state, element))} " +
                         element.bonus.label,
                     style = MaterialTheme.typography.labelSmall,
                     color = Positive,
+                    maxLines = 1,
+                    softWrap = false,
                 )
             }
         }
@@ -229,6 +253,8 @@ private fun ElementChip(state: GameState, element: Element) {
             text = if (active) Numbers.format(Fusion.whole(held)) else "—",
             style = MaterialTheme.typography.bodySmall,
             color = if (active) Starlight else Muted,
+            maxLines = 1,
+            softWrap = false,
         )
         Text(
             // The lever, not just the multiplier: two elements pull on production and the other
@@ -240,6 +266,8 @@ private fun ElementChip(state: GameState, element: Element) {
             },
             style = MaterialTheme.typography.labelSmall,
             color = if (active) Positive else Outline,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }
