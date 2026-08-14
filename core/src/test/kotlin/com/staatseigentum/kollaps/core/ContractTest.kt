@@ -73,14 +73,74 @@ class ContractTest {
     }
 
     @Test
-    fun `the more-of contracts count from where the table was dealt`() {
+    fun `the more-of contracts count from where that contract was dealt`() {
         // A deep save must not finish "five further collapses" by opening the tab.
         val veteran = GameEngine.tick(player(collapses = 40), 1.0)
+            .let { it.copy(contracts = listOf("ct_collapses"), contractMarks = mapOf("ct_collapses" to 40.0)) }
         val five = assertNotNull(Contract.byId("ct_collapses"))
         assertTrue(!five.isMetBy(veteran), "Vierzig Kollapse haben fünf weitere sofort erfüllt")
 
         val later = veteran.copy(collapses = veteran.collapses + 5)
         assertTrue(five.isMetBy(later), "Fünf weitere Kollapse reichen nicht")
+    }
+
+    /**
+     * The bug the per-contract marks exist for.
+     *
+     * One shared mark set to the maximum of four unrelated counters asked a save with thirteen
+     * collapses for sixteen research projects. There are fourteen in the tree, so the contract
+     * could not be finished, could not be replaced, and sat there for ever showing 0 / 3.
+     */
+    @Test
+    fun `a contract never asks for more than its own counter can reach`() {
+        val deep = GameEngine.tick(
+            player(collapses = 40, bigBangs = Multiverse.SLOTS).copy(
+                research = ResearchTree.all.take(6).map { it.id }.toSet(),
+                challengesDone = setOf("c_hand"),
+                findsAnswered = 2,
+            ),
+            1.0,
+        )
+
+        for (id in deep.contracts) {
+            val contract = assertNotNull(Contract.byId(id))
+            val mark = deep.contractMarks[id] ?: 0.0
+            assertTrue(
+                mark <= contract.counter(deep),
+                "${contract.title} startet bei $mark, der Zähler steht aber bei ${contract.counter(deep)}",
+            )
+        }
+
+        // Specifically: the research contract must be reachable inside the tree that exists.
+        val research = assertNotNull(Contract.byId("ct_research"))
+        val dealt = deep.copy(
+            contracts = listOf("ct_research"),
+            contractMarks = mapOf("ct_research" to deep.research.size.toDouble()),
+        )
+        val needed = (deep.contractMarks["ct_research"] ?: deep.research.size.toDouble()) + research.target
+        assertTrue(
+            deep.research.size + research.target <= ResearchTree.all.size.toDouble(),
+            "Der Auftrag verlangt $needed Projekte, es gibt ${ResearchTree.all.size}",
+        )
+        val finished = dealt.copy(research = ResearchTree.all.take(deep.research.size + 3).map { it.id }.toSet())
+        assertTrue(research.isMetBy(finished), "Drei weitere Projekte erfüllen ihn nicht")
+    }
+
+    @Test
+    fun `a mark belongs to its contract and survives its neighbours being replaced`() {
+        var state = GameEngine.tick(player(collapses = 40), 1.0)
+        val marked = state.contracts.filter { Contract.byId(it)?.fromHere == true }
+        val before = state.contractMarks.filterKeys { it in marked }
+        assertTrue(before.isNotEmpty(), "Kein einziger Auftrag misst von hier aus")
+
+        // Hand in something else; the untouched contracts keep their zero.
+        state = state.copy(collectors = mapOf("dust" to 1_200), contracts = listOf("ct_fleet") + state.contracts)
+        state = GameEngine.tick(GameEngine.claimContract(state, "ct_fleet"), 1.0)
+
+        for ((id, mark) in before) {
+            if (id !in state.contracts) continue
+            assertEquals(mark, state.contractMarks[id], "$id hat seine Marke verloren")
+        }
     }
 
     @Test
@@ -109,7 +169,7 @@ class ContractTest {
         for (contract in Contract.all) {
             assertTrue(contract.title.isNotBlank())
             assertTrue(contract.reward > 0.0, "${contract.title} zahlt nichts")
-            assertTrue(contract.target(state) > 0.0, "${contract.title} verlangt nichts")
+            assertTrue(contract.target > 0.0, "${contract.title} verlangt nichts")
             assertTrue(contract.fractionOf(state) in 0.0..1.0)
             assertTrue(contract.statusOf(state).isNotBlank())
         }

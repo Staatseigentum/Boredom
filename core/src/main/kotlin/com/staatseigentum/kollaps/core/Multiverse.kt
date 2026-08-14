@@ -432,7 +432,13 @@ object Multiverse {
             // has two. Everything downstream reads both.
             secondPathId = absorb.pathId ?: keep.secondPathId,
         )
-        return state.copy(universes = state.universes.filterNot { it.slot == absorbSlot } - keep + merged)
+        // Both removals by slot, and neither by value. `List - element` removes the first entry
+        // that compares equal, and `ParkedUniverse` is a data class — two galaxies that happened
+        // to be identical in every field would make it take the wrong one. Slots are unique, so
+        // slots are what identifies a galaxy.
+        return state.copy(
+            universes = state.universes.filterNot { it.slot == absorbSlot || it.slot == keepSlot } + merged,
+        )
     }
 
     /** How much of the weaker galaxy survives the weld. */
@@ -471,7 +477,13 @@ object Multiverse {
         val absorb = state.universes.firstOrNull { it.slot == absorbSlot } ?: return false
         // Only ever with a full sky. With a slot free there is nothing to buy, and a merge would
         // be pure loss dressed up as a choice.
-        return !hasRoom(state) && !keep.isRamping && !absorb.isRamping && keep.secondPathId == null
+        // Neither side may already be a weld. Only `keep` was checked, which let an *absorbed*
+        // galaxy carry a second lean into the merge — where it was silently dropped, because a
+        // merged galaxy has room for exactly two and one of those is already spoken for. Losing a
+        // lean without saying so is worse than refusing the merge.
+        return !hasRoom(state) &&
+            !keep.isRamping && !absorb.isRamping &&
+            !keep.isMerged && !absorb.isMerged
     }
 
     /**

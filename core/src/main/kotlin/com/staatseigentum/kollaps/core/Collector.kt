@@ -31,6 +31,8 @@ data class Collector(
      * the opening run in three hours instead of three and a half.
      */
     val catalogueOnly: Boolean = false,
+    // Anything reading this must also remember that it gates the *head start*, not only the shop:
+    // see `GameEngine.startingCollectors`.
 ) {
     /** What the shop row says. Translated here so no call site has to remember to. */
     val name: String get() = Lang.t(germanName)

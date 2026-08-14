@@ -349,6 +349,13 @@ private fun CollectorRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
+                offer.lockedReason?.let { reason ->
+                    Text(
+                        text = reason,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Ember,
+                    )
+                }
                 if (role != null) {
                     Text(
                         text = "${role.label}: ${role.text}",
@@ -365,7 +372,13 @@ private fun CollectorRow(
                 // cap the row says so instead, the same way a full investment does.
                 val full = offer.owned >= Collector.MAX_OWNED
                 PixelLabel(
-                    text = if (full) "voll" else Numbers.formatMass(offer.cost),
+                    // A rule beats the cap beats the price. Naming the rule matters most: the
+                    // other two are states the player can see coming, and this one is a door.
+                    text = when {
+                        offer.lockedReason != null -> "gesperrt"
+                        full -> "voll"
+                        else -> Numbers.formatMass(offer.cost)
+                    },
                     color = when {
                         full -> Nebula
                         enabled -> Positive

@@ -63,6 +63,16 @@ data class CollectorOffer(
     val everBought: Boolean,
     /** Hidden collectors are still too far away to be shown at all. */
     val visible: Boolean,
+    /**
+     * Why this row cannot be bought, when the reason is a rule rather than the price.
+     *
+     * `null` when the only thing in the way is money, which the price already says. A row that
+     * refuses without a reason is the worst thing a shop can contain, and one existed: the head
+     * start used to hand over the catalogue fleet, which made those rows visible while the rules
+     * went on refusing to sell another. Fixed at the source — but a save written before the fix
+     * still holds those machines until its next collapse, so the row has to be able to say so.
+     */
+    val lockedReason: String? = null,
     /** Milestones passed, and the count the next one lands on. */
     val milestones: Int = 0,
     val nextMilestoneAt: Int? = null,
@@ -711,7 +721,7 @@ object GameEngine {
                 // The table survives both resets, because half of what it asks for is a reset.
                 contracts = state.contracts,
                 contractsDone = state.contractsDone,
-                contractMark = state.contractMark,
+                contractMarks = state.contractMarks,
                 prestigeUpgrades = state.prestigeUpgrades,
                 investments = state.investments,
                 achievements = state.achievements,
@@ -796,7 +806,7 @@ object GameEngine {
                 // The table survives both resets, because half of what it asks for is a reset.
                 contracts = state.contracts,
                 contractsDone = state.contractsDone,
-                contractMark = state.contractMark,
+                contractMarks = state.contractMarks,
                 lastRunSeconds = state.lastRunSeconds,
                 lastRunMass = state.lastRunMass,
                 lastRunSingularities = state.lastRunSingularities,
@@ -875,17 +885,21 @@ object GameEngine {
         if (!Contract.isUnlocked(state)) return state
         val wanted = Contract.refilled(state)
         if (wanted == state.contracts) return state
-        return state.copy(
-            contracts = wanted,
-            // Only when the table was empty. Re-marking on every refill would reset the progress
-            // of the two contracts that stayed on it.
-            contractMark = if (state.contracts.isEmpty()) markFor(state) else state.contractMark,
-        )
-    }
 
-    /** The counters a freshly dealt table measures "more of" against. */
-    private fun markFor(state: GameState): Int =
-        maxOf(state.collapses, state.findsAnswered, state.challengesDone.size, state.research.size)
+        // A mark is written only for contracts that are arriving now, and only for the ones that
+        // measure "more of" something. Re-marking a contract that stayed on the table would reset
+        // its progress every time a neighbour was replaced.
+        val arriving = wanted.filterNot { it in state.contracts }
+        val marks = state.contractMarks.toMutableMap()
+        for (id in arriving) {
+            val contract = Contract.byId(id) ?: continue
+            if (contract.fromHere) marks[id] = contract.counter(state)
+        }
+        // And a mark for a contract that is no longer anywhere is a map that grows for ever.
+        marks.keys.retainAll(wanted.toSet())
+
+        return state.copy(contracts = wanted, contractMarks = marks)
+    }
 
     /**
      * Hands a finished contract in.
@@ -907,7 +921,10 @@ object GameEngine {
                 // next press.
                 contracts = state.contracts.filterNot { it == contractId },
                 contractsDone = state.contractsDone + 1,
-                contractMark = markFor(state),
+                // The handed-in contract's mark goes with it. If it is ever dealt again it starts
+                // counting from wherever the player is then, not from where they were the first
+                // time round.
+                contractMarks = state.contractMarks - contractId,
             ),
         )
     }
@@ -1229,7 +1246,7 @@ object GameEngine {
         // The table survives both resets, because half of what it asks for is a reset.
         contracts = state.contracts,
         contractsDone = state.contractsDone,
-        contractMark = state.contractMark,
+        contractMarks = state.contractMarks,
         lastRunSeconds = state.lastRunSeconds,
         lastRunMass = state.lastRunMass,
         lastRunSingularities = state.lastRunSingularities,
@@ -1290,13 +1307,26 @@ object GameEngine {
             .filterIsInstance<PrestigeEffect.StartingMass>()
             .sumOf { it.mass }
 
-    /** Collectors a fresh run begins with. The best one wins, they do not add. */
+    /**
+     * Collectors a fresh run begins with. The best one wins, they do not add.
+     *
+     * The catalogue fleet is left out while its ladder is shut, and that omission is the whole of
+     * a bug worth remembering. The head start handed over every machine in the game, including the
+     * five that are not for sale yet — so after a collapse a player owned a hundred and forty-five
+     * Entropiemühlen, which made the row visible (anything owned is shown), while `buyCollector`
+     * went on correctly refusing to sell a hundred and forty-sixth. A row in the shop that does
+     * nothing at all when pressed, with no explanation, is about the worst thing an interface can
+     * do, and it took two rules that were each individually right to produce it.
+     */
     private fun startingCollectors(state: GameState): Map<String, Int> {
         val count = permanentEffects(state)
             .filterIsInstance<PrestigeEffect.StartingCollectors>()
             .maxOfOrNull { it.count } ?: 0
         if (count <= 0) return emptyMap()
-        return Collectors.all.associate { it.id to count }
+        val open = Designations.isUnlocked(state)
+        return Collectors.all
+            .filter { open || !it.catalogueOnly }
+            .associate { it.id to count }
     }
 
     /**
@@ -1521,12 +1551,20 @@ object GameEngine {
                 } else {
                     0.0
                 },
+                lockedReason = if (collector.catalogueOnly && !Designations.isUnlocked(state)) {
+                    "Erst mit ${Multiverse.SLOTS} Galaxien"
+                } else {
+                    null
+                },
                 milestones = Milestones.reached(owned),
                 // Nothing to count towards once the cap is reached: the twentieth milestone lands
                 // on the last copy that can be built, and pointing at a twenty-first would be the
                 // shop promising something it will never sell.
                 nextMilestoneAt = Milestones.nextAt(owned)?.takeIf { it <= Collector.MAX_OWNED },
-                affordable = count > 0 && cost <= state.mass,
+                // A rule that refuses beats a purse that can pay. Without this the row lit up green
+                // and then did nothing when it was pressed.
+                affordable = count > 0 && cost <= state.mass &&
+                    (!collector.catalogueOnly || Designations.isUnlocked(state)),
                 everBought = owned > 0,
                 visible = visible,
             )

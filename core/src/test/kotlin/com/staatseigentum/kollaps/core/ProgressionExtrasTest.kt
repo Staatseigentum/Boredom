@@ -199,9 +199,31 @@ class ProgressionExtrasTest {
             NOW,
         )
         assertEquals(50_000.0, prepared.mass)
+        // Every machine the shop will actually sell — which is not every machine in the game.
+        // The head start used to hand over the catalogue fleet as well, and since anything owned
+        // is shown, those rows appeared in the shop with a buy button that correctly refused to
+        // do anything. Two rules that were each right, producing a dead button between them.
         assertTrue(
-            Collectors.all.all { prepared.ownedOf(it.id) == 5 },
+            Collectors.all.filterNot { it.catalogueOnly }.all { prepared.ownedOf(it.id) == 5 },
             "Die Startkollektoren fehlen",
+        )
+        assertTrue(
+            Collectors.all.filter { it.catalogueOnly }.all { prepared.ownedOf(it.id) == 0 },
+            "Die Starthilfe verschenkt Maschinen, die der Laden noch nicht verkauft",
+        )
+
+        // And once the ladder is open they arrive like everything else.
+        val opened = GameEngine.collapse(
+            base.copy(
+                prestigeUpgrades = setOf("p_start_mass", "p_collectors_1"),
+                bigBangs = Multiverse.SLOTS,
+                universes = (0 until Multiverse.SLOTS).map { ParkedUniverse(slot = it) },
+            ),
+            NOW,
+        )
+        assertTrue(
+            Collectors.all.all { opened.ownedOf(it.id) == 5 },
+            "Mit offener Katalogleiter fehlt die Katalogflotte trotzdem",
         )
     }
 

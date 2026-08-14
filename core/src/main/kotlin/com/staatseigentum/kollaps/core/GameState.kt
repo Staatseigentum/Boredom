@@ -219,12 +219,20 @@ data class GameState(
     val contractsDone: Int = 0,
 
     /**
-     * Where the counters stood when the table was last dealt.
+     * Where each contract's own counter stood when that contract was dealt.
      *
-     * Several contracts ask for *more* of something rather than a total — five further collapses,
-     * three further finds — and without a mark a save that already has forty collapses would
-     * finish those the moment they were dealt. One shared mark rather than one per contract,
-     * because the table is dealt as a table.
+     * Keyed by contract id, because the counters are unrelated to each other. The shape this
+     * replaced was a single shared number set to the *maximum* of them all, which asked a save
+     * with thirteen collapses for sixteen research projects — three more than the tree contains.
+     * See [Contract.fromHere].
+     */
+    val contractMarks: Map<String, Double> = emptyMap(),
+
+    /**
+     * The single shared mark, from before each contract kept its own.
+     *
+     * Read by nothing. Kept rather than deleted so a save written by 3.0.0 or 3.0.1 still decodes
+     * — dropping a field is a load failure, not a migration.
      */
     val contractMark: Int = 0,
 
