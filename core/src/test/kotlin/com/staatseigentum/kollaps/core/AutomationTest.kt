@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import kotlin.math.floor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -201,22 +202,34 @@ class AutomationTest {
     }
 
     /**
-     * Nothing in the automation catalogue may end a run.
+     * Exactly one rule may end a run, and only ever a counted number of times.
      *
-     * There used to be a rule that collapsed for you, and two tests here that checked it waited
-     * for a worthwhile payout and never interrupted a challenge. Both are gone with it — but the
-     * reason it was removed is worth keeping as a rule of its own: the five that remain all *buy*
-     * things. An automation that reaches the one moment the whole run builds towards is a
-     * different kind of feature, and if one is ever added again it should be a decision rather
-     * than something that slipped in next to "buy the cheapest upgrade".
+     * This guard used to forbid the whole idea, because a rule that reaches the one moment the run
+     * builds towards is a different kind of feature from "buy the cheapest upgrade" and should be
+     * a decision rather than something that slips in beside them. It has since been made — see
+     * [AutomationRule.COLLAPSE] — so what is left to hold is the shape of that decision: the
+     * collapse rule is bounded by a count, and the big bang, which throws away the universe rather
+     * than the run, is not automated at all.
+     *
+     * The behaviour of the rule itself lives in `AutoCollapseTest`.
      */
     @Test
-    fun `no automation rule ends a run`() {
+    fun `only the counted collapse rule ends a run, and nothing ends a universe`() {
         val ending = AutomationRule.entries.filter {
-            it.label.contains("kollab", ignoreCase = true) ||
-                it.label.contains("urknall", ignoreCase = true)
+            it.label.contains("kollab", ignoreCase = true)
         }
-        assertEquals(emptyList(), ending, "Eine Regel beendet wieder den Durchlauf von allein")
+        assertEquals(listOf(AutomationRule.COLLAPSE), ending, "Eine zweite Regel beendet Läufe")
+
+        val universeEnding = AutomationRule.entries.filter {
+            it.label.contains("urknall", ignoreCase = true)
+        }
+        assertEquals(emptyList(), universeEnding, "Der Urknall wird automatisiert")
+
+        // Every setting of it is a number of runs, not a mode. That is what bounds it.
+        assertTrue(
+            AutomationRule.COLLAPSE.options.all { it.value >= 1.0 && it.value == floor(it.value) },
+            "Die Kollaps-Regel hat eine Einstellung, die keine Anzahl ist",
+        )
     }
 
     // ------------------------------------------------------------------ persistence

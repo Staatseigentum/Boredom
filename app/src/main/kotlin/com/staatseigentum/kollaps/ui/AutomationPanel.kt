@@ -123,7 +123,13 @@ private fun RuleRow(state: GameState, rule: AutomationRule, onCycle: () -> Unit)
                         color = Muted,
                     )
                     PixelLabel(
-                        text = rule.optionAt(setting).label,
+                        // The collapse rule counts down, so what belongs here is what is left of
+                        // the order rather than the number it was placed at — a rule that still
+                        // read "50" after forty-nine runs would be telling the player nothing.
+                        text = when (rule) {
+                            AutomationRule.COLLAPSE -> "noch ${state.collapseBudget}"
+                            else -> rule.optionAt(setting).label
+                        },
                         color = Ember,
                         size = 12,
                     )
@@ -139,4 +145,5 @@ private fun lockedReason(rule: AutomationRule): String = when (rule) {
     AutomationRule.FUSION -> "erst, wenn der Kern brennt"
     AutomationRule.ORBITS -> "erst mit dem eigenen System"
     AutomationRule.RESEARCH -> "erst mit dem Labor"
+    AutomationRule.COLLAPSE -> "erst nach dem ersten eigenen Kollaps"
 }

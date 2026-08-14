@@ -424,6 +424,15 @@ data class GameState(
      * [autoBuyOn] flag is still read rather than migrated away.
      */
     val automation: Map<String, Int> = emptyMap(),
+
+    /**
+     * Automatic collapses still owed, from the count the player set. See [AutomationRule.COLLAPSE].
+     *
+     * The whole reason that rule is allowed to exist again. It is not a switch that hands the game
+     * over — it is an order for a fixed number of runs, and this is what is left of it. At zero the
+     * rule switches itself off and the button is the player's again.
+     */
+    val collapseBudget: Int = 0,
 ) {
     fun ownedOf(collectorId: String): Int = collectors[collectorId] ?: 0
 

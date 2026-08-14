@@ -77,20 +77,37 @@ enum class AutomationRule(
             AutomationOption("das teuerste leistbare", 1.0),
         ),
     ),
-    ;
-
-    /*
-     * There was a sixth rule here that collapsed for you.
+    /**
+     * The rule that collapses for you, for a number of runs you name and no more.
      *
-     * It is gone, and not because it worked badly. The other five buy things: they take a decision
-     * the player has already made a hundred times and stop asking. This one *ended the run* — the
-     * single moment the whole game builds to, the one with four hours behind it and a sequence in
-     * front of it, handed to a background loop while nobody was looking. An idle game may play
-     * itself; it should not finish itself.
+     * This was removed once, and the objection was right: the other rules buy things, taking a
+     * decision the player has already made a hundred times and no longer asking. That one *ended
+     * the run* — the single moment the whole game builds to, the one with hours behind it and a
+     * sequence in front of it, handed to a background loop while nobody was looking. An idle game
+     * may play itself; it should not finish itself.
      *
-     * Saves that still carry `au_collapse` in their automation map are unaffected: an id no rule
-     * answers to is simply never read.
+     * What brings it back is the dial. It is not a switch that hands the game over indefinitely,
+     * it is an order for five, ten, twenty-five or fifty runs — and when they are done it switches
+     * itself off and gives the button back. Setting it is itself the decision to end that many
+     * runs, made once, deliberately, in advance. The count left is in [GameState.collapseBudget].
+     *
+     * Note the id. The old rule's `au_collapse` is deliberately *not* reused: there are saves out
+     * there carrying it from before the removal, and answering to it again would switch this on for
+     * players who never asked, at a setting they chose for something else years ago.
      */
+    COLLAPSE(
+        id = "au_collapse_counted",
+        label = "Kollabieren lassen",
+        flavor = "Kollabiert, sobald Warten kaum noch etwas bringt — und hört danach von selbst auf.",
+        setting = "Läufe",
+        options = listOf(
+            AutomationOption("5", 5.0),
+            AutomationOption("10", 10.0),
+            AutomationOption("25", 25.0),
+            AutomationOption("50", 50.0),
+        ),
+    ),
+    ;
 
     fun optionAt(index: Int): AutomationOption = options[index.coerceIn(options.indices)]
 
@@ -127,6 +144,9 @@ object Automation {
             AutomationRule.FUSION -> Fusion.isUnlocked(state)
             AutomationRule.ORBITS -> Orbits.isUnlocked(state)
             AutomationRule.RESEARCH -> ResearchTree.isUnlocked(state)
+            // Not before the player has ended a run by hand. Automating a thing nobody has done
+            // yet is not saving them the work, it is taking the moment away before they have had it.
+            AutomationRule.COLLAPSE -> state.collapses > 0
         }
     }
 
@@ -154,7 +174,15 @@ object Automation {
         // The old switch is kept in step so that turning the collector rule off actually turns it
         // off, rather than falling straight back through to the legacy flag.
         val legacy = if (rule == LEGACY_RULE) option != null else state.autoBuyOn
-        return state.copy(automation = updated, autoBuyOn = legacy)
+        // Choosing a count *is* placing the order, so it is filled here rather than at the first
+        // collapse. Picking a different count refills it outright instead of adding to what is
+        // left: "fünfzig" has to mean fifty more runs, whatever was standing before it.
+        val budget = when {
+            rule != AutomationRule.COLLAPSE -> state.collapseBudget
+            option == null -> 0
+            else -> rule.optionAt(option).value.toInt()
+        }
+        return state.copy(automation = updated, autoBuyOn = legacy, collapseBudget = budget)
     }
 
     /** Moves a rule to its next setting, switching it on if it was off and off after the last. */
