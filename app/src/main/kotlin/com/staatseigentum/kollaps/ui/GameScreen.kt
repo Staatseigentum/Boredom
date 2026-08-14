@@ -522,7 +522,19 @@ fun GameScreen(
                      * bottom — where the thumb already is — says which. The status stays on top
                      * of both, because the mass is the one number you want while doing either.
                      */
-                    var view by rememberSaveable { mutableStateOf(PhoneView.BODY.name) }
+                    /*
+                     * Which area the phone is on.
+                     *
+                     * Seeded from [startTab], which is how the screenshot harness reaches anything
+                     * but the body — and that stopped working silently when the bottom bar took
+                     * over from the shop's tab strip. `startTab` still went to the strip, the strip
+                     * was no longer what chose the screen, and so every phone screenshot in the
+                     * build quietly became another photograph of the same body. Zero is the body,
+                     * which is where a player starts, so nothing changes for anybody else.
+                     */
+                    var view by rememberSaveable {
+                        mutableStateOf(PhoneView.entries.getOrElse(startTab) { PhoneView.BODY }.name)
+                    }
                     val available = PhoneView.availableIn(shownState)
                     val current = PhoneView.entries.firstOrNull { it.name == view }
                         ?.takeIf { it in available }

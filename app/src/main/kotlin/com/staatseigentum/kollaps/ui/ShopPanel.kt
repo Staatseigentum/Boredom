@@ -675,7 +675,7 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
  * question: what do I do with a finished run, what is the lab doing, what runs without me, and
  * how is the app set up.
  */
-private enum class CosmosSection(val title: String) {
+internal enum class CosmosSection(val title: String) {
     COLLAPSE("Kollaps"),
     SKY("Himmel"),
     LAB("Labor"),
@@ -685,7 +685,7 @@ private enum class CosmosSection(val title: String) {
 }
 
 /** Sections worth offering for this state. Empty ones would be a tab onto a blank page. */
-private fun sectionsFor(state: GameState, stats: Stats): List<CosmosSection> =
+internal fun sectionsFor(state: GameState, stats: Stats): List<CosmosSection> =
     CosmosSection.entries.filter {
         when (it) {
             CosmosSection.COLLAPSE, CosmosSection.SYSTEM, CosmosSection.ACHIEVEMENTS -> true

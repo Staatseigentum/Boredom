@@ -9,7 +9,9 @@ import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.Heavy
 import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Tiers
+import com.staatseigentum.kollaps.ui.PhoneView
 import com.staatseigentum.kollaps.ui.SpriteCache
+import com.staatseigentum.kollaps.ui.sectionsFor
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.skia.EncodedImageFormat
 import java.io.File
@@ -66,6 +68,16 @@ fun main(args: Array<String>) {
         println("  $name.png  $note")
     }
 
+    /**
+     * Which position a Kosmos section sits at *for this save*.
+     *
+     * The list is filtered — no sky before the first big bang, no lab before it is unlocked — so a
+     * written-down index means a different panel from one state to the next, and it did: the shot
+     * labelled "Erfolge" had been photographing the orbits since the tab list changed length.
+     */
+    fun sectionOf(game: DesktopGame, name: String): Int =
+        sectionsFor(game.state, game.stats).indexOfFirst { it.name == name }.coerceAtLeast(0)
+
     // By name rather than by number, so inserting a body into the ladder does not silently
     // repoint every screenshot at its neighbour.
     fun at(name: String): DesktopGame = DesktopGame().apply { seekToTier(Tiers.indexOf(name)) }
@@ -92,9 +104,9 @@ fun main(args: Array<String>) {
         }
         edit { GameEngine.award(it) }
     }
-    shoot("20-kollektoren", veteran, tab = 0, note = "(gespieltes Spiel, mit Meilensteinen)")
-    shoot("21-erfolge", veteran, tab = 2)
-    shoot("22-kosmos", veteran, tab = 3)
+    shoot("20-kollektoren", veteran, tab = 1, note = "(gespieltes Spiel, mit Meilensteinen)")
+    shoot("21-erfolge", veteran, tab = 4, section = sectionOf(veteran, "ACHIEVEMENTS"))
+    shoot("22-kosmos", veteran, tab = 4)
 
     // The Kosmos tab shows either the list of challenges or the one being run, never both, so
     // it takes two states to see the whole feature.
@@ -104,9 +116,9 @@ fun main(args: Array<String>) {
         startChallenges(setOf("c_hand"))
         edit { GameEngine.tick(it, 11 * 60.0) }
     }
-    shoot("23-herausforderung", challenging, tab = 3, section = 2, note = "(Herausforderung läuft)")
-    shoot("24-querformat", veteran, tab = 0, note = "(Tablet, zweispaltig)", wide = true)
-    shoot("25-querformat-kosmos", veteran, tab = 3, note = "(Tablet, Kosmos)", wide = true)
+    shoot("23-herausforderung", challenging, tab = 4, section = sectionOf(challenging, "RULES"), note = "(Herausforderung läuft)")
+    shoot("24-querformat", veteran, tab = 1, note = "(Tablet, zweispaltig)", wide = true)
+    shoot("25-querformat-kosmos", veteran, tab = 4, note = "(Tablet, Kosmos)", wide = true)
 
     // A star with the whole chain lit. The tab only exists once the body has ignited, which is
     // why this needs its own state rather than another photograph of the veteran above.
@@ -121,7 +133,7 @@ fun main(args: Array<String>) {
             it.copy(heavy = Heavy.forge(Heavy.forge(emptyMap(), 40_000.0), 90_000.0))
         }
     }
-    shoot("26-fusion", fusing, tab = 2, note = "(Fusionskette läuft)")
+    shoot("26-fusion", fusing, tab = 3, note = "(Fusionskette läuft)")
 
     // The lab, with a project part way through. An idle bench shows the catalogue and nothing
     // else, and the countdown is the half of it worth looking at.
@@ -135,7 +147,7 @@ fun main(args: Array<String>) {
             it.copy(researchDoneAt = System.currentTimeMillis() + (total * 660).toLong())
         }
     }
-    shoot("27-labor", researching, tab = 3, section = 1, note = "(Forschung läuft)")
+    shoot("27-labor", researching, tab = 4, section = sectionOf(researching, "LAB"), note = "(Forschung läuft)")
 
     // Lab and standing orders in one frame, which only fits on the tablet: on a phone the second
     // card starts below the fold and a still cannot scroll to it.
@@ -153,9 +165,9 @@ fun main(args: Array<String>) {
         cycleAutomation(AutomationRule.UPGRADES.id)
         cycleAutomation(AutomationRule.RESEARCH.id)
     }
-    shoot("28-automatik", automated, tab = 3, section = 2, note = "(Tablet, Regeln)", wide = true)
+    shoot("28-automatik", automated, tab = 4, section = sectionOf(automated, "RULES"), note = "(Tablet, Regeln)", wide = true)
 
-    shoot("29-system", veteran, tab = 3, section = 3, note = "(Statistik und Einstellungen)")
+    shoot("29-system", veteran, tab = 4, section = sectionOf(veteran, "SYSTEM"), note = "(Statistik und Einstellungen)")
 
     // The star system, with bodies on most slots and two of them in resonance. Grown by ticking
     // rather than by setting masses directly, so the picture is one the game can actually reach.
@@ -197,6 +209,37 @@ fun main(args: Array<String>) {
       } finally {
         scene.close()
       }
+    }
+
+    /*
+     * Every area and every section, rendered once.
+     *
+     * This exists because of a crash that shipped. Moving the achievements into the Kosmos panel
+     * nested one lazy list inside another, which Compose does not draw badly — it throws — and the
+     * whole section took the game down the first time anybody opened it. Nothing here caught it,
+     * because the shots above are a hand-picked list of interesting screens and that section was
+     * not on it.
+     *
+     * So the list stops being hand-picked. Rendering a screen is enough to prove it *can* be
+     * rendered, which is exactly the class of fault a layout error is; anything that throws fails
+     * this job and never reaches a release. The pictures are written out too, because a screen
+     * nobody has ever looked at is its own kind of untested.
+     */
+    println("Durchlauf durch alle Bereiche:")
+    val sections = sectionsFor(veteran.state, veteran.stats)
+    for ((index, view) in PhoneView.availableIn(veteran.state).withIndex()) {
+        if (view == PhoneView.COSMOS) {
+            for ((sectionIndex, section) in sections.withIndex()) {
+                shoot("90-${view.name.lowercase()}-${section.name.lowercase()}", veteran,
+                    tab = index, section = sectionIndex)
+            }
+        } else {
+            shoot("90-${view.name.lowercase()}", veteran, tab = index)
+        }
+    }
+    // And the wide layout's own sections, which are a different panel entirely.
+    for ((sectionIndex, section) in sections.withIndex()) {
+        shoot("91-breit-${section.name.lowercase()}", veteran, section = sectionIndex, wide = true)
     }
 
     println("geschrieben nach ${out.absolutePath}")
