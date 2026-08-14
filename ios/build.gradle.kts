@@ -47,9 +47,10 @@ kotlin {
             baseName = "Kollaps"
             // The entry point is not in the root package, so it has to be named.
             entryPoint = "com.staatseigentum.kollaps.ios.main"
-            // UIKit will not hand a window to a program that does not link it, and nothing in the
-            // Kotlin sources references it by symbol until the delegate is instantiated.
-            freeCompilerArgs += listOf("-linker-option", "-framework", "-linker-option", "UIKit")
+            // Named rather than left to the platform klib. `UIApplicationMain` is reached through
+            // the delegate class by name, not by a symbol the linker can see being used, and a
+            // framework that nothing appears to reference is a framework that can be dropped.
+            linkerOpts("-framework", "UIKit")
         }
     }
 

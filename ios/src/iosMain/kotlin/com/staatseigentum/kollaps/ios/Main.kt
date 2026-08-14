@@ -73,7 +73,7 @@ fun main() {
  * killed later without being told. So the save goes out when the app leaves the screen, not when
  * it ends, because being ended is not something it will be present for.
  */
-@OptIn(BetaInteropApi::class)
+@OptIn(BetaInteropApi::class, ExperimentalForeignApi::class)
 class KollapsDelegate : UIResponder, UIApplicationDelegateProtocol {
 
     companion object : UIResponderMeta(), UIApplicationDelegateProtocolMeta

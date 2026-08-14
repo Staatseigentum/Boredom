@@ -219,13 +219,9 @@ jobs:
   # Dieselben Schritte wie im iPhone-Workflow, nur von hier aus aufgerufen — ein zweites Mal
   # hinschreiben hieße, sie beim nächsten Mal an einer Stelle zu ändern.
   #
-  # `continue-on-error`, damit eine iPhone-Fassung, die gerade nicht durchgeht, das Release nicht
-  # aufhält: das APK und die Windows-Fassung kommen aus eigenen Jobs, und ein Release ohne IPA ist
-  # unendlich viel besser als gar keines. Was fehlt, sieht man am Release selbst.
   ios:
     name: Unsignierte IPA
     needs: version
-    continue-on-error: true
     uses: ./.github/workflows/ios.yml
     with:
       version: ${{ needs.version.outputs.name }}
@@ -233,6 +229,18 @@ jobs:
   publish:
     name: Release veröffentlichen
     needs: [version, android, windows, ios]
+    # Wartet auf die iPhone-Fassung, hängt aber nicht an ihr. Eine IPA, die gerade nicht
+    # durchgeht, darf das Release nicht aufhalten — APK und Windows-Fassung kommen aus eigenen
+    # Jobs, und ein Release ohne IPA ist unendlich viel besser als gar keines. Was fehlt, sieht
+    # man an den Dateien, die das Release am Ende auflistet.
+    #
+    # Als Bedingung statt als `continue-on-error` am iOS-Job: Letzteres nimmt GitHub bei einem
+    # aufgerufenen Workflow gar nicht erst an — die Datei wird dann ungültig und *gar nichts*
+    # läuft mehr, was dieser Kommentar der Nachwelt erspart, noch einmal herauszufinden.
+    if: >
+      always()
+      && needs.android.result == 'success'
+      && needs.windows.result == 'success'
     runs-on: ubuntu-latest
 
     steps:

@@ -116,7 +116,7 @@ object Heavy {
         val made = yieldFrom(iron)
         if (made.isEmpty()) return held
         return held.toMutableMap().apply {
-            for ((id, amount) in made) merge(id, amount, Double::plus)
+            for ((id, amount) in made) combine(id, amount, Double::plus)
         }
     }
 

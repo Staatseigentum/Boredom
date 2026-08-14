@@ -2069,12 +2069,12 @@ object GameEngine {
                 is UpgradeEffect.TapMultiplier -> mods.tapMultiplier *= effect.factor
                 is UpgradeEffect.GlobalMultiplier -> mods.global *= effect.factor
                 is UpgradeEffect.TapFromProduction -> mods.tapFraction += effect.fraction
-                is UpgradeEffect.CollectorMultiplier -> mods.collectors.merge(
+                is UpgradeEffect.CollectorMultiplier -> mods.collectors.combine(
                     effect.collectorId,
                     effect.factor,
                 ) { a, b -> a * b }
 
-                is UpgradeEffect.CollectorSynergy -> mods.collectors.merge(
+                is UpgradeEffect.CollectorSynergy -> mods.collectors.combine(
                     effect.targetId,
                     1.0 + effect.perUnit * state.ownedOf(effect.sourceId),
                 ) { a, b -> a * b }
@@ -2082,7 +2082,7 @@ object GameEngine {
                 is UpgradeEffect.FleetSynergy -> {
                     val factor = 1.0 + effect.perUnit * state.ownedOf(effect.sourceId)
                     for (collector in Collectors.all) {
-                        mods.collectors.merge(collector.id, factor) { a, b -> a * b }
+                        mods.collectors.combine(collector.id, factor) { a, b -> a * b }
                     }
                 }
 
@@ -2101,7 +2101,7 @@ object GameEngine {
             for (collector in Collectors.all) {
                 val factor = Roles.outputFactor(state, collector.id) *
                     Roles.networkFactor(state, collector.id)
-                if (factor != 1.0) mods.collectors.merge(collector.id, factor) { a, b -> a * b }
+                if (factor != 1.0) mods.collectors.combine(collector.id, factor) { a, b -> a * b }
             }
         }
 
