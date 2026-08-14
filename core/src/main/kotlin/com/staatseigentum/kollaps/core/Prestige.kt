@@ -60,7 +60,11 @@ val PrestigeEffect.text: String
             "Offline-Zeit zählt bis zu ${hours.toInt()} Stunden"
 
         is PrestigeEffect.StartingCollectors ->
-            "Jeder Kollektor startet mit $count Stück"
+            // "Jeder freigeschaltete" and not "jeder". The head start covers the machines the shop
+            // will actually sell, which is not every machine in the game — the catalogue fleet is
+            // out until its ladder opens. The sentence used to promise all of them, and for a
+            // while it delivered on that promise, which is how the dead buy button got made.
+            "Jeder freigeschaltete Kollektor startet mit $count Stück"
 
         is PrestigeEffect.StartingMass ->
             "Start mit ${Numbers.formatMass(mass)}"

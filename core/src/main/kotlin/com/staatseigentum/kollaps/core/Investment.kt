@@ -140,7 +140,7 @@ object Investments {
             id = "i_fleet",
             germanName = "Eingelagerte Flotte",
             germanFlavor = "Nicht die Anlagen überleben den Kollaps, sondern das Lagerverzeichnis.",
-            perLevel = "je Stufe +3 Kollektoren zum Start",
+            perLevel = "je Stufe +3 je freigeschaltetem Kollektor",
             baseCost = 16.0,
             growth = 1.34,
             maxLevel = 200,

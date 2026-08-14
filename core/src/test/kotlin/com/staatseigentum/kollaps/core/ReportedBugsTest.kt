@@ -269,3 +269,112 @@ class ShopHonestyTest {
         assertTrue(after.ownedOf("dust") > 0, "Die reguläre Starthilfe ist mit weggefallen")
     }
 }
+
+/**
+ * Every route by which a machine can arrive, held against the one rule that decides.
+ *
+ * There are four: the shop, the automatic buyer, the head start bought with singularities, and the
+ * repeatable account that raises it. All four have to agree with `Designations.isUnlocked`, and the
+ * words on the cards have to agree with all four.
+ */
+class CatalogueGateTest {
+
+    private val now = 1_700_000_000_000L
+
+    private fun shutLadder(): GameState = GameState.new(now).copy(
+        collapses = 30,
+        bigBangs = 2,
+        universes = (0 until 2).map { ParkedUniverse(slot = it, bestTier = 24, collapses = 12) },
+        singularities = 1e12,
+        prestigeUpgrades = PrestigeUpgrades.all.map { it.id }.toSet(),
+        investments = Investments.all.associate { it.id to it.maxLevel },
+        mass = 1e60,
+        totalMass = 1e60,
+        runMass = Tiers.last.threshold * 10,
+        bestTier = Tiers.last.index,
+        automation = mapOf(AutomationRule.COLLECTORS.id to 2),
+    )
+
+    private val catalogue get() = Collectors.all.filter { it.catalogueOnly }
+
+    @Test
+    fun `no prestige purchase at any level hands one over`() {
+        val state = shutLadder()
+        assertFalse(Designations.isUnlocked(state))
+        // Everything buyable is bought and every account is full — the strongest head start the
+        // game can produce.
+        val fresh = GameEngine.collapse(state, now)
+        assertTrue(fresh.ownedOf("dust") > 0, "Die reguläre Starthilfe greift gar nicht")
+
+        for (collector in catalogue) {
+            assertEquals(0, fresh.ownedOf(collector.id), "${collector.name} kam durch die Starthilfe")
+        }
+    }
+
+    @Test
+    fun `the automatic buyer never spends on one`() {
+        // Including the awkward case: a save that already owns some, so the row is still visible.
+        var state = shutLadder().copy(collectors = catalogue.associate { it.id to 145 })
+        val before = catalogue.associate { it.id to state.ownedOf(it.id) }
+
+        repeat(200) { state = GameEngine.tick(state, 1.0) }
+
+        for (collector in catalogue) {
+            assertEquals(
+                before[collector.id],
+                state.ownedOf(collector.id),
+                "Der Auto-Kauf hat ${collector.name} nachgekauft",
+            )
+        }
+        // And it did not stall on them either: it bought *something*.
+        assertTrue(
+            Collectors.all.filterNot { it.catalogueOnly }.sumOf { state.ownedOf(it.id) } > 0,
+            "Der Auto-Kauf hat gar nichts gekauft",
+        )
+    }
+
+    @Test
+    fun `the shop refuses by hand as well`() {
+        val state = shutLadder().copy(collectors = catalogue.associate { it.id to 145 })
+        for (collector in catalogue) {
+            assertEquals(
+                state.ownedOf(collector.id),
+                GameEngine.buyCollector(state, collector.id, BuyAmount.MAX).ownedOf(collector.id),
+                "${collector.name} ließ sich von Hand kaufen",
+            )
+        }
+    }
+
+    @Test
+    fun `the cards do not promise what the rules refuse`() {
+        // The one that was wrong: "Jeder Kollektor startet mit N Stück", while five of them do not.
+        val texts = PrestigeUpgrades.all.map { it.effect.text } +
+            Investments.all.map { it.perLevel } +
+            AeonUpgrades.all.map { it.effect.text }
+
+        for (text in texts) {
+            assertFalse(
+                text.contains("Jeder Kollektor"),
+                "Eine Karte verspricht jeden Kollektor: \"$text\"",
+            )
+        }
+    }
+
+    @Test
+    fun `with the sky full every route works again`() {
+        val open = shutLadder().copy(
+            bigBangs = Multiverse.SLOTS,
+            universes = (0 until Multiverse.SLOTS).map { ParkedUniverse(slot = it, bestTier = 24, collapses = 12) },
+        )
+        assertTrue(Designations.isUnlocked(open))
+
+        val fresh = GameEngine.collapse(open, now)
+        for (collector in catalogue) {
+            assertTrue(fresh.ownedOf(collector.id) > 0, "${collector.name} fehlt trotz vollem Himmel")
+        }
+        assertTrue(
+            GameEngine.buyCollector(open, catalogue.first().id, BuyAmount.ONE)
+                .ownedOf(catalogue.first().id) > open.ownedOf(catalogue.first().id),
+        )
+    }
+}

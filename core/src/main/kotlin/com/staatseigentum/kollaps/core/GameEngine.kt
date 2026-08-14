@@ -434,7 +434,14 @@ object GameEngine {
         val reserve = Automation.valueOf(state, AutomationRule.COLLECTORS) ?: return state
 
         val best = collectorOffers(state, BuyAmount.ONE)
-            .filter { it.visible && it.amount > 0 && it.cost * reserve <= state.mass }
+            // `lockedReason` and not only `visible`. A machine the save already owns stays visible
+            // even while its ladder is shut, and picking one would make `buyCollector` refuse — at
+            // which point this returns the state unchanged and the automatic buyer silently does
+            // nothing that tick, having had a perfectly good second choice available.
+            .filter {
+                it.visible && it.lockedReason == null &&
+                    it.amount > 0 && it.cost * reserve <= state.mass
+            }
             .minByOrNull { it.cost / it.collector.baseRate }
             ?: return state
 
