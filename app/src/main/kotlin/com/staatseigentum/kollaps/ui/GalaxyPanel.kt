@@ -274,7 +274,15 @@ private fun GalaxyRow(
             )
         }
         Text(
-            text = Numbers.formatMultiplier(1.0 + Multiverse.weightedYieldOf(state, universe)),
+            // A farming galaxy shows what it is actually doing to production, leverage and all,
+            // so the rows add up to the figure at the top of the panel. One on another job shows
+            // its plain weight, which is what drives the currency it *is* earning.
+            text = Numbers.formatMultiplier(
+                1.0 + when (Multiverse.productionShareOf(state, universe)) {
+                    0.0 -> Multiverse.weightedYieldOf(state, universe)
+                    else -> Multiverse.productionShareOf(state, universe)
+                },
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = Ember,
             maxLines = 1,

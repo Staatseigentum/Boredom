@@ -331,9 +331,50 @@ object Multiverse {
             weightedYieldOf(state, universe)
         }
 
+    /**
+     * How much harder a galaxy's weight pulls on production than it does on anything else.
+     *
+     * The sky pays four ways, and three of them are in currencies that stay small: Äonen are
+     * counted in ones, comets in how often they come, metal in grams. Production is the one that
+     * does not — by the time the sky is full, the active universe is multiplied by the designation
+     * ladder, the orbits, the path tree and the singularity shelf, all of which have grown by
+     * orders of magnitude since the sky's numbers were chosen. A flat share of yield keeps pace
+     * with the small currencies and quietly falls off the bottom of the big one.
+     *
+     * So Fördern gets leverage the other three jobs do not. It only touches [multiplier], which is
+     * the deliberate part: the yields themselves are untouched, so Äonen, comets and metal all pay
+     * exactly what they paid before and nothing else in the economy moves.
+     */
+    const val FOERDERN_LEVERAGE = 2.4
+
+    /**
+     * And how much more a sky that has actually been finished is worth than a sky merely filled.
+     *
+     * Measured against the whole sky rather than the galaxies standing in it: with three galaxies,
+     * all of them at [MAX_LEVEL], this sits at three eighths, not at one. Filling the last five
+     * slots is the largest single thing left to do in the game, and the multiplier should say so
+     * instead of being indifferent to it.
+     */
+    const val COMPLETION_BONUS = 1.6
+
+    /**
+     * How far along the sky as a whole is, from nothing at all to eight finished galaxies.
+     *
+     * Levels rather than slots, because slots are filled by playing the game anyway and levels are
+     * bought — this is the part of the sky that is a decision.
+     */
+    fun completion(state: GameState): Double {
+        val built = parked(state).sumOf { it.level.coerceIn(0, MAX_LEVEL) }
+        return 1.0 + COMPLETION_BONUS * built.toDouble() / (SLOTS * MAX_LEVEL)
+    }
+
+    /** What one galaxy is adding to production, which is nothing unless it is out there farming. */
+    fun productionShareOf(state: GameState, universe: ParkedUniverse): Double =
+        workingYield(state, universe, GalaxyJob.FOERDERN) * FOERDERN_LEVERAGE * completion(state)
+
     /** The multiplier the sky is worth to the active universe. Only the galaxies on [GalaxyJob.FOERDERN]. */
     fun multiplier(state: GameState): Double =
-        1.0 + parked(state).sumOf { workingYield(state, it, GalaxyJob.FOERDERN) }
+        1.0 + parked(state).sumOf { productionShareOf(state, it) }
 
     /**
      * Äonen every parked universe together earns per second.

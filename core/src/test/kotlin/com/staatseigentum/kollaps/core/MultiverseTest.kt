@@ -124,13 +124,16 @@ class MultiverseTest {
         // was measuring the wrong thing.
         val best = state.universes.maxOf { Multiverse.yieldOf(it) }
         val total = Multiverse.multiplier(state) - 1.0
+        // Both of Fördern's factors belong in the bound rather than in a looser number. They scale
+        // the series; they do not change that it is one, which is the property under test.
+        val each = best * Multiverse.FOERDERN_LEVERAGE * Multiverse.completion(state)
         assertTrue(
-            total < best / (1.0 - Multiverse.SLOT_FALLOFF),
-            "Acht Galaxien sind $total, die Schranke ist ${best / (1.0 - Multiverse.SLOT_FALLOFF)}",
+            total < each / (1.0 - Multiverse.SLOT_FALLOFF),
+            "Acht Galaxien sind $total, die Schranke ist ${each / (1.0 - Multiverse.SLOT_FALLOFF)}",
         )
         // And it has to actually bite: undamped this would be eight times the best one.
         assertTrue(
-            total < best * Multiverse.SLOTS * 0.75,
+            total < each * Multiverse.SLOTS * 0.75,
             "Acht Galaxien sind $total — die Dämpfung greift kaum",
         )
     }
