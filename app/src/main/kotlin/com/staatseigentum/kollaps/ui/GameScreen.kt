@@ -61,10 +61,12 @@ import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.core.Element
 import com.staatseigentum.kollaps.core.Fusion
+import com.staatseigentum.kollaps.core.Designations
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Heat
 import com.staatseigentum.kollaps.core.NumberFormat
+import com.staatseigentum.kollaps.core.Multiverse
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.ResearchTree
@@ -774,10 +776,17 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
 
         val next = stats.nextTier
         val glow = Color(stats.tier.glowColor)
-        val climb = if (next != null) {
-            "${stats.tier.label} > ${next.label}"
-        } else {
-            "${stats.tier.label} — das Ende der Leiter"
+        val climb = when {
+            next != null -> "${stats.tier.label} > ${next.label}"
+            // Above the gate with the catalogue still shut. Not the end of anything — there are
+            // sixteen thousand rungs over this one — and saying "das Ende der Leiter" to somebody
+            // fifty orders of magnitude past it is the interface calling a locked door a wall. The
+            // line names what is missing instead, because that is the one thing worth knowing here.
+            !Designations.isUnlocked(state) ->
+                "${stats.tier.label} · Katalog ab ${Multiverse.SLOTS} Galaxien " +
+                    "(${Multiverse.count(state)})"
+
+            else -> "${stats.tier.label} — das Ende der Leiter"
         }
         val remaining = next?.let { "noch ${Numbers.formatMass(it.threshold - state.runMass)}" }
 

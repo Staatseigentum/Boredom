@@ -106,7 +106,12 @@ fun BigBangPanel(
                 text = if (stats.canBigBang) {
                     "Jetzt zu holen: ${Numbers.format(stats.pendingAeons)} Äonen"
                 } else {
-                    "Ab ${BigBang.REQUIRED_COLLAPSES} Kollapsen. Du bist bei ${state.collapses}."
+                    // `requiredNow` and not `REQUIRED_COLLAPSES`. The constant is what the *first*
+                    // big bang costs; every one after it asks for three more. The card printed the
+                    // constant for ever, so after one big bang it read "Ab 10 Kollapsen. Du bist
+                    // bei 12" next to a button that refused — the card said yes and the rules said
+                    // no, and the rules were right.
+                    "Ab ${BigBang.requiredNow(state)} Kollapsen. Du bist bei ${state.collapses}."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (stats.canBigBang) Positive else Muted,
