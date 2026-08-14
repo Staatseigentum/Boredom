@@ -153,6 +153,8 @@ data class Contract(
                 requiredBigBangs = 0,
                 counter = { it.collectors.values.sum().toDouble() },
                 target = 1_000.0,
+                // Die Flotte fällt mit jedem Kollaps auf null und ist danach wieder zu holen.
+                dailyLimit = 5,
             ),
             Contract(
                 id = "ct_finds",
@@ -193,6 +195,8 @@ data class Contract(
                 requiredBigBangs = 0,
                 counter = { Orbits.occupiedCount(it).toDouble() },
                 target = 6.0,
+                // Dasselbe für die Bahnen: nach dem Kollaps sind sie leer und neu besetzbar.
+                dailyLimit = 5,
             ),
             Contract(
                 id = "ct_research",
@@ -211,6 +215,8 @@ data class Contract(
                 requiredBigBangs = 1,
                 counter = { Heavy.amountOf(it, HeavyElement.GOLD) },
                 target = 500.0,
+                // Gold überlebt zwar alles, aber ein Limit kostet hier nichts und schließt die Lücke.
+                dailyLimit = 5,
             ),
         )
 
@@ -251,6 +257,24 @@ data class Contract(
          */
         fun offered(state: GameState): List<Contract> =
             state.contracts.mapNotNull(::byId).take(SLOTS)
+
+        /**
+         * Whether an empty table means "done for today" rather than "done for good".
+         *
+         * These are two very different things and they used to look identical: the panel simply
+         * vanished. That was survivable while three contracts had no daily allowance and so could
+         * always be drawn — but the Äonen audit found those three were exactly the ones that could
+         * be farmed, and closing that hole made an empty table reachable. A player who clears every
+         * allowance in a day would have watched the whole section disappear with no word about why
+         * or whether it comes back.
+         *
+         * So the state gets a name and the panel gets a sentence. Something the clock will hand
+         * back tomorrow is a reward for a thorough day, not an absence.
+         */
+        fun restingUntilTomorrow(state: GameState): Boolean =
+            isUnlocked(state) &&
+                offered(state).isEmpty() &&
+                all.any { it.requiredBigBangs <= state.bigBangs && isSpentToday(state, it) }
 
         /** The ids the table should hold, given what is on it and what has been finished. */
         fun refilled(state: GameState): List<String> {

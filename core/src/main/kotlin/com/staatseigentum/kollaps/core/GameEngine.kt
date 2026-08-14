@@ -1912,7 +1912,48 @@ object GameEngine {
         return (((runMass - tier.threshold) / span).coerceIn(0.0, 1.0)).toFloat()
     }
 
+    /**
+     * The folded modifiers for a state, remembered for as long as that state is the current one.
+     *
+     * ## Why this is worth a cache
+     *
+     * [foldModifiers] walks every Äon purchase, every prestige upgrade, every investment level,
+     * every upgrade, every running challenge rule and every parked galaxy before it can answer.
+     * Twenty places here call it — `massPerSecond`, `stats`, `collectorOffers`, `upgradeOffers`,
+     * `pendingSingularities` and the rest — and the screen calls *those* several times per frame.
+     *
+     * The tick makes a new state every hundred milliseconds, so the interface was re-folding the
+     * whole account ten times a second, several times over, and throwing all of it away. The
+     * desktop harness had already noticed and cached [stats] for exactly this reason; that fixed
+     * one caller. This fixes the thing all of them share.
+     *
+     * ## Why identity and not equality
+     *
+     * The state is immutable, so a new object is the only way it can have changed. Comparing forty
+     * fields to discover that would cost more than the fold it saves — the same reasoning, and the
+     * same `===`, the harness's own cache uses.
+     *
+     * One entry, not a map: the game has one current state, and a map would keep every state the
+     * tick has ever produced alive for the garbage collector to trip over. `@Volatile` on both
+     * halves, written key last, so a reader either sees a matching pair or misses and re-folds —
+     * a miss costs a fold, which is what it would have paid anyway.
+     */
+    @Volatile
+    private var foldedFor: GameState? = null
+
+    @Volatile
+    private var folded: Modifiers? = null
+
     private fun modifiersOf(state: GameState): Modifiers {
+        val cached = folded
+        if (cached != null && foldedFor === state) return cached
+        return foldModifiers(state).also {
+            folded = it
+            foldedFor = state
+        }
+    }
+
+    private fun foldModifiers(state: GameState): Modifiers {
         val mods = Modifiers()
 
         // Äonen first, then prestige, then the run: deepest layer sets the floor the shallower

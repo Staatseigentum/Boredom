@@ -91,10 +91,18 @@ class ContractLimitTest {
 
     @Test
     fun `only the contracts that can repeat carry a limit`() {
-        // The rest finish themselves: five alloys, sixteen challenges, fourteen projects, and a
-        // pile of gold that only grows. A limit on those would be a rule with nothing to rule.
+        // The rest finish themselves: five alloys, sixteen challenges, fourteen projects. A limit
+        // on those would be a rule with nothing to rule — they run out on their own and leave.
+        //
+        // Three more joined the list after the Äonen audit. The fleet, the orbits and the gold all
+        // count the *current* state, and a collapse resets the first two — so they came back around
+        // every run, unlimited, paying the permanent currency. That is the shape that was farmed to
+        // death once already; it was simply never noticed on these three.
         val limited = Contract.all.filter { it.dailyLimit != null }.map { it.id }.toSet()
-        assertEquals(setOf("ct_rungs", "ct_collapses", "ct_finds", "ct_sky"), limited)
+        assertEquals(
+            setOf("ct_rungs", "ct_collapses", "ct_finds", "ct_sky", "ct_fleet", "ct_orbits", "ct_metal"),
+            limited,
+        )
 
         for (contract in Contract.all) {
             contract.dailyLimit?.let {

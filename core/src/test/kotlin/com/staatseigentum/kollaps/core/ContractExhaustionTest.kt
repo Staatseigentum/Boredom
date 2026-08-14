@@ -101,12 +101,35 @@ class ContractExhaustionTest {
 
     @Test
     fun `a completionist still gets a table rather than an empty screen`() {
-        // Everything finite is done and every daily allowance is spent: there must still be
-        // something to do, or the screen whose job is "what next" answers "nothing".
+        /*
+         * Everything finite is done and every daily allowance is spent.
+         *
+         * This used to demand a non-empty table, and that was satisfiable only because three
+         * contracts had no allowance at all — the same three the Äonen audit found could be farmed
+         * for ever. Closing that hole made this state reachable, which means the demand has to
+         * change rather than the fix.
+         *
+         * What actually has to hold is that the player is never left with *nothing coming back*.
+         * An empty table because today is finished is a different thing from an empty table because
+         * the game has run out, and the difference has to be visible — so the state has a name and
+         * the panel says it out loud.
+         */
         val spent = completionist().copy(
             contractsToday = Contract.all.mapNotNull { c -> c.dailyLimit?.let { c.id to it } }.toMap(),
         )
         val dealt = GameEngine.tick(spent, 1.0)
-        assertTrue(dealt.contracts.isNotEmpty(), "Der Tisch ist völlig leer")
+        if (dealt.contracts.isEmpty()) {
+            assertTrue(
+                Contract.restingUntilTomorrow(dealt),
+                "Der Tisch ist leer und das Spiel sagt nicht, dass es am Tag liegt",
+            )
+        }
+
+        // And the day turning has to actually hand it back — otherwise "morgen wieder" is a lie.
+        val tomorrow = GameEngine.onWallClock(dealt, now + 2 * 24 * 3_600_000L)
+        assertTrue(
+            GameEngine.tick(tomorrow, 1.0).contracts.isNotEmpty(),
+            "Am nächsten Tag liegt immer noch nichts auf dem Tisch",
+        )
     }
 }

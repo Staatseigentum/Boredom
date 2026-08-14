@@ -33,7 +33,23 @@ import com.staatseigentum.kollaps.ui.theme.Starlight
 @Composable
 fun ContractPanel(state: GameState, actions: GameActions, modifier: Modifier = Modifier) {
     val offered = Contract.offered(state)
-    if (offered.isEmpty()) return
+    if (offered.isEmpty()) {
+        // Cleared for the day rather than gone: see [Contract.restingUntilTomorrow]. Without this
+        // the whole section simply disappeared, which reads as a fault and not as a full day's
+        // work finished.
+        if (Contract.restingUntilTomorrow(state)) {
+            PixelPanel(modifier = modifier.fillMaxWidth(), border = Positive, padding = 14) {
+                PixelLabel("Aufträge", color = Positive, size = 14)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Für heute alles abgeräumt. Morgen liegen wieder welche auf dem Tisch.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Muted,
+                )
+            }
+        }
+        return
+    }
 
     PixelPanel(modifier = modifier.fillMaxWidth(), border = Positive, padding = 14) {
         Column {

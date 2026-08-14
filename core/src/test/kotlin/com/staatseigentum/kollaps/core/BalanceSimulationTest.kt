@@ -140,6 +140,15 @@ class BalanceSimulationTest {
             val rendered = if (time == null) "nicht erreicht" else Numbers.formatDuration(time)
             println("  ${tier.index.toString().padStart(2)} ${tier.name.padEnd(18)} $rendered")
         }
+        // The one number the bands below are about, said once and plainly. It used to be findable
+        // only by reading the right row out of a twenty-five row table — which is how it got
+        // misread for the *other* run's figure, twice, and wrong conclusions drawn from it both
+        // times. A report that has to be interpreted will be.
+        val end = run.tierTimes[Tiers.last.index]
+        println(
+            "  ZEIT BIS SCHWARZES LOCH: " +
+                if (end == null) "nicht erreicht" else "%.2f h".format(end / 3_600.0),
+        )
         println("  Produktion am Ende: ${Numbers.formatRate(GameEngine.massPerSecond(run.finalState))}")
         println("  Kollektoren: ${run.finalState.collectors.values.sum()}")
         println("  Upgrades: ${run.finalState.upgrades.size} von ${Upgrades.all.size}")
@@ -193,10 +202,41 @@ class BalanceSimulationTest {
     }
 
     @Test
-    fun `a pure idler still gets there`() {
+    fun `a pure idler still gets there, and not much later`() {
         val run = simulate(tapsPerSecond = 1, activeSeconds = 60)
         report("idle: eine Minute antippen, danach nur warten", run)
         assertTrue(run.reachedBlackHole, "Reines Idlen führt nie zum Ende")
+
+        /*
+         * A band, not just "arrives".
+         *
+         * This test used to assert only that the idler gets there at all, and printed its time.
+         * The active run next to it has had a band all along — so the report showed two figures
+         * of which exactly one was guarded, and the unguarded one is the one that got read as the
+         * guarded one. Twice, in one session, leading to two wrong diagnoses.
+         *
+         * Both are bounded now. The floor matters as much as the ceiling: an idler who arrives as
+         * fast as somebody playing means the tapping is decoration.
+         */
+        val hours = run.tierTimes.getValue(Tiers.last.index) / 3_600.0
+        assertTrue(hours > 3.6, "Idlen ist nach $hours Stunden durch — zu schnell für gar nichts")
+        assertTrue(hours < 5.5, "Idlen braucht $hours Stunden — als Nebenbeispiel zu zäh")
+    }
+
+    @Test
+    fun `playing actively is worth doing`() {
+        // The whole premise of a tap in an idle game: it has to buy time, and a measurable amount
+        // of it. Neither run's own band says this — 3.45 and 3.85 both sit inside both bands — so
+        // the two could drift together without anything going red. This is the relationship.
+        val idle = simulate(tapsPerSecond = 1, activeSeconds = 60)
+        val active = simulate(tapsPerSecond = 4, activeSeconds = 20 * 60)
+
+        val idleHours = idle.tierTimes.getValue(Tiers.last.index) / 3_600.0
+        val activeHours = active.tierTimes.getValue(Tiers.last.index) / 3_600.0
+        assertTrue(
+            activeHours < idleHours * 0.95,
+            "Zwanzig Minuten Tippen sparen fast nichts: aktiv $activeHours h, idle $idleHours h",
+        )
     }
 
     @Test
