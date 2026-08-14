@@ -216,9 +216,23 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
+  # Dieselben Schritte wie im iPhone-Workflow, nur von hier aus aufgerufen — ein zweites Mal
+  # hinschreiben hieße, sie beim nächsten Mal an einer Stelle zu ändern.
+  #
+  # `continue-on-error`, damit eine iPhone-Fassung, die gerade nicht durchgeht, das Release nicht
+  # aufhält: das APK und die Windows-Fassung kommen aus eigenen Jobs, und ein Release ohne IPA ist
+  # unendlich viel besser als gar keines. Was fehlt, sieht man am Release selbst.
+  ios:
+    name: Unsignierte IPA
+    needs: version
+    continue-on-error: true
+    uses: ./.github/workflows/ios.yml
+    with:
+      version: ${{ needs.version.outputs.name }}
+
   publish:
     name: Release veröffentlichen
-    needs: [version, android, windows]
+    needs: [version, android, windows, ios]
     runs-on: ubuntu-latest
 
     steps:

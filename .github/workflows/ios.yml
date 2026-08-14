@@ -1,0 +1,80 @@
+name: iPhone
+
+# Baut die unsignierte IPA. Getrennt vom Release, weil das hier eine eigene Maschine braucht —
+# ein iOS-Programm lässt sich nur auf einem Mac zusammenbauen — und weil eine iPhone-Fassung,
+# die gerade nicht durchgeht, weder das APK noch die Windows-Fassung aufhalten darf.
+#
+# Das Release ruft denselben Job über `workflow_call` auf, damit es die Schritte nicht ein
+# zweites Mal gibt.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version, z. B. 4.2.0'
+        required: false
+        default: '0.0.0'
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+  # Auf dem Entwicklungszweig bei jeder Änderung, die die iPhone-Fassung betreffen kann. Der
+  # geteilte Bildschirm gehört dazu: er wird hier mitkompiliert, also bricht er hier auch.
+  push:
+    branches: ['claude/**']
+    paths:
+      - 'ios/**'
+      - 'settings-ios.gradle.kts'
+      - 'core/src/main/kotlin/**'
+      - 'app/src/main/kotlin/**'
+      - '.github/workflows/ios.yml'
+
+jobs:
+  ipa:
+    name: Unsignierte IPA
+    # Apple-Silicon-Läufer mit Xcode. Der Linker für arm64-iOS und `actool` kommen beide von dort.
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle einrichten
+        uses: gradle/actions/setup-gradle@v4
+
+      # Eigene Settings-Datei, siehe deren Kopf: `:ios` wird allein gebaut, weil sonst die
+      # JVM- und die Multiplattform-Fassung desselben Kotlin-Plugins über zwei Klassenlader
+      # kommen und Kotlin/Natives Werkzeugkasten sich selbst nicht mehr erkennt.
+      - name: Programm bauen
+        run: |
+          set +e
+          ./gradlew -c settings-ios.gradle.kts \
+            :ios:linkReleaseExecutableIosArm64 \
+            --no-daemon --console=plain > build.log 2>&1
+          code=$?
+          # Kotlins eigene Fehlerzeilen zuerst — mehr ist es hier fast nie.
+          grep -E "^e: |^\* What went wrong|^Caused by|FAILURE:" build.log | head -n 60
+          echo "--- letzte Zeilen ---"
+          tail -n 30 build.log
+          exit $code
+
+      - name: Bündeln
+        run: ios/paket.sh "${{ inputs.version || '0.0.0' }}"
+
+      - name: Nachsehen, was drin ist
+        run: |
+          unzip -l ios/build/dist/*.ipa
+          file ios/build/paket/Payload/Kollaps.app/Kollaps
+
+      - name: IPA weiterreichen
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ios
+          path: ios/build/dist/*.ipa
+          if-no-files-found: error

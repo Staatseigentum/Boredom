@@ -184,6 +184,7 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 | `core`    | Reines Kotlin, keine Android-Abhängigkeit: Spielregeln, Inhalte, Zahlenformatierung, Speicherformat, Sprite-Renderer |
 | `app`     | Android-App mit Jetpack Compose: Rendering, Eingabe, Persistenz, Lebenszyklus |
 | `desktop` | Testfassung am Rechner. Führt **dieselbe** Oberfläche aus wie die App |
+| `ios`     | iPhone-Fassung. Kompiliert `core` und dieselbe Oberfläche für Kotlin/Native |
 
 Die Trennung ist Absicht: weil `core` nichts von Android weiß, lässt sich die komplette Simulation
 in Unit-Tests im Schnelldurchlauf spielen. `BalanceSimulationTest` lässt einen Bot das Spiel
@@ -248,6 +249,56 @@ Releases-Seite) und keine Erinnerungs-Benachrichtigung.
 
 Startparameter: `--frisch` ignoriert den vorhandenen Spielstand, `--tier 17` beginnt auf einer
 bestimmten Stufe.
+
+## Auf dem iPhone spielen
+
+Jedem Release liegt **`Kollaps-<version>-unsigniert.ipa`** bei. Unsigniert ist hier keine
+Nachlässigkeit, sondern das Verfahren: Apple lässt nur Programme aufs Gerät, die für *dieses*
+Gerät signiert sind, und ein Entwicklerkonto, das für alle signiert, kostet Geld und hätte diese
+Datei sowieso an den App Store gebunden. Also signiert jedes Telefon sie selbst — mit einer
+gewöhnlichen, kostenlosen Apple-ID.
+
+Was man dafür braucht: einen Rechner mit einem der üblichen Werkzeuge.
+
+| Weg | Läuft auf | Anmerkung |
+| --- | --------- | --------- |
+| **AltStore / SideStore** | Windows, macOS, Linux (AltServer) | Signiert einmal und erneuert danach im WLAN von selbst. Der bequemste Weg. |
+| **Sideloadly** | Windows, macOS | Einmal anstecken, IPA hineinziehen, Apple-ID eintragen. |
+| **Xcode** (*Window → Devices and Simulators*) | macOS | Braucht kein Zusatzprogramm, dafür Xcode. |
+
+**Die sieben Tage.** Eine kostenlose Apple-ID signiert nur für eine Woche. Danach startet das
+Spiel nicht mehr und muss neu signiert werden — AltStore/SideStore machen das von allein, solange
+der Rechner erreichbar ist, sonst hängt man das Telefon einmal die Woche an. Mit einem bezahlten
+Entwicklerkonto sind es zwölf Monate. Drei Apps gleichzeitig sind das Limit einer freien ID.
+
+**Der Spielstand überlebt das**, denn er liegt in den Benutzereinstellungen des Geräts und nicht
+in der App-Signatur; ein Erneuern rührt ihn nicht an. Wer trotzdem sichergehen will, benutzt den
+Kopieren-Knopf im Kosmos-Reiter: derselbe Textblock lässt sich auf Handy, PC und iPhone einlesen.
+
+**Zwei Unterschiede zur Android-Fassung.** Es gibt keinen Ton — Klänge und Musik werden auf den
+anderen beiden Plattformen erzeugt, nicht abgespielt, und der Tongenerator dafür ist an
+`javax.sound` beziehungsweise Androids `AudioTrack` gebunden; auf iOS gibt es beides nicht, und
+eine Portierung ist ein eigenes Stück Arbeit. Die Schnittstelle war von Anfang an darauf
+ausgelegt, dass eine Plattform schweigt. Und es gibt keinen Updater: eine App, die sich selbst
+ersetzt, müsste sich selbst signieren können.
+
+### Wie die IPA gebaut wird
+
+Es gibt kein Xcode-Projekt und keine Zeile Swift. Ein iOS-Programm ist ein Ordner mit einem
+Mach-O-Programm, einer `Info.plist` und ein paar Dateien daneben — und Kotlin/Native baut das
+Programm. Also baut Gradle es, und `ios/paket.sh` legt den Rest drumherum:
+
+```bash
+./gradlew -c settings-ios.gradle.kts :ios:linkReleaseExecutableIosArm64   # nur auf einem Mac
+ios/paket.sh 4.2.0
+```
+
+Die eigene Settings-Datei ist nötig und nicht kosmetisch: `kotlin.jvm` und
+`kotlin.multiplatform` sind dasselbe Jar, dieses Projekt löst Plugins bewusst pro Modul auf, und
+über zwei Klassenlader erkennt Kotlin/Natives Werkzeugkasten sich selbst nicht wieder. `:ios`
+allein zu bauen geht, weil es von keinem anderen Modul abhängt — es kompiliert `core` und `app`
+aus deren Quellverzeichnissen, genau wie der Desktop-Harness. Nebenbei heißt das: eine
+iPhone-Fassung, die gerade nicht durchgeht, kann das APK nicht aufhalten.
 
 ## Bauen
 
