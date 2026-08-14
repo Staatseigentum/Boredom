@@ -624,6 +624,25 @@ object GameEngine {
      */
     const val OVERSHOOT_BONUS = 1.0
 
+    /**
+     * What waiting a little longer would be worth, so pressing now is a choice and not a reflex.
+     *
+     * The button says how much it pays. It has never said what it would pay in twenty minutes, so
+     * the depth bonus that rewards staying above the gate has been invisible since the day it was
+     * added — a player can only see the alternative by *not* taking it, which is not how anybody
+     * finds out about anything.
+     *
+     * Projected from the production the run is making right now, which is a deliberate
+     * underestimate: production climbs across those twenty minutes, so the real figure is a little
+     * better than the one shown. An estimate that flatters and then disappoints would be worse
+     * than none at all; one that undersells is a quiet promise kept.
+     */
+    fun singularitiesIn(state: GameState, seconds: Double): Double {
+        if (seconds <= 0.0) return pendingSingularities(state)
+        val grown = state.runMass + massPerSecond(state) * seconds
+        return pendingSingularities(state.copy(runMass = grown))
+    }
+
     fun singularityMultiplier(state: GameState): Double =
         singularityMultiplier(state, modifiersOf(state))
 
@@ -669,9 +688,18 @@ object GameEngine {
                 // What the run that just ended came to, so the next one has something to beat.
                 lastRunSeconds = state.runSeconds,
                 lastRunMass = state.runMass,
+                lastRunSingularities = earned,
                 // Kept when it is the first, or when it beats the record. `minOf` would make
                 // every first collapse a record of zero seconds, which is the wrong direction.
                 bestRunSeconds = bestRunOf(state.bestRunSeconds, state.runSeconds),
+                // And the shape of that run, so the next one has something to race rather than only
+                // something to beat. Replaced exactly when the record is, so the ghost is always the
+                // curve of the run whose time is on the board.
+                bestHistory = if (bestRunOf(state.bestRunSeconds, state.runSeconds) == state.runSeconds) {
+                    state.history
+                } else {
+                    state.bestHistory
+                },
                 // Everything below is the point of collapsing: it is what carries over.
                 heavy = forged,
                 alloys = state.alloys,
@@ -771,7 +799,9 @@ object GameEngine {
                 contractMark = state.contractMark,
                 lastRunSeconds = state.lastRunSeconds,
                 lastRunMass = state.lastRunMass,
+                lastRunSingularities = state.lastRunSingularities,
                 bestRunSeconds = state.bestRunSeconds,
+                bestHistory = state.bestHistory,
                 playedSeconds = state.playedSeconds,
                 cometsCaught = state.cometsCaught,
                 soundOn = state.soundOn,
@@ -1202,7 +1232,9 @@ object GameEngine {
         contractMark = state.contractMark,
         lastRunSeconds = state.lastRunSeconds,
         lastRunMass = state.lastRunMass,
+        lastRunSingularities = state.lastRunSingularities,
         bestRunSeconds = state.bestRunSeconds,
+        bestHistory = state.bestHistory,
         achievements = state.achievements,
         playedSeconds = state.playedSeconds,
         cometsCaught = state.cometsCaught,

@@ -102,9 +102,18 @@ fun AchievementList(
             item {
                 PixelPanel(modifier = Modifier.fillMaxWidth()) {
                     PixelLabel("Produktion, letzte halbe Stunde", size = 13)
+                    if (state.bestHistory.isNotEmpty()) {
+                        Spacer(Modifier.height(2.dp))
+                        PixelLabel(
+                            "Grau: dein bester Lauf, ${Numbers.formatDuration(state.bestRunSeconds.toLong())}",
+                            color = Muted,
+                            size = 10,
+                        )
+                    }
                     Spacer(Modifier.height(8.dp))
                     Sparkline(
                         samples = state.history,
+                        ghost = state.bestHistory,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(64.dp),
@@ -547,7 +556,11 @@ private fun ImportDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
  * a stroked path, so it belongs to the same picture as the planets.
  */
 @Composable
-private fun Sparkline(samples: List<Double>, modifier: Modifier = Modifier) {
+private fun Sparkline(
+    samples: List<Double>,
+    modifier: Modifier = Modifier,
+    ghost: List<Double> = emptyList(),
+) {
     Canvas(modifier = modifier) {
         if (samples.isEmpty() || size.width <= 0f || size.height <= 0f) return@Canvas
 
@@ -555,17 +568,36 @@ private fun Sparkline(samples: List<Double>, modifier: Modifier = Modifier) {
         val columns = floor(size.width / block).toInt().coerceAtLeast(1)
         val rows = floor(size.height / block).toInt().coerceAtLeast(1)
 
+        // Both curves share one scale, or the comparison is a lie: two strips each normalised to
+        // their own maximum look identical however far apart the runs actually were.
         val logs = samples.map { ln(it.coerceAtLeast(1.0)) }
-        val low = logs.min()
-        val high = logs.max()
+        val ghostLogs = ghost.map { ln(it.coerceAtLeast(1.0)) }
+        val low = minOf(logs.min(), ghostLogs.minOrNull() ?: logs.min())
+        val high = maxOf(logs.max(), ghostLogs.maxOrNull() ?: logs.max())
         val span = (high - low).takeIf { it > 1e-9 }
 
-        for (column in 0 until columns) {
+        fun heightAt(curve: List<Double>, column: Int): Int {
             // The record is shorter than the strip is wide, so each sample owns a slice of it.
-            val index = (column.toFloat() / columns * samples.size).toInt().coerceIn(samples.indices)
-            val height = if (span == null) 0.6f else ((logs[index] - low) / span).toFloat()
-            val filled = (height * (rows - 1)).roundToInt() + 1
+            val index = (column.toFloat() / columns * curve.size).toInt().coerceIn(curve.indices)
+            val height = if (span == null) 0.6f else ((curve[index] - low) / span).toFloat()
+            return (height * (rows - 1)).roundToInt() + 1
+        }
 
+        // The ghost first and underneath, as an outline: a filled second curve would fight the
+        // live one for the same pixels and neither would be readable.
+        if (ghostLogs.isNotEmpty()) {
+            for (column in 0 until columns) {
+                val top = heightAt(ghostLogs, column)
+                drawRect(
+                    color = Muted.copy(alpha = 0.55f),
+                    topLeft = Offset(column * block, size.height - top * block),
+                    size = Size(block, block),
+                )
+            }
+        }
+
+        for (column in 0 until columns) {
+            val filled = heightAt(logs, column)
             for (row in 0 until filled) {
                 drawRect(
                     color = if (row == filled - 1) Ember else Ember.copy(alpha = 0.35f),

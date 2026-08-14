@@ -106,6 +106,14 @@ data class GameState(
     val lastRunMass: Double = 0.0,
 
     /**
+     * What the previous collapse actually paid.
+     *
+     * The third figure on the collapse card, and the one that turns the other two into a decision:
+     * "jetzt" and "in zwanzig Minuten" are only meaningful against what the last press was worth.
+     */
+    val lastRunSingularities: Double = 0.0,
+
+    /**
      * The fastest run ever finished, in seconds of play. Zero until the first collapse.
      *
      * The last run is what you are beating right now; this is what you are beating for good. A
@@ -325,6 +333,19 @@ data class GameState(
 
     /** Production per second, sampled during play. Oldest first. See [History]. */
     val history: List<Double> = emptyList(),
+
+    /**
+     * The production curve of the fastest run ever finished, kept to be raced against.
+     *
+     * The game already knew how long the best run took; it just never showed the *shape* of it.
+     * A number says you were quicker; a curve behind the live one says where — which twenty
+     * minutes you are ahead in and which you always lose. It costs one list in the save and turns
+     * every run from a repetition into a race against the only opponent available.
+     *
+     * Only replaced when a run actually beats the record, and only by a run that reached the black
+     * hole, so what is behind the curve is always a run that finished.
+     */
+    val bestHistory: List<Double> = emptyList(),
 
     /** Seconds of play since the last sample was taken. */
     val historySeconds: Double = 0.0,

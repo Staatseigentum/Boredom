@@ -839,6 +839,25 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
             color = if (stats.canCollapse) Positive else Muted,
             modifier = Modifier.sog(SogDepth.CONTENT, Positive),
         )
+        // What waiting would pay, next to what pressing now pays.
+        //
+        // Only while the button is live, and only while the projection is actually higher — at the
+        // very top of a long run the two round to the same number, and a line that says "in zwanzig
+        // Minuten: dasselbe" is noise pretending to be advice.
+        if (stats.canCollapse) {
+            val soon = remember(state) { GameEngine.singularitiesIn(state, 20 * 60.0) }
+            if (soon > stats.pendingSingularities) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "In zwanzig Minuten: ${Numbers.format(soon)} — " +
+                        "letzter Lauf: ${Numbers.format(state.lastRunSingularities)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Muted,
+                    modifier = Modifier.sog(SogDepth.CONTENT, Muted),
+                )
+            }
+        }
+
         // Where the run stands, next to the button that ends it. Only after the first collapse:
         // before that there is nothing to be faster than.
         Statistics.standing(state)?.let { standing ->
