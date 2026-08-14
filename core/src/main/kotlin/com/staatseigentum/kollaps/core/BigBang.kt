@@ -13,19 +13,45 @@ import kotlin.math.sqrt
  */
 object BigBang {
 
-    /** Collapses needed before the button exists at all. */
+    /** Collapses needed before the button exists at all — that is, for the very first one. */
     const val REQUIRED_COLLAPSES = 10
 
-    /** Äonen for exactly [REQUIRED_COLLAPSES] collapses. It grows with the root from there. */
-    const val SCALE = 3.0
+    /**
+     * Collapses each further big bang asks for on top of the one before it.
+     *
+     * The requirement used to be flat, which made every big bang after the first one cheaper in
+     * real terms: collapses come faster the deeper a player is, so ten of them cost less and less
+     * each time round. The road to the fourth universe took an afternoon and then the ladder had
+     * nothing left above it.
+     *
+     * Rising instead, so the eight universes it takes to fill the sky are eight genuinely
+     * different stretches of game rather than the same one at eight speeds.
+     *
+     * Three and not five. Five was set while the catalogue ladder opened at the fourth universe;
+     * moving that gate to a full sky doubled the road on its own, and keeping the steeper step on
+     * top of it would have stacked two stretches into 220 collapses. This lands at 164 — about
+     * four times the old road, which is a long endgame rather than a punishing one.
+     */
+    const val REQUIREMENT_STEP = 3
+
+    /** Collapses needed for the big bang after [bigBangs] of them. */
+    fun requiredFor(bigBangs: Int): Int =
+        REQUIRED_COLLAPSES + REQUIREMENT_STEP * bigBangs.coerceAtLeast(0)
+
+    /** What this state needs before the button does anything. */
+    fun requiredNow(state: GameState): Int = requiredFor(state.bigBangs)
 
     fun isUnlocked(state: GameState): Boolean =
         state.collapses >= REQUIRED_COLLAPSES || state.bigBangs > 0 || state.aeons > 0.0
 
+    /** Äonen for exactly the required collapses. It grows with the root from there. */
+    const val SCALE = 3.0
+
     /** Äonen a big bang would pay right now. */
     fun pending(state: GameState): Double {
-        if (state.collapses < REQUIRED_COLLAPSES) return 0.0
-        return floor(SCALE * sqrt(state.collapses.toDouble() / REQUIRED_COLLAPSES))
+        val needed = requiredNow(state)
+        if (state.collapses < needed) return 0.0
+        return floor(SCALE * sqrt(state.collapses.toDouble() / needed))
     }
 
     fun canBang(state: GameState): Boolean =

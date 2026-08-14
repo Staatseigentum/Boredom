@@ -148,8 +148,8 @@ object GameEngine {
 
     fun stats(state: GameState): Stats {
         val mods = modifiersOf(state)
-        val tier = Tiers.forMass(state.runMass)
-        val next = Tiers.next(tier)
+        val tier = Tiers.forState(state)
+        val next = Tiers.next(tier, Designations.isUnlocked(state))
         val perSecond = massPerSecond(state, mods, tier)
 
         return Stats(
@@ -186,17 +186,17 @@ object GameEngine {
     }
 
     fun massPerSecond(state: GameState): Double {
-        val tier = Tiers.forMass(state.runMass)
+        val tier = Tiers.forState(state)
         return massPerSecond(state, modifiersOf(state), tier)
     }
 
     fun massPerTap(state: GameState): Double {
         val mods = modifiersOf(state)
-        val tier = Tiers.forMass(state.runMass)
+        val tier = Tiers.forState(state)
         return massPerTap(state, mods, tier, massPerSecond(state, mods, tier))
     }
 
-    fun tierOf(state: GameState): CelestialTier = Tiers.forMass(state.runMass)
+    fun tierOf(state: GameState): CelestialTier = Tiers.forState(state)
 
     // ---------------------------------------------------------------- actions
 
@@ -1272,7 +1272,7 @@ object GameEngine {
         val owned = state.ownedOf(collector.id)
         if (owned <= 0) return 0.0
         val mods = modifiersOf(state)
-        val tier = Tiers.forMass(state.runMass)
+        val tier = Tiers.forState(state)
         if (!mods.collectorsWork) return 0.0
         return owned * collector.baseRate * mods.collectorFactor(collector.id) *
             Milestones.factor(owned, mods.milestoneFactor) *
@@ -1281,7 +1281,7 @@ object GameEngine {
 
     fun collectorOffers(state: GameState, amount: BuyAmount): List<CollectorOffer> {
         val mods = modifiersOf(state)
-        val tier = Tiers.forMass(state.runMass)
+        val tier = Tiers.forState(state)
         val scale = mods.global * tier.productionMultiplier * singularityMultiplier(state, mods)
 
         return Collectors.all.mapIndexed { position, collector ->
@@ -1466,7 +1466,10 @@ object GameEngine {
             runMass = runMass,
             totalMass = state.totalMass + gained,
             bestRunMass = maxOf(state.bestRunMass, runMass),
-            bestTier = maxOf(state.bestTier, Tiers.forMass(runMass).index),
+            // Deep, so a record set on the catalogue ladder is actually recorded. Everything
+            // that compares `bestTier` against a named body still reads correctly, because a
+            // designated rung sits above every one of them by construction.
+            bestTier = maxOf(state.bestTier, Tiers.forMass(runMass, Designations.isUnlocked(state)).index),
         )
     }
 

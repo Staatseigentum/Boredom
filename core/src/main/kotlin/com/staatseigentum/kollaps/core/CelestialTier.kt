@@ -71,12 +71,36 @@ data class CelestialTier(
      * `PixelPlanet.size`, which snaps to an eight pixel grid.
      */
     val relativeSize: Float = 0.6f,
+    /**
+     * Which catalogue entry of [name] this is, or `-1` for one of the twenty-five named bodies.
+     *
+     * See [Designations]. A designated rung is the same body drawn the same way, one entry further
+     * down a survey list — `Saturn AB` is a Saturn, and everything that asks whether the player has
+     * reached Saturn is still right about it.
+     */
+    val designation: Int = -1,
 ) {
-    /** The name as the player reads it. Everything on screen uses this; nothing keys off it. */
-    val label: String get() = Lang.t(name)
+    val isDesignated: Boolean get() = designation >= 0
+
+    /**
+     * The name as the player reads it. Everything on screen uses this; nothing keys off it.
+     *
+     * The designation is appended rather than translated with the body, because a catalogue number
+     * is a catalogue number in every language.
+     */
+    val label: String
+        get() = if (isDesignated) "${Lang.t(name)} ${Designations.label(designation)}" else Lang.t(name)
 
     val flavor: String get() = Lang.t(germanFlavor)
 
+    /**
+     * Whether this is the black hole — the rung a collapse becomes available at.
+     *
+     * Named for what it meant when the ladder stopped here, and still true of exactly one rung.
+     * The rungs above it are the [Designations] ladder, and none of them is this: a collapse is
+     * offered at the black hole and at every catalogue entry past it, but only one rung is the
+     * place the named ladder ends.
+     */
     val isFinal: Boolean get() = index == Tiers.all.lastIndex
 }
 
@@ -393,8 +417,16 @@ object Tiers {
     val first: CelestialTier get() = all.first()
     val last: CelestialTier get() = all.last()
 
-    /** The tier unlocked by [lifetimeMass] collected during the current run. */
-    fun forMass(lifetimeMass: Double): CelestialTier {
+    /**
+     * The tier unlocked by [lifetimeMass] collected during the current run.
+     *
+     * Stops at the black hole. [deep] opens the [Designations] ladder above it, and is off by
+     * default on purpose: this is the safe answer, every caller that only compares rungs against
+     * named bodies wants it, and the handful that represent where the player actually *is* ask for
+     * the deep one explicitly through [forState].
+     */
+    fun forMass(lifetimeMass: Double, deep: Boolean = false): CelestialTier {
+        if (deep && lifetimeMass >= last.threshold) return Designations.forMass(lifetimeMass)
         var result = all.first()
         for (tier in all) {
             if (lifetimeMass >= tier.threshold) result = tier else break
@@ -402,10 +434,31 @@ object Tiers {
         return result
     }
 
-    /** The tier after [tier], or `null` if it is already the black hole. */
-    fun next(tier: CelestialTier): CelestialTier? = all.getOrNull(tier.index + 1)
+    /** The rung this save is standing on, catalogue entries included once they are earned. */
+    fun forState(state: GameState): CelestialTier =
+        forMass(state.runMass, Designations.isUnlocked(state))
 
-    fun byIndex(index: Int): CelestialTier = all[index.coerceIn(all.indices)]
+    /**
+     * The tier after [tier], or `null` where there is nothing above it.
+     *
+     * Above the black hole there is nothing *until the catalogue ladder is earned*, which is why
+     * [deep] exists and why it is off by default: a player who has not seen four big bangs is
+     * standing on the last rung there is, and telling them the next one is "Meteorit AA" would
+     * promise something the game will not give them. Past the black hole the question does not
+     * arise — being on a designated rung is itself proof the ladder is open.
+     */
+    fun next(tier: CelestialTier, deep: Boolean = false): CelestialTier? = when {
+        tier.index + 1 < all.size -> all[tier.index + 1]
+        !deep && tier.index + 1 <= all.lastIndex + 1 && !tier.isDesignated -> null
+        tier.index + 1 < Designations.TOTAL -> Designations.at(tier.index + 1)
+        else -> null
+    }
+
+    fun byIndex(index: Int): CelestialTier = when {
+        index < 0 -> all.first()
+        index < all.size -> all[index]
+        else -> Designations.at(index)
+    }
 
     /**
      * Looks a tier up by its name, throwing if it is gone.

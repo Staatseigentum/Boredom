@@ -209,11 +209,15 @@ fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
             )
             Spacer(Modifier.height(24.dp))
             Text(
-                text = if (tier.isFinal) {
-                    "Du hast die Leiter zu Ende geklettert. Im Reiter Kosmos kannst du " +
-                        "kollabieren und mit Singularitäten neu anfangen."
-                } else {
-                    "Tippen zum Weitermachen · noch ${Tiers.all.size - tier.index - 1} Stufen"
+                text = when {
+                    // Above the black hole there is no "how many left" worth printing — the
+                    // catalogue ladder is sixteen thousand rungs, and saying so is not encouraging,
+                    // it is discouraging. The designation itself is the progress.
+                    tier.isDesignated -> "Tippen zum Weitermachen · Katalog ${tier.label}"
+                    tier.isFinal ->
+                        "Du hast die Leiter zu Ende geklettert. Im Reiter Kosmos kannst du " +
+                            "kollabieren und mit Singularitäten neu anfangen."
+                    else -> "Tippen zum Weitermachen · noch ${Tiers.all.size - tier.index - 1} Stufen"
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,

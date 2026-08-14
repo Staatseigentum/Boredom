@@ -392,7 +392,9 @@ fun GameScreen(
         ) {
             Starfield(
                 tint = Color(shownStats.tier.glowColor),
-                depth = shownStats.tier.index / (Tiers.all.size - 1f).coerceAtLeast(1f),
+                // Capped at one: the starfield's depth is how far up the named ladder the player
+                // is, and the catalogue rungs above it would drive it far past its own range.
+                depth = (shownStats.tier.index / (Tiers.all.size - 1f).coerceAtLeast(1f)).coerceAtMost(1f),
                 warp = { collapse.warp },
                 warpCentre = { collapse.centre },
                 crush = { bigBang.skyCrush },
@@ -675,7 +677,13 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Stufe ${stats.tier.index + 1}/${Tiers.all.size}",
+                // On the catalogue ladder the fraction is meaningless — "Stufe 3471/16925" is a
+                // number, not a position — so the designation stands in its place.
+                text = if (stats.tier.isDesignated) {
+                    "Katalog ${stats.tier.label}"
+                } else {
+                    "Stufe ${stats.tier.index + 1}/${Tiers.all.size}"
+                },
                 style = MaterialTheme.typography.labelLarge,
                 color = Muted,
             )

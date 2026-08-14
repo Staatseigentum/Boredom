@@ -62,10 +62,11 @@ class PathTest {
         )
         assertEquals(Path.HAND.id, started.path)
 
-        // The next big bang replaces it.
+        // The next big bang replaces it. Asked for by the state rather than by the flat constant,
+        // because each big bang now asks for more collapses than the one before it.
         val again = GameEngine.bigBang(
             handed.copy(
-                collapses = BigBang.REQUIRED_COLLAPSES,
+                collapses = BigBang.requiredFor(handed.bigBangs),
                 runMass = Tiers.last.threshold,
                 bestTier = Tiers.last.index,
             ),

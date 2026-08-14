@@ -57,8 +57,9 @@ class MultiverseTest {
         var state = ready()
         repeat(Multiverse.SLOTS) {
             state = GameEngine.bigBang(state, AT, Path.MASCHINE.id).copy(
-                // Earn the next button press, a little deeper every time.
-                collapses = 12 + it,
+                // Earn the next button press, which costs more collapses every time round, and be
+                // a little deeper for it.
+                collapses = BigBang.requiredFor(it + 1) + it,
                 singularities = 90.0,
                 bestTier = Tiers.indexOf("Schwarzes Loch"),
             )
@@ -82,7 +83,7 @@ class MultiverseTest {
         var state = ready()
         repeat(Multiverse.SLOTS) {
             state = GameEngine.bigBang(state, AT, Path.MASCHINE.id).copy(
-                collapses = 40,
+                collapses = BigBang.requiredFor(it + 1) + 40,
                 singularities = 400.0,
                 bestTier = Tiers.indexOf("Schwarzes Loch"),
             )
@@ -101,8 +102,11 @@ class MultiverseTest {
         var state = ready()
         val steps = mutableListOf<Double>()
         repeat(Multiverse.SLOTS) {
+            // Eight *identical* galaxies, which is what makes the bound below meaningful — so
+            // the collapse count is held flat and simply set high enough to afford all eight
+            // presses rather than rising with the requirement.
             state = GameEngine.bigBang(state, AT, Path.MASCHINE.id).copy(
-                collapses = 20,
+                collapses = BigBang.requiredFor(Multiverse.SLOTS) + 15,
                 singularities = 200.0,
                 bestTier = Tiers.indexOf("Schwarzes Loch"),
             )
@@ -111,11 +115,23 @@ class MultiverseTest {
 
         assertTrue(steps.first() > 1.0, "Die erste Galaxie bringt nichts")
         assertTrue(steps.zipWithNext().all { (a, b) -> b > a }, "Eine weitere Galaxie bringt nichts")
-        // The falloff is the whole reason this is safe to stack: eight of the same universe must
-        // land near four of them, not eight.
+
+        // The falloff is the whole reason this is safe to stack, and it is a geometric series, so
+        // the bound can be stated exactly rather than guessed at: however many galaxies stand
+        // there and however good they are, the total can never pass the best one divided by what
+        // is left of the falloff. Measured against the *best* galaxy, not the first — the first
+        // one parked is the shallowest by construction, and holding the sum of eight against it
+        // was measuring the wrong thing.
+        val best = state.universes.maxOf { Multiverse.yieldOf(it) }
+        val total = Multiverse.multiplier(state) - 1.0
         assertTrue(
-            steps.last() < 1.0 + (steps.first() - 1.0) * 5.0,
-            "Acht Galaxien sind ${steps.last()} — die Dämpfung greift nicht",
+            total < best / (1.0 - Multiverse.SLOT_FALLOFF),
+            "Acht Galaxien sind $total, die Schranke ist ${best / (1.0 - Multiverse.SLOT_FALLOFF)}",
+        )
+        // And it has to actually bite: undamped this would be eight times the best one.
+        assertTrue(
+            total < best * Multiverse.SLOTS * 0.75,
+            "Acht Galaxien sind $total — die Dämpfung greift kaum",
         )
     }
 
@@ -178,7 +194,7 @@ class MultiverseTest {
         var state = ready()
         repeat(Multiverse.SLOTS) {
             state = GameEngine.bigBang(state, AT, Path.MASCHINE.id)
-                .copy(collapses = 20, bestTier = 10)
+                .copy(collapses = BigBang.requiredFor(it + 1) + 20, bestTier = 10)
         }
         val names = state.universes.map { it.name }
         assertEquals(names.size, names.distinct().size, "Zwei Galaxien heißen gleich: $names")
