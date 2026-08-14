@@ -110,7 +110,11 @@ object Statistics {
             StatLine("Tipps", Numbers.format(state.taps.toDouble())),
             StatLine("Masse insgesamt", Numbers.formatMass(state.totalMass)),
             StatLine("Bester Lauf", Numbers.formatMass(state.bestRunMass)),
-            StatLine("Höchste Stufe", Tiers.all[state.bestTier].label),
+            // Through [Tiers.byIndex] and not `Tiers.all[...]`. The named ladder is twenty-five
+            // rungs and `bestTier` now counts the catalogue above it, so the raw list index threw
+            // the moment anybody climbed past the black hole — a crash on the statistics screen
+            // for exactly the players who had earned the right to look at it.
+            StatLine("Höchste Stufe", Tiers.byIndex(state.bestTier).label),
             StatLine("Kollapse", Numbers.format(state.collapses.toDouble())),
             StatLine("Singularitäten", Numbers.format(state.singularities)),
             StatLine("Kometen gefangen", Numbers.format(state.cometsCaught.toDouble())),

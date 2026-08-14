@@ -113,18 +113,30 @@ object Designations {
     /**
      * The rung at [index], built from its position.
      *
-     * Kept once built. The cache could in principle grow to the whole ladder, but only for a
-     * player who has actually stood on every rung of it, and it fills strictly in the order they
-     * are climbed — so in any real session it holds the handful of rungs that session passed
-     * through.
+     * Remembers exactly one rung, and that is deliberate on two counts.
+     *
+     * The first attempt was a `HashMap` keyed by index, which is the obvious shape and wrong twice
+     * over. It is a mutable map on a singleton, written from whichever thread happens to ask —
+     * the tick and the composition both do, and a `HashMap` torn between two threads does not
+     * merely lose an entry, it can spin for ever inside `get`. And it grows without a ceiling that
+     * anything enforces: sixteen thousand rungs of held objects, for a saving that was never
+     * measured.
+     *
+     * A single rung is enough because of how this is actually asked. Mass climbs, so consecutive
+     * questions are overwhelmingly about the same rung, and the answer costs two `pow` calls and a
+     * `copy` when it misses. A stale or half-written memo is harmless here: the worst case is that
+     * a rung gets built twice, and every rung is a pure function of its index.
      */
     fun at(index: Int): CelestialTier {
         require(isDesignated(index)) { "Stufe $index gehört nicht zur Kennungsleiter" }
         val clamped = index.coerceAtMost(TOTAL - 1)
-        return cache.getOrPut(clamped) { build(clamped) }
+        val remembered = memo
+        if (remembered != null && remembered.index == clamped) return remembered
+        return build(clamped).also { memo = it }
     }
 
-    private val cache = HashMap<Int, CelestialTier>()
+    @Volatile
+    private var memo: CelestialTier? = null
 
     private fun build(index: Int): CelestialTier {
         val position = index - FIRST_INDEX

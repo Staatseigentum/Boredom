@@ -285,7 +285,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
     }
 
     fun seekToTier(index: Int) {
-        val tier = com.staatseigentum.kollaps.core.Tiers.all[index]
+        // Through `byIndex`, which clamps and reaches the catalogue ladder. The raw list index
+        // threw on `--tier 99` — and `--tier 400` is now a perfectly reasonable thing to want,
+        // because there are sixteen thousand rungs to jump to.
+        val tier = com.staatseigentum.kollaps.core.Tiers.byIndex(index)
         state = state.copy(
             mass = tier.threshold,
             runMass = tier.threshold,

@@ -715,7 +715,10 @@ private fun CosmosPanel(
                     item { StatRow("Pro Tipp", Numbers.formatMass(stats.massPerTap)) }
                     item { StatRow("Kollektoren", state.collectors.values.sum().toString()) }
                     item { StatRow("Upgrades", "${state.upgrades.size} von ${Upgrades.all.size}") }
-                    item { StatRow("Beste Stufe", Tiers.byIndex(state.bestTier).name) }
+                    // `label` and not `name`: on the catalogue ladder the name is the bare body and
+                    // the designation is the whole of what distinguishes one rung from the six
+                    // hundred and seventy-five others that share it.
+                    item { StatRow("Beste Stufe", Tiers.byIndex(state.bestTier).label) }
                     item {
                         StatRow(
                             "Bonus aus Singularitäten",
