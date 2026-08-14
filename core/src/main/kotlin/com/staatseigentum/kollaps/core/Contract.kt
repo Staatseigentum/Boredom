@@ -65,6 +65,19 @@ data class Contract(
      * and become a lever.
      */
     val dailyLimit: Int? = null,
+    /**
+     * The highest this contract's counter can ever go, where there is one.
+     *
+     * Some counters run out. There are sixteen challenges, five alloys and fourteen research
+     * projects in the game, and once a player has all of them the counter stops for good — so
+     * "eine Herausforderung bestehen" sat on the table for ever at 0 / 1, asking for a
+     * seventeenth. `null` where the counter has no end: collapses, rungs and finds always have
+     * another one.
+     *
+     * The same shape as the mark bug and worth naming as such: a contract is only a direction if
+     * the thing it points at is still ahead of the player.
+     */
+    val ceiling: ((GameState) -> Double)? = null,
 ) {
     /** Where this contract stands, with its own zero subtracted where it has one. */
     fun progressOf(state: GameState): Double {
@@ -75,6 +88,18 @@ data class Contract(
     }
 
     fun isMetBy(state: GameState): Boolean = progressOf(state) >= target
+
+    /**
+     * Whether this can still be finished from where it is now.
+     *
+     * Counted against the counter's own ceiling and its own zero, so a contract that was dealt
+     * while there was still room stays honest as the room runs out.
+     */
+    fun isPossibleFor(state: GameState): Boolean {
+        val top = ceiling?.invoke(state) ?: return true
+        val zero = if (fromHere) state.contractMarks[id] ?: counter(state) else 0.0
+        return zero + target <= top
+    }
 
     /** How far along, in `0f..1f`. */
     fun fractionOf(state: GameState): Double {
@@ -109,6 +134,7 @@ data class Contract(
                 counter = { it.alloys.size.toDouble() },
                 target = 2.0,
                 fromHere = true,
+                ceiling = { Alloy.entries.size.toDouble() },
             ),
             Contract(
                 id = "ct_collapses",
@@ -148,6 +174,7 @@ data class Contract(
                 },
                 target = 4.0,
                 dailyLimit = 5,
+                ceiling = { Multiverse.count(it).toDouble() },
             ),
             Contract(
                 id = "ct_challenge",
@@ -157,6 +184,7 @@ data class Contract(
                 counter = { it.challengesDone.size.toDouble() },
                 target = 1.0,
                 fromHere = true,
+                ceiling = { Challenge.entries.size.toDouble() },
             ),
             Contract(
                 id = "ct_orbits",
@@ -174,6 +202,7 @@ data class Contract(
                 counter = { it.research.size.toDouble() },
                 target = 3.0,
                 fromHere = true,
+                ceiling = { ResearchTree.all.size.toDouble() },
             ),
             Contract(
                 id = "ct_metal",
@@ -233,6 +262,10 @@ data class Contract(
             val kept = state.contracts
                 .filter { id -> eligible.any { it.id == id } }
                 .filterNot { id -> byId(id)?.let { isSpentToday(state, it) } == true }
+                // And nothing whose counter can no longer reach its target. A row asking for a
+                // seventeenth challenge is not a hard contract, it is a permanent piece of
+                // furniture on the one screen whose whole job is to say what to do next.
+                .filterNot { id -> byId(id)?.isPossibleFor(state) == false }
                 .distinct()
             if (kept.size >= SLOTS) return kept.take(SLOTS)
 
@@ -248,7 +281,11 @@ data class Contract(
             var tries = 0
             while (filled.size < SLOTS && tries < eligible.size) {
                 val candidate = eligible[cursor.mod(eligible.size)]
-                if (candidate.id !in filled && !candidate.isMetBy(state) && !isSpentToday(state, candidate)) {
+                val fits = candidate.id !in filled &&
+                    !candidate.isMetBy(state) &&
+                    !isSpentToday(state, candidate) &&
+                    candidate.isPossibleFor(state)
+                if (fits) {
                     filled += candidate.id
                 }
                 cursor++
