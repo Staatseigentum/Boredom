@@ -1,6 +1,7 @@
 package com.staatseigentum.kollaps.core
 
 import com.staatseigentum.kollaps.core.pixel.Skins
+import kotlin.concurrent.Volatile
 import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.min

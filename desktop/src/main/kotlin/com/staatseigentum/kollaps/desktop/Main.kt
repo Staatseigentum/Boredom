@@ -22,6 +22,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Tiers
+import com.staatseigentum.kollaps.core.Wallclock
 import com.staatseigentum.kollaps.ui.GameScreen
 import com.staatseigentum.kollaps.ui.SaveSlotPanel
 import com.staatseigentum.kollaps.ui.SlotSummary
@@ -37,7 +38,14 @@ import com.staatseigentum.kollaps.ui.SlotSummary
  * Arguments: `--tier 17` starts on a given rung, which is otherwise hours away, `--frisch`
  * ignores whatever is in the save file, and `--kein-update` skips the launch check.
  */
-fun main(args: Array<String>) = application {
+fun main(args: Array<String>) {
+    // The clock the whole game reads, installed before anything asks the time — the save is
+    // credited for the hours the window was shut while the window is still being put together.
+    Wallclock.readFrom(System::currentTimeMillis)
+    window(args)
+}
+
+private fun window(args: Array<String>) = application {
     val startTier = args.indexOf("--tier").takeIf { it >= 0 }
         ?.let { args.getOrNull(it + 1)?.toIntOrNull() }
         ?.minus(1)

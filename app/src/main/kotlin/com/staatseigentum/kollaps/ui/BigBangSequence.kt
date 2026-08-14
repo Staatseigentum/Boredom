@@ -159,7 +159,7 @@ class BigBangSequence {
     private val nodes = mutableListOf<FlatNode>()
     private val debris = mutableListOf<Shard>()
     private val matter = mutableListOf<Chunk>()
-    private val random = Random(System.nanoTime())
+    private val random = Random(Random.nextLong())
 
     /** Set once the bang has thrown its matter, so it is thrown exactly once. */
     private var scattered = false

@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import kotlin.concurrent.Volatile
 import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.pow

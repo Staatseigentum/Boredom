@@ -9,6 +9,7 @@ import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.Heavy
 import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Tiers
+import com.staatseigentum.kollaps.core.Wallclock
 import com.staatseigentum.kollaps.ui.PhoneView
 import com.staatseigentum.kollaps.ui.SpriteCache
 import com.staatseigentum.kollaps.ui.sectionsFor
@@ -24,6 +25,10 @@ import java.io.File
  * be nicer to play in, but it cannot be inspected from a build log.
  */
 fun main(args: Array<String>) {
+    // Same clock the window installs. The harness renders a lab mid-project, and the bar it
+    // draws is counted against this.
+    Wallclock.readFrom(System::currentTimeMillis)
+
     val out = File(args.firstOrNull() ?: "screenshots").apply { mkdirs() }
     val width = 411
     val height = 891

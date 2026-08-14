@@ -16,6 +16,7 @@ import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.Roles
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.UpgradeOffer
+import com.staatseigentum.kollaps.core.Wallclock
 import com.staatseigentum.kollaps.data.SaveStore
 import com.staatseigentum.kollaps.data.SlotPreference
 import com.staatseigentum.kollaps.ui.SAVE_SLOTS
@@ -79,6 +80,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private var paused = false
 
     init {
+        // The clock the panels read. This driver asks the platform directly, because on Android
+        // there is nothing wrong with doing so — but the countdowns in the lab are drawn by code
+        // that is also compiled for a phone without a `System`, so they go through the seam, and
+        // the seam has to point at the same clock this one uses or the bar and the rules disagree.
+        Wallclock.readFrom(System::currentTimeMillis)
+
         viewModelScope.launch {
             store.load()?.let { _state.value = it }
             restored = true

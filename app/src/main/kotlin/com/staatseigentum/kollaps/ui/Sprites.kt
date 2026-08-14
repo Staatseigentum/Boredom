@@ -6,6 +6,7 @@ import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.pixel.PixelPlanet
 import com.staatseigentum.kollaps.core.pixel.Skin
 import com.staatseigentum.kollaps.core.pixel.Skins
+import kotlin.concurrent.Volatile
 
 /**
  * Turning raw sprite pixels into a bitmap is the one step in the whole renderer that each platform
@@ -83,7 +84,19 @@ object SpriteCache {
      */
     private const val KEEP = 4
 
-    private val sprites = LinkedHashMap<Key, PixelPlanet.Sprite>()
+    /**
+     * The kept bodies, oldest first, replaced whole rather than edited in place.
+     *
+     * A `LinkedHashMap` behind a lock is the obvious shape and is what this was. The lock is the
+     * problem: `synchronized` is a JVM word, and this file is compiled for the phone, the PC and
+     * now an iPhone, where there is no such thing. A list that is only ever swapped for a new one
+     * needs no lock — a reader sees one whole version or another, never a half-built one.
+     *
+     * What a race costs is spelled out at [sprite], and it is the same thing the lock already
+     * allowed: a body built twice and one copy dropped.
+     */
+    @Volatile
+    private var sprites: List<Pair<Key, PixelPlanet.Sprite>> = emptyList()
 
     /**
      * What identifies a built body: the rung and the colour scheme baked into its ramps.
@@ -99,8 +112,10 @@ object SpriteCache {
     private data class Key(val tier: Int, val skin: String)
 
     /** The body if it has already been built, for showing one without waiting. */
-    fun ready(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): PixelPlanet.Sprite? =
-        synchronized(sprites) { sprites[Key(tier.index, skin.id)] }
+    fun ready(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): PixelPlanet.Sprite? {
+        val key = Key(tier.index, skin.id)
+        return sprites.firstOrNull { it.first == key }?.second
+    }
 
     /**
      * The body, built if this is the first time anybody has asked for it.
@@ -113,17 +128,22 @@ object SpriteCache {
      */
     fun sprite(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): PixelPlanet.Sprite {
         ready(tier, skin)?.let { return it }
-        // Built outside the lock: two threads racing here would each build one and the loser's copy
-        // is simply dropped, which is far cheaper than every caller queueing behind whoever is
-        // building a body they do not want.
+        // Two threads racing here each build one and the loser's copy is simply dropped, which is
+        // far cheaper than every caller queueing behind whoever is building a body they do not
+        // want. That was true of the lock this replaces as well — building never happened inside
+        // it — so nothing about the cost has changed.
+        val key = Key(tier.index, skin.id)
         val built = PixelPlanet.Sprite.of(tier, skin)
-        return synchronized(sprites) {
-            sprites.getOrPut(Key(tier.index, skin.id)) { built }.also {
-                while (sprites.size > KEEP) sprites.remove(sprites.keys.first())
-            }
-        }
+        val kept = sprites
+        // Whoever wins the race is whoever writes last, and both wrote the same body. What the
+        // read-modify-write can lose is an *entry*, never a wrong one: the loser's other bodies
+        // fall out a moment before they would have anyway.
+        sprites = (kept.filterNot { it.first == key } + (key to built)).takeLast(KEEP)
+        return built
     }
 
     /** Drops everything. Only the desktop harness needs this, to measure a cold render. */
-    fun clear() = synchronized(sprites) { sprites.clear() }
+    fun clear() {
+        sprites = emptyList()
+    }
 }

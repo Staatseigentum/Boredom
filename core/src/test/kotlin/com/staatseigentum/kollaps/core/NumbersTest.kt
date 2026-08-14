@@ -67,4 +67,31 @@ class NumbersTest {
         assertEquals("15 %", Numbers.formatPercent(0.15))
         assertEquals("1,5 %", Numbers.formatPercent(0.015))
     }
+
+    /**
+     * The decimals are rounded by hand now — `String.format` only exists on the JVM, and these
+     * numbers have to be written the same way on a phone that is not an Android one. Half up on
+     * the last place shown, exactly as the formatter it replaces did.
+     */
+    @Test
+    fun `rounds the last place shown half up`() {
+        // Two decimals below ten: down when it is below the half, up at it and above.
+        assertEquals("1,24", Numbers.format(1.244))
+        assertEquals("0,13", Numbers.format(0.125))
+        assertEquals("1,25", Numbers.format(1.246))
+        // One decimal between ten and a hundred, none above.
+        assertEquals("12,3", Numbers.format(12.34))
+        assertEquals("124", Numbers.format(123.5))
+        // Rounding that carries all the way into the whole part still writes both decimals.
+        assertEquals("10,00 K", Numbers.format(9_999.0))
+    }
+
+    /** The gap between the decimal comma and the digits after it is where a zero goes missing. */
+    @Test
+    fun `pads the decimals rather than dropping them`() {
+        assertEquals("1,05 Mio", Numbers.format(1_050_000.0))
+        assertEquals("×1,05", Numbers.formatMultiplier(1.05))
+        assertEquals("0,5 %", Numbers.formatPercent(0.005))
+        assertEquals("2,0 KB", Numbers.formatBytes(2_048))
+    }
 }

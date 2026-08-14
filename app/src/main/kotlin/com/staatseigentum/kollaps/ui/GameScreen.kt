@@ -73,6 +73,7 @@ import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
+import com.staatseigentum.kollaps.core.Wallclock
 import com.staatseigentum.kollaps.core.audio.Mood
 import com.staatseigentum.kollaps.core.pixel.Skins
 import com.staatseigentum.kollaps.ui.theme.Ember
@@ -890,10 +891,10 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
 private fun ResearchTicker(state: GameState) {
     val running = ResearchTree.active(state) ?: return
 
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var now by remember { mutableLongStateOf(Wallclock.millis()) }
     LaunchedEffect(running.id) {
         while (true) {
-            now = System.currentTimeMillis()
+            now = Wallclock.millis()
             delay(1_000)
         }
     }

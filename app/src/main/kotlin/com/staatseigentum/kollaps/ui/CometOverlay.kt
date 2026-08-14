@@ -52,7 +52,10 @@ fun CometOverlay(
     onCatch: (Comet) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val random = remember { Random(System.nanoTime()) }
+    // Its own stream, seeded from the shared one so that two runs of the game do not see the same
+    // comets in the same order. Seeded from a number rather than from the clock: `System.nanoTime`
+    // is a JVM word, and this file is compiled for three platforms now.
+    val random = remember { Random(Random.nextLong()) }
     var flight by remember { mutableStateOf<Flight?>(null) }
     val travel = remember { Animatable(0f) }
     val appears = Comets.appearsAt(state)

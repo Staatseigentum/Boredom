@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core.i18n
 
+import kotlin.concurrent.Volatile
+
 /** The languages the game speaks. */
 enum class Language(val id: String, val label: String) {
     DE("de", "Deutsch"),

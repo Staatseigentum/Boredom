@@ -1,6 +1,6 @@
 package com.staatseigentum.kollaps.core
 
-import java.util.Locale
+import kotlin.concurrent.Volatile
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.log10
@@ -39,8 +39,6 @@ enum class NumberFormat(val label: String, val example: String) {
  * because of it.
  */
 object Numbers {
-
-    private val LOCALE: Locale = Locale.GERMANY
 
     /** How numbers are written right now. Set from the save; only ever affects what is shown. */
     @Volatile
@@ -108,15 +106,14 @@ object Numbers {
             value /= 1_024
             index++
         }
-        val pattern = if (value >= 100) "%.0f %s" else "%.1f %s"
-        return String.format(LOCALE, pattern, value, units[index])
+        return "${fixed(value, if (value >= 100) 0 else 1)} ${units[index]}"
     }
 
     /** Renders a multiplier, e.g. `×2,5`. */
     fun formatMultiplier(value: Double): String {
         val rendered = if (value < 1_000.0) {
             if (abs(value - value.roundToLong()) < 1e-9) value.roundToLong().toString()
-            else String.format(LOCALE, "%.2f", value)
+            else fixed(value, 2)
         } else {
             format(value)
         }
@@ -129,7 +126,7 @@ object Numbers {
         val rendered = if (abs(percent - percent.roundToLong()) < 1e-9) {
             percent.roundToLong().toString()
         } else {
-            String.format(LOCALE, "%.1f", percent)
+            fixed(percent, 1)
         }
         return "$rendered %"
     }
@@ -138,22 +135,46 @@ object Numbers {
         if (v == 0.0) return "0"
         if (v == floor(v)) return v.toLong().toString()
         return when {
-            v >= 100.0 -> String.format(LOCALE, "%.0f", v)
-            v >= 10.0 -> String.format(LOCALE, "%.1f", v)
-            v >= 0.01 -> String.format(LOCALE, "%.2f", v)
-            else -> String.format(LOCALE, "%.3f", v)
+            v >= 100.0 -> fixed(v, 0)
+            v >= 10.0 -> fixed(v, 1)
+            v >= 0.01 -> fixed(v, 2)
+            else -> fixed(v, 3)
         }
     }
 
     private fun withSignificantDigits(mantissa: Double): String = when {
-        mantissa >= 100.0 -> String.format(LOCALE, "%.0f", mantissa)
-        mantissa >= 10.0 -> String.format(LOCALE, "%.1f", mantissa)
-        else -> String.format(LOCALE, "%.2f", mantissa)
+        mantissa >= 100.0 -> fixed(mantissa, 0)
+        mantissa >= 10.0 -> fixed(mantissa, 1)
+        else -> fixed(mantissa, 2)
     }
 
     private fun formatScientific(v: Double, marker: String): String {
         val exponent = floor(log10(v)).toInt()
         val mantissa = v / 10.0.pow(exponent)
-        return String.format(LOCALE, "%.2f$marker%d", mantissa, exponent)
+        return "${fixed(mantissa, 2)}$marker$exponent"
     }
+
+    /**
+     * A number with a fixed number of decimals, German-style, written out by hand.
+     *
+     * This was `String.format(Locale.GERMANY, "%.2f", …)`, and it was the last thing in the whole
+     * of the rules that only exists on the JVM — which mattered the moment the same rules had to
+     * compile for a phone that is not an Android one. The formatter is not much of a loss here:
+     * every number that reaches this point is small by construction (a mantissa below ten, a file
+     * size below a thousand, a value below a thousand), so the rounding is one multiplication and
+     * a division with integers, and the comma was the only reason the locale was named at all.
+     *
+     * Rounds half up on the tenth, hundredth or thousandth, as the formatter did.
+     */
+    private fun fixed(value: Double, places: Int): String {
+        val power = POWERS[places]
+        // Half up, and negative values do not occur here: everything shown is a mass, a rate or a
+        // share, and [format] has already floored the one place a negative could come from.
+        val units = floor(value * power + 0.5).toLong()
+        if (places == 0) return units.toString()
+        return "${units / power}," + (units % power).toString().padStart(places, '0')
+    }
+
+    /** Ten to the power of nought through three — the only scales [fixed] is ever asked for. */
+    private val POWERS = longArrayOf(1L, 10L, 100L, 1_000L)
 }

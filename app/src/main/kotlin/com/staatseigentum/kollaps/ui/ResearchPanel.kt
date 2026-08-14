@@ -26,6 +26,7 @@ import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.Research
 import com.staatseigentum.kollaps.core.ResearchTree
+import com.staatseigentum.kollaps.core.Wallclock
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
 import com.staatseigentum.kollaps.ui.theme.Nebula
@@ -50,14 +51,14 @@ fun ResearchPanel(
 ) {
     if (!ResearchTree.isUnlocked(state)) return
 
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var now by remember { mutableLongStateOf(Wallclock.millis()) }
     val running = ResearchTree.active(state)
 
     // Only while something is running: an idle lab has nothing that changes on its own, and a
     // ticker behind a still panel would keep the whole screen recomposing once a second.
     LaunchedEffect(running?.id) {
         while (running != null) {
-            now = System.currentTimeMillis()
+            now = Wallclock.millis()
             delay(500)
         }
     }

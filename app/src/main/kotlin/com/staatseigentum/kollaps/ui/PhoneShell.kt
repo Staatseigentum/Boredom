@@ -41,6 +41,7 @@ import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.Orbits
 import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Stats
+import com.staatseigentum.kollaps.core.Wallclock
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
@@ -325,11 +326,11 @@ fun StatusMarks(state: GameState, stats: Stats, size: Int = 10, modifier: Modifi
     // Ticked once a second, and only while something is actually counting down — a `while (true)`
     // that runs when there is no lab and no buff is a wakeup per second for nothing.
     val running = ResearchTree.active(state)
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var now by remember { mutableLongStateOf(Wallclock.millis()) }
     LaunchedEffect(running?.id) {
         if (running == null) return@LaunchedEffect
         while (true) {
-            now = System.currentTimeMillis()
+            now = Wallclock.millis()
             delay(1_000)
         }
     }
