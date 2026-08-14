@@ -7,6 +7,7 @@ import com.staatseigentum.kollaps.core.update.ReleaseFeed
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
+import kotlin.system.exitProcess
 
 /**
  * The PC version keeping itself up to date.
@@ -100,7 +101,12 @@ object DesktopUpdater {
     fun install(installer: File): Boolean = runCatching {
         if (!canInstall) return false
         ProcessBuilder("msiexec", "/i", installer.absolutePath).start()
-        true
+        // And then actually go, which the doc above promised and the code did not do. `msiexec`
+        // runs as its own process and survives this one, so quitting here is safe — and it is the
+        // whole point: without it the installer opened behind a game that was still holding every
+        // file it wanted to replace, and the update simply failed. From the player's side the
+        // button downloaded a hundred megabytes and then did nothing at all.
+        exitProcess(0)
     }.getOrDefault(false)
 
     /** Opens the releases page in whatever the machine uses for the web. */

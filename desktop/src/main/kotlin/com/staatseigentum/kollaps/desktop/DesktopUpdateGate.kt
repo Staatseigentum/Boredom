@@ -74,21 +74,34 @@ fun DesktopUpdateGate(onBeforeExit: () -> Unit, content: @Composable () -> Unit)
 
     val update = required ?: return
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Space)
-            // Nothing behind this reacts. The game is still running underneath — production does
-            // not stop for an update — but no click reaches it.
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        /*
+         * The curtain, and it has to be a sibling *behind* the panel rather than the panel's
+         * parent.
+         *
+         * It was the parent, which is the obvious way to write "nothing behind this reacts" and is
+         * exactly wrong: `PointerEventPass.Initial` travels from the outside in, so a parent that
+         * consumes on it consumes before its own children are offered anything. The gate ate the
+         * clicks meant for its own download button, and the one screen in the game a player cannot
+         * leave had a button that did nothing.
+         *
+         * As a sibling drawn first, the panel sits on top and is hit first; whatever the panel does
+         * not take lands here and stops. The game underneath keeps running — production does not
+         * pause for an update — but no click reaches it.
+         */
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(Space)
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                        }
                     }
-                }
-            },
-        contentAlignment = Alignment.Center,
-    ) {
+                },
+        )
+
         PixelPanel(
             modifier = Modifier.widthIn(max = 520.dp).padding(24.dp),
             border = Ember,
@@ -144,10 +157,12 @@ fun DesktopUpdateGate(onBeforeExit: () -> Unit, content: @Composable () -> Unit)
                                 return@Thread
                             }
                             onBeforeExit()
-                            if (!DesktopUpdater.install(file)) {
-                                trouble = "Der Installer ließ sich nicht starten."
-                                busy = false
-                            }
+                            // `install` does not return on success — it hands the file to Windows
+                            // and quits, because msiexec cannot replace a file this process is
+                            // holding open. Reaching the next line means it failed.
+                            DesktopUpdater.install(file)
+                            trouble = "Der Installer ließ sich nicht starten."
+                            busy = false
                         }.apply { isDaemon = true }.start()
                     },
                     modifier = Modifier.fillMaxWidth(),

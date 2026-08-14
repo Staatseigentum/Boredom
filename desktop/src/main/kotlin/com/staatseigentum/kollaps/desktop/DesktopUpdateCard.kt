@@ -29,7 +29,6 @@ import com.staatseigentum.kollaps.ui.theme.Starlight
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import kotlin.system.exitProcess
 
 /** Where the card is in its one job. */
 private sealed interface Phase {
@@ -166,7 +165,12 @@ fun DesktopUpdateCard(onBeforeExit: () -> Unit = {}) {
                         // The save is written first: the process is about to end on purpose, and
                         // an update that costs the last few minutes of play would be a bad trade.
                         onBeforeExit()
-                        if (DesktopUpdater.install(current.installer)) exitProcess(0)
+                        // The quitting lives in `install` now. It used to live here, and *only*
+                        // here — which is how the forced-update window came to download an
+                        // installer and then leave the game running on top of every file it wanted
+                        // to replace. One caller remembering a step the other forgot is not a
+                        // step, it is a trap.
+                        DesktopUpdater.install(current.installer)
                     },
                 )
             }
