@@ -1,6 +1,7 @@
 package com.staatseigentum.kollaps.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -1000,14 +1001,22 @@ private fun TapArea(
                 sfx?.click()
                 if (hapticsOn) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 scope.launch {
-                    squash.snapTo(0.93f)
-                    squash.animateTo(
-                        targetValue = 1f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow,
-                        ),
-                    )
+                    /*
+                     * A stepped squash-and-stretch rather than a spring.
+                     *
+                     * The spring was the obvious choice and the wrong one for this art: it settles
+                     * through a continuum of scales, and a pixel sprite drawn at 0.973 of its size
+                     * is a sprite with soft edges. Every frame of it looked slightly blurred, which
+                     * is the entire style undone once per tap.
+                     *
+                     * This runs the same shape — squash, overshoot, settle — as four held poses
+                     * over 260 ms. Nothing in between is ever drawn, so every frame is the sprite
+                     * at a scale it looks right at.
+                     */
+                    squash.snapTo(1f)
+                    squash.animateTo(0.90f, tween(SQUASH_MILLIS * 12 / 100, easing = LinearEasing))
+                    squash.animateTo(1.05f, tween(SQUASH_MILLIS * 28 / 100, easing = LinearEasing))
+                    squash.animateTo(1f, tween(SQUASH_MILLIS * 60 / 100, easing = LinearEasing))
                 }
             }
         },
@@ -1030,8 +1039,11 @@ private fun TapArea(
                         collapse != null -> collapse.bodyScale
                         else -> 1f
                     }
-                    scaleX = squash.value * swell
-                    scaleY = squash.value * swell
+                    // Snapped on the way out, so the tween between the held poses above is never
+                    // actually drawn — see the comment where the squash is started.
+                    val held = quantise(squash.value, SQUASH_STEPS)
+                    scaleX = held * swell
+                    scaleY = held * swell
                     alpha = when {
                         bigBang?.running == true -> bigBang.bodyAlpha
                         collapse != null -> collapse.bodyAlpha
@@ -1116,6 +1128,28 @@ private fun TapArea(
     }
 }
 
+/**
+ * What a tap looks like.
+ *
+ * Two rings rather than one, and every part of it stepped.
+ *
+ * ## Why two
+ *
+ * One ring expanding out of a point reads as a circle growing. Two, offset by ninety milliseconds
+ * and with the second one thinner and starting further out, read as an impact — the eye gets a
+ * front and a wake, which is the difference between "something is drawing a circle" and "something
+ * was hit". It costs one more ring's worth of rectangles.
+ *
+ * ## Why stepped
+ *
+ * Everything else on this screen is made of hard blocks that sit on whole pixels. A ring that
+ * travels outwards continuously is the one smoothly moving thing in the picture, and next to
+ * sprites it reads as a rendering artefact rather than as motion. Quantising the progress into a
+ * dozen steps makes it move the way the rest of the game does: in visible increments.
+ *
+ * The animation itself is still a plain linear tween — it is the *value read out of it* that is
+ * snapped, which keeps the timing exact and the positions on the grid.
+ */
 @Composable
 private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit) {
     val progress = remember { Animatable(0f) }
@@ -1127,25 +1161,31 @@ private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit)
     // Its own full-size box, so the offsets below are measured from the top left of the tap
     // area and not from the centre where the planet sits.
     Box(modifier = Modifier.fillMaxSize()) {
-        // A ring of blocks flying outwards, rather than a smooth expanding circle.
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val p = progress.value
-            val radius = 12.dp.toPx() + p * 48.dp.toPx()
-            val block = 5.dp.toPx() * (1f - p * 0.5f)
-            val alpha = (1f - p) * 0.9f
-            for (index in 0 until SHOCKWAVE_BLOCKS) {
-                val angle = index.toFloat() / SHOCKWAVE_BLOCKS * TWO_PI
-                drawRect(
-                    color = color.copy(alpha = alpha),
-                    topLeft = Offset(
-                        effect.position.x + cos(angle) * radius - block / 2f,
-                        effect.position.y + sin(angle) * radius - block / 2f,
-                    ),
-                    size = Size(block, block),
-                )
-            }
+            // The leading ring is done at 620 ms of the 900; the trailing one starts 90 ms in and
+            // runs to 790. Both are read off the same clock so they can never drift apart.
+            ring(
+                effect = effect,
+                color = color,
+                progress = stepped(progress.value * 900f, from = 0f, to = 620f),
+                startRadius = 12.dp.toPx(),
+                reach = 48.dp.toPx(),
+                block = 6.dp.toPx(),
+            )
+            ring(
+                effect = effect,
+                color = color,
+                progress = stepped(progress.value * 900f, from = 90f, to = 790f),
+                startRadius = 22.dp.toPx(),
+                reach = 54.dp.toPx(),
+                block = 4.dp.toPx(),
+            )
         }
 
+        // The number climbs in fourteen steps and fades in over the first fifteen per cent, so it
+        // arrives rather than being simply present. It starts a little below the tap and never
+        // overshoots — a number that springs past its mark reads as a different number.
+        val climb = quantise(progress.value, TAP_NUMBER_STEPS)
         Text(
             text = "+${effect.label}",
             color = Color.White,
@@ -1156,14 +1196,65 @@ private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit)
                 .offset {
                     IntOffset(
                         x = (effect.position.x - 40.dp.toPx()).roundToInt(),
-                        y = (effect.position.y - 24.dp.toPx() - progress.value * 90.dp.toPx())
-                            .roundToInt(),
+                        y = (effect.position.y - 20.dp.toPx() - climb * 54.dp.toPx()).roundToInt(),
                     )
                 }
-                .alpha(1f - progress.value * progress.value),
+                .alpha(
+                    if (progress.value < 0.15f) {
+                        progress.value / 0.15f
+                    } else {
+                        1f - ((progress.value - 0.15f) / 0.85f)
+                    },
+                ),
         )
     }
 }
+
+/** One ring of blocks, at a progress already stepped by the caller. */
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.ring(
+    effect: TapEffect,
+    color: Color,
+    progress: Float,
+    startRadius: Float,
+    reach: Float,
+    block: Float,
+) {
+    if (progress <= 0f || progress >= 1f) return
+    val radius = startRadius + progress * reach
+    val edge = block * (1f - progress * 0.5f)
+    val alpha = (1f - progress) * 0.9f
+    for (index in 0 until SHOCKWAVE_BLOCKS) {
+        val angle = index.toFloat() / SHOCKWAVE_BLOCKS * TWO_PI
+        drawRect(
+            color = color.copy(alpha = alpha),
+            topLeft = Offset(
+                effect.position.x + cos(angle) * radius - edge / 2f,
+                effect.position.y + sin(angle) * radius - edge / 2f,
+            ),
+            size = Size(edge, edge),
+        )
+    }
+}
+
+/**
+ * A window of the tap's clock, in [TAP_RING_STEPS] steps.
+ *
+ * Returns 0 before the window and 1 after it, so a ring that has not started and one that has
+ * finished are both simply absent.
+ */
+private fun stepped(millis: Float, from: Float, to: Float): Float {
+    val raw = ((millis - from) / (to - from)).coerceIn(0f, 1f)
+    return quantise(raw, TAP_RING_STEPS)
+}
+
+/**
+ * Snaps a 0..1 progress to [steps] discrete values.
+ *
+ * The whole of part four goes through here. Compose has no stepped easing, and writing one per
+ * animation is how five animations end up stepping by slightly different amounts.
+ */
+internal fun quantise(value: Float, steps: Int): Float =
+    (value * steps).toInt().toFloat() / steps
 
 /**
  * What tapping is worth right now, shown only while it is worth anything.
@@ -1200,6 +1291,23 @@ private fun HeatMeter(heat: Double) {
 
 private const val SHOCKWAVE_BLOCKS = 14
 private const val TWO_PI = 6.2831855f
+
+/** Steps a tap's rings travel outwards in. Twelve reads as motion; smooth reads as a smear. */
+private const val TAP_RING_STEPS = 12
+
+/** And the steps the floating number climbs in. */
+private const val TAP_NUMBER_STEPS = 14
+
+/** How long the whole squash takes, split 12 / 28 / 60 between its three moves. */
+private const val SQUASH_MILLIS = 260
+
+/**
+ * Scales the body is ever actually drawn at, between 0.90 and 1.05.
+ *
+ * Twenty-four across the whole 0..1 range works out to about four distinct scales inside the range
+ * the squash uses, which is what a hand-drawn squash would have had.
+ */
+private const val SQUASH_STEPS = 24
 
 /**
  * Width at which the screen puts the body and the shop next to each other.

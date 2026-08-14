@@ -136,6 +136,9 @@ class CollapseSequence {
 
     private val nodes = mutableListOf<SogNode>()
     private val debris = mutableListOf<Block>()
+
+    /** How many blocks of the element being shattered have been handed over, for the ripple. */
+    private var staggered = 0
     private val random = Random(0x5A17)
 
     val running: Boolean get() = elapsed != null
@@ -243,6 +246,7 @@ class CollapseSequence {
         elapsed = 0f
         extraSpin = 0f
         debris.clear()
+        staggered = 0
         nodes.forEach { it.reset() }
 
         var blasted = false
@@ -267,6 +271,7 @@ class CollapseSequence {
             // come back with half its interface parked somewhere near the middle.
             elapsed = null
             debris.clear()
+        staggered = 0
             nodes.forEach { it.reset() }
             if (!blasted) onBlast()
         }
@@ -287,13 +292,23 @@ class CollapseSequence {
         // Over a copy: the list is added to and taken from as the interface changes around the
         // sequence, and a frame callback is a bad place to find that out.
         for (node in nodes.toList()) {
-            for (spec in node.shatter(this)) debris += blockOf(spec)
+            // Reset per element: a panel ripples apart over its own blocks, not behind every block
+            // that has ever come off anything.
+            staggered = 0
+            for (spec in node.shatter(this)) {
+                debris += blockOf(spec)
+                staggered++
+            }
         }
 
         val step = deltaMillis / 16.6f
         val iterator = debris.iterator()
         while (iterator.hasNext()) {
             val block = iterator.next()
+            if (block.waiting > 0f) {
+                block.waiting -= deltaMillis
+                continue
+            }
             block.advance(step)
             if (block.radius <= 4f) iterator.remove()
         }
@@ -308,13 +323,16 @@ class CollapseSequence {
      */
     private fun blockOf(spec: BlockSpec): Block {
         val offset = Offset(spec.x - centre.x, spec.y - centre.y)
+        val radius = hypot(offset.x, offset.y)
         return Block(
-            radius = hypot(offset.x, offset.y),
+            radius = radius,
             angle = atan2(offset.y, offset.x),
             side = spec.side,
             fall = spec.fall,
             spin = spec.spin,
             color = spec.color,
+            birth = radius.coerceAtLeast(1f),
+            waiting = staggered * DEBRIS_STAGGER_MILLIS,
         )
     }
 
@@ -335,8 +353,19 @@ class CollapseSequence {
         if (fade <= 0f) return
 
         for (block in debris) {
-            val x = centre.x + cos(block.angle) * block.radius
-            val y = centre.y + sin(block.angle) * block.radius
+            if (block.waiting > 0f) continue
+            // Sixteen stops on the way in rather than a slide.
+            //
+            // The position was already snapped to the grid — that part of the picture was right
+            // long before this pass. What was not is *when* it moves: a block that changes place
+            // every frame travels smoothly however cleanly each frame is drawn, and next to a body
+            // that turns in forty-eight discrete steps it is the one thing sliding. Quantising the
+            // radius makes the fall a sequence of positions, which is what the rest of the screen
+            // is doing.
+            val stride = (block.birth / DEBRIS_STEPS).coerceAtLeast(1f)
+            val radius = floor(block.radius / stride) * stride
+            val x = centre.x + cos(block.angle) * radius
+            val y = centre.y + sin(block.angle) * radius
             val side = block.side
             scope.drawRect(
                 color = block.color.copy(alpha = block.alpha * fade),
@@ -355,6 +384,16 @@ private class Block(
     val fall: Float,
     val spin: Float,
     val color: Color,
+    /** Where it started, so its sixteen steps are steps of its own journey and not of a fixed one. */
+    val birth: Float,
+    /**
+     * Milliseconds still to wait before it moves at all.
+     *
+     * A shattered element used to hand over its blocks all at once, so a panel came apart as a
+     * single sheet drifting inwards. Sixty milliseconds apart they come off in a ripple, which is
+     * what breaking looks like.
+     */
+    var waiting: Float,
 ) {
     val alpha: Float get() = min(1f, radius / 90f)
 
@@ -536,6 +575,12 @@ internal class BlockSpec(
 internal class Bounds(val position: Offset, val size: Size) {
     val centre: Offset get() = Offset(position.x + size.width / 2f, position.y + size.height / 2f)
 }
+
+/** Stops a block makes on its way in. See [CollapseSequence.drawDebris]. */
+private const val DEBRIS_STEPS = 16
+
+/** And how far apart the blocks of one element come off. */
+private const val DEBRIS_STAGGER_MILLIS = 60f
 
 private fun snap(value: Float): Float = (value / SNAP).roundToInt() * SNAP
 

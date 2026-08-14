@@ -1,6 +1,8 @@
 package com.staatseigentum.kollaps.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -27,7 +29,9 @@ import com.staatseigentum.kollaps.core.Comets
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Starlight
+import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.sin
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -91,6 +95,22 @@ fun CometOverlay(
     // Reset for every flight, so a core that got away half broken arrives whole next time.
     var struck by remember(current) { mutableIntStateOf(0) }
 
+    /*
+     * Chips knocked off the crust.
+     *
+     * A hard core used to be hit and simply carry on with a slightly smaller square. The hit
+     * counter was in the code and nowhere on the screen, so a player who struck one and did not
+     * catch it had no way to tell they had done anything at all.
+     *
+     * Keyed on the strike count: every hit restarts it, and it runs to nothing on its own.
+     */
+    val chips = remember(current) { Animatable(1f) }
+    LaunchedEffect(struck) {
+        if (struck == 0) return@LaunchedEffect
+        chips.snapTo(0f)
+        chips.animateTo(1f, tween(CHIP_MILLIS, easing = LinearEasing))
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         // The catcher is a small box that follows the head, not a sheet over the whole screen.
         // A full-size tap catcher swallowed every tap that missed, so for the eleven seconds a
@@ -138,39 +158,66 @@ fun CometOverlay(
             val head = headOf(current, progress, size.width, size.height)
             val block = floor(3.dp.toPx()).coerceAtLeast(2f)
 
-            // A tail of blocks trailing behind, thinning out — drawn on the grid so it stays
-            // part of the same picture as the planets.
             val accent = current.comet.accent
             val backwards = if (current.leftToRight) -1f else 1f
-            for (step in TAIL_BLOCKS downTo 1) {
-                val distance = step * block * 1.6f
-                val fade = 1f - step.toFloat() / TAIL_BLOCKS
+
+            /*
+             * Two tail blocks rather than nine.
+             *
+             * Nine fading squares are a gradient built out of rectangles — the shape it makes is a
+             * smooth trail, and reading it as one is the point at which the effect stops belonging
+             * to this art. Two hard slabs at fixed opacities, the near one short and thick and the
+             * far one long and thin, say "moving fast" in the language of the sprites: a shape, not
+             * a fade.
+             */
+            for ((length, thickness, alpha) in TAIL) {
+                val far = block * (length + 2f)
                 drawRect(
-                    color = accent.copy(alpha = 0.10f + 0.5f * fade * fade),
+                    color = accent.copy(alpha = alpha),
                     topLeft = Offset(
-                        snap(head.x + backwards * distance, block),
-                        snap(head.y - distance * 0.22f, block),
+                        snap(head.x + backwards * far, block),
+                        snap(head.y - far * 0.22f - block * thickness / 2f, block),
                     ),
-                    size = Size(block, block),
+                    size = Size(block * length, block * thickness),
                 )
             }
 
-            // The head, in the colour of what it is carrying: three comets that all looked the
-            // same was three comets the player could not tell apart until after catching one.
-            // A hard core is drawn wider and loses a ring with every hit, so the crust visibly
-            // comes off rather than the count living only in the tap handler.
-            val crust = current.comet.hits - struck
-            val side = block * (1 + crust)
+            // The head: a light core with a ring in the colour of what it is carrying. Three
+            // comets that all looked the same was three the player could not tell apart until
+            // after catching one — and the ring is also the crust, one step thinner per hit, so a
+            // strike that did not catch it is still visibly a strike.
+            val crust = (current.comet.hits - struck).coerceAtLeast(0)
+            val ring = block * (1f + crust)
             drawRect(
                 color = accent,
-                topLeft = Offset(snap(head.x - side / 2f, block), snap(head.y - side / 2f, block)),
-                size = Size(side, side),
+                topLeft = Offset(snap(head.x - ring, block), snap(head.y - ring, block)),
+                size = Size(ring * 2f, ring * 2f),
             )
+            val core = block * 2f
             drawRect(
                 color = Starlight,
-                topLeft = Offset(snap(head.x, block), snap(head.y - block, block)),
-                size = Size(block, block),
+                topLeft = Offset(snap(head.x - core / 2f, block), snap(head.y - core / 2f, block)),
+                size = Size(core, core),
             )
+
+            // And the pieces that came off, if one just did. Stepped like everything else in this
+            // pass, so they travel in visible jumps rather than sliding.
+            val life = chips.value
+            if (life < 1f) {
+                val flung = quantise(life, CHIP_STEPS)
+                for (index in 0 until CHIP_COUNT) {
+                    val angle = index.toFloat() / CHIP_COUNT * TWO_PI
+                    val distance = block * 2f + flung * block * 7f
+                    drawRect(
+                        color = accent.copy(alpha = 1f - flung),
+                        topLeft = Offset(
+                            snap(head.x + cos(angle) * distance, block),
+                            snap(head.y + sin(angle) * distance, block),
+                        ),
+                        size = Size(block * 1.4f, block * 1.4f),
+                    )
+                }
+            }
         }
     }
 }
@@ -198,7 +245,21 @@ private suspend fun waitSeconds(seconds: Double) {
     }
 }
 
-private const val TAIL_BLOCKS = 9
+/**
+ * The two slabs behind the head: how long, how thick, how visible — all in blocks.
+ *
+ * Near one first, so the far one is drawn under it where they overlap.
+ */
+private val TAIL = listOf(
+    Triple(4f, 1.6f, 0.60f),
+    Triple(8f, 1f, 0.35f),
+)
+
+/** How many pieces come off a crust, and over how long, in how many steps. */
+private const val CHIP_COUNT = 6
+private const val CHIP_MILLIS = 260
+private const val CHIP_STEPS = 8
+private const val TWO_PI = 6.2831855f
 
 /** Colour is not enough to tell the three comets apart, so the catch says which it was. */
 val Comet.accent: Color

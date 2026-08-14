@@ -40,6 +40,7 @@ import com.staatseigentum.kollaps.ui.theme.Positive
 import com.staatseigentum.kollaps.ui.theme.SpaceElevated
 import com.staatseigentum.kollaps.ui.theme.Starlight
 import com.staatseigentum.kollaps.ui.theme.Unreached
+import kotlinx.coroutines.delay
 
 /**
  * The ladder, as a column you can look up and down.
@@ -111,10 +112,35 @@ fun LadderColumn(state: GameState, stats: Stats, modifier: Modifier = Modifier) 
         }
 
         Rule()
-        val fragment = Lore.forTier(hovered ?: standing)
+
+        /*
+         * The line flashes when a rung is reached.
+         *
+         * The celebration ring goes off around the body, on the other side of the screen from the
+         * column that just gained a step — so for a second and a bit the chronicle line is lit
+         * rather than muted, which is enough to pull the eye over and show *where* the ring came
+         * from. It says nothing new; it says the same thing louder, once.
+         *
+         * Only upwards. A collapse drops the rung by twenty-four steps at once, and lighting the
+         * meteorite's line after four hours of climbing would be the interface congratulating the
+         * player on losing everything.
+         */
+        var fresh by remember { mutableStateOf(false) }
+        val seen = remember { intArrayOf(standing) }
+        LaunchedEffect(standing) {
+            if (standing > seen[0]) {
+                fresh = true
+                delay(ASCENT_FLASH_MILLIS)
+                fresh = false
+            }
+            seen[0] = standing
+        }
+
+        val shown = hovered ?: standing
+        val fragment = Lore.forTier(shown)
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp)) {
             PixelLabel(
-                text = "Chronik · ${Tiers.all[hovered ?: standing].label}",
+                text = "Chronik · ${Tiers.all[shown].label}",
                 color = Nebula,
                 size = 9,
             )
@@ -122,7 +148,9 @@ fun LadderColumn(state: GameState, stats: Stats, modifier: Modifier = Modifier) 
             Text(
                 text = fragment?.text.orEmpty(),
                 style = MaterialTheme.typography.bodyMedium,
-                color = Muted,
+                // Lit only for the rung actually reached — hovering somewhere else while the flash
+                // is running is the player asking about a different line, and it gets the usual one.
+                color = if (fresh && hovered == null) Starlight else Muted,
             )
         }
     }
@@ -189,3 +217,6 @@ private fun LadderRow(
 internal fun Rule(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().height(2.dp).background(Outline))
 }
+
+/** How long a newly reached rung keeps its chronicle line lit. */
+private const val ASCENT_FLASH_MILLIS = 1_200L

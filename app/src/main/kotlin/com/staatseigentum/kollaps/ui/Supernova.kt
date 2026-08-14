@@ -157,11 +157,17 @@ fun TierPulse(
         val reach = minOf(size.width, size.height) / 2f
 
         for (ring in 0 until 2) {
-            val life = (time - ring * 0.18f) / (1f - ring * 0.18f)
-            if (life <= 0f || life >= 1f) continue
+            // A hundred and twenty milliseconds of the nine hundred, so the second ring is a wake
+            // behind the first rather than a second event.
+            val offset = ring * (120f / 900f)
+            val raw = (time - offset) / (1f - offset)
+            if (raw <= 0f || raw >= 1f) continue
+            // Stepped, for the same reason the tap's rings are: this expands past a sprite made of
+            // hard blocks, and the one smooth thing in that picture is the one that looks wrong.
+            val life = quantise(raw, PULSE_STEPS)
 
-            val radius = reach * (0.35f + life * 0.75f)
-            val alpha = (1f - life) * 0.8f
+            val radius = reach * (0.55f + life * 0.75f)
+            val alpha = (1f - life) * 0.9f
             val count = (radius / block * 1.4f).toInt().coerceIn(10, 140)
             val side = block * (1.6f - life * 0.8f)
 
@@ -177,6 +183,9 @@ fun TierPulse(
         }
     }
 }
+
+/** Steps the celebration ring expands in. See [quantise]. */
+private const val PULSE_STEPS = 12
 
 /** Snaps to the pixel grid, the same way the sky and the sprites do. */
 private fun DrawScope.drawBlock(x: Float, y: Float, size: Float, color: Color) {

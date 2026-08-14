@@ -648,7 +648,15 @@ internal class FlatNode(private val accent: Color) {
         val brightness: Float
         if (now <= FLAT_END) {
             val k = progress(sequence, here)
-            val e = k * k
+            // Twenty stops between colour and white, and saturation and brightness take them
+            // together — quantising one and not the other would give a colour that is half drained
+            // at a brightness meant for fully drained, which is a shade nothing else on screen has.
+            //
+            // Stepped for the reason everything in this pass is: this is the whole interface
+            // changing colour, and it is the largest smooth transition left in the game. Twenty
+            // steps over the best part of a second is a visible ratchet, which is what an interface
+            // made of hard-edged blocks should do when it burns.
+            val e = quantise(k * k, WASH_STEPS)
             if (e <= 0f) return null
             saturation = 1f - e
             brightness = 1f + e * 2.2f
@@ -657,7 +665,7 @@ internal class FlatNode(private val accent: Color) {
             val k = ((now - RETURN_AT - awayDp * 0.55f) / RETURN_MILLIS).coerceIn(0f, 1f)
             if (k >= 1f) return null
             val left = 1f - k
-            val e = 1f - left * left * left
+            val e = quantise(1f - left * left * left, WASH_STEPS)
             saturation = 1f
             brightness = 1f + (1f - e) * 1.8f
         } else {
@@ -817,3 +825,6 @@ fun BigBangCanvas(sequence: BigBangSequence, modifier: Modifier = Modifier) {
 fun WithBigBang(sequence: BigBangSequence?, content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalBigBang provides sequence, content = content)
 }
+
+/** Steps between full colour and white as the universe is pressed flat. */
+private const val WASH_STEPS = 20
