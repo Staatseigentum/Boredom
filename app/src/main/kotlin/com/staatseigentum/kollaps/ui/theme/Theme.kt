@@ -22,6 +22,16 @@ val Muted = Color(0xFF8E95C4)
 val Positive = Color(0xFF5CE1A6)
 val Outline = Color(0xFF2E3564)
 
+/**
+ * Rungs of the ladder that have not been reached yet.
+ *
+ * The one colour the overhaul added, and it exists because [Muted] could not do this job. Muted is
+ * for text that is *present but secondary* — a caption, a unit, a hint. A rung fifteen steps above
+ * where the player is standing is neither: it has to be legible enough to read as a list and dim
+ * enough that the eye never mistakes it for something available. Between Muted and Outline.
+ */
+val Unreached = Color(0xFF4A5285)
+
 private val KollapsColors = darkColorScheme(
     primary = Nebula,
     onPrimary = Color.White,

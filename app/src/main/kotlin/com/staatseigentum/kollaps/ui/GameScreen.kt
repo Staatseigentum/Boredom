@@ -434,18 +434,24 @@ fun GameScreen(
                     .fillMaxSize()
                     .safeDrawingPadding(),
             ) {
-                val body = @Composable { modifier: Modifier ->
+                val body = @Composable { modifier: Modifier, phone: Boolean ->
                     TapArea(
                         state = shownState,
                         stats = shownStats,
                         actions = actions,
+                        buyAmount = buyAmount,
+                        // On a phone this area carries what the status band above it gave up: the
+                        // running chips along the top, and the one purchase worth not switching
+                        // screens for along the bottom. The wide layout has a HUD for the first
+                        // and a whole column for the second.
+                        phone = phone,
                         // The one thing that does not move: it is what everything else moves
                         // towards, and the sprite in the middle of it is the hole itself — and,
                         // for the big bang, the line the universe is pressed onto.
                         modifier = modifier.collapseCentre().bigBangCentre(),
                     )
                 }
-                val shop = @Composable { modifier: Modifier ->
+                val shop = @Composable { modifier: Modifier, pinned: ShopTab? ->
                     ShopPanel(
                         state = shownState,
                         stats = shownStats,
@@ -456,6 +462,7 @@ fun GameScreen(
                         startSection = startSection,
                         updateSection = updateSection,
                         saveSlots = saveSlots,
+                        pinned = pinned,
                     )
                 }
 
@@ -466,9 +473,9 @@ fun GameScreen(
                     Row(modifier = Modifier.fillMaxSize()) {
                         Column(modifier = Modifier.weight(1f)) {
                             Header(state = shownState, stats = shownStats, compact = false)
-                            body(Modifier.fillMaxWidth().weight(1f))
+                            body(Modifier.fillMaxWidth().weight(1f), false)
                         }
-                        shop(Modifier.fillMaxHeight().weight(1f))
+                        shop(Modifier.fillMaxHeight().weight(1f), null)
                     }
                 } else {
                     /*
@@ -487,26 +494,36 @@ fun GameScreen(
                      * of both, because the mass is the one number you want while doing either.
                      */
                     var view by rememberSaveable { mutableStateOf(PhoneView.BODY.name) }
+                    val available = PhoneView.availableIn(shownState)
                     val current = PhoneView.entries.firstOrNull { it.name == view }
+                        ?.takeIf { it in available }
                         ?: PhoneView.BODY
 
                     // A collapse or a big bang pulls the whole interface into the body, and
-                    // watching that happen from the shop tab would be watching the wrong half.
+                    // watching that happen from another area would be watching the wrong half.
                     LaunchedEffect(collapse.running, bigBang.running) {
                         if (collapse.running || bigBang.running) view = PhoneView.BODY.name
                     }
 
                     Column(modifier = Modifier.fillMaxSize()) {
-                        Header(state = shownState, stats = shownStats, compact = true)
+                        StatusBand(state = shownState, stats = shownStats)
 
                         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                             when (current) {
-                                PhoneView.BODY -> body(Modifier.fillMaxSize())
-                                PhoneView.SHOP -> shop(Modifier.fillMaxSize())
+                                PhoneView.BODY -> body(Modifier.fillMaxSize(), true)
+                                PhoneView.FLEET -> shop(Modifier.fillMaxSize(), ShopTab.COLLECTORS)
+                                PhoneView.ORBITS -> shop(Modifier.fillMaxSize(), ShopTab.ORBITS)
+                                PhoneView.FUSION -> shop(Modifier.fillMaxSize(), ShopTab.FUSION)
+                                PhoneView.COSMOS -> shop(Modifier.fillMaxSize(), ShopTab.COSMOS)
                             }
                         }
 
-                        PhoneNav(current = current, onSelect = { view = it.name })
+                        PhoneNav(
+                            state = shownState,
+                            stats = shownStats,
+                            current = current,
+                            onSelect = { view = it.name },
+                        )
                     }
                 }
             }
@@ -622,58 +639,6 @@ fun GameScreen(
             BigBangCanvas(sequence = bigBang, modifier = Modifier.fillMaxSize())
 
             updateDialog()
-        }
-    }
-}
-
-/**
- * Which half of the game a phone is showing.
- *
- * Two, not seven. A bar with an entry per shop tab would put six pixel labels across 360 dp and
- * make every one of them unreadable; the shop already has a tab strip that knows how to scroll.
- * What was missing was one level above that — a way to put the shop away entirely and have the
- * body to yourself.
- */
-private enum class PhoneView(val label: String) {
-    BODY("Körper"),
-    SHOP("Aufbau"),
-}
-
-/**
- * The switch between them, along the bottom.
- *
- * At the bottom because that is where a thumb rests, and full width because two targets that each
- * take half a phone are two targets nobody misses. The selected one is filled rather than
- * outlined — the same language the shop's own tabs already speak.
- */
-@Composable
-private fun PhoneNav(current: PhoneView, onSelect: (PhoneView) -> Unit) {
-    val sfx = LocalSfx.current
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Outline)
-            .padding(top = 2.dp),
-    ) {
-        PhoneView.entries.forEach { entry ->
-            val selected = entry == current
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .background(if (selected) Nebula else SpaceElevated)
-                    .clickable {
-                        sfx?.click()
-                        onSelect(entry)
-                    }
-                    .padding(vertical = 14.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                PixelLabel(
-                    text = entry.label,
-                    color = if (selected) Starlight else Muted,
-                    size = 13,
-                )
-            }
         }
     }
 }
@@ -929,6 +894,9 @@ private fun TapArea(
     state: GameState,
     stats: Stats,
     actions: GameActions,
+    buyAmount: BuyAmount,
+    /** Whether this is the phone's body screen, which carries two things the wide one does not. */
+    phone: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val tier = stats.tier
@@ -1068,16 +1036,25 @@ private fun TapArea(
             }
         }
 
-        // Along the top, where nothing else is: the header sits above this box, not in it.
-        AchievementToast(
-            earned = state.achievements,
-            // Collected as normal, shown afterwards: a collapse earns two or three of these at
-            // once and a card sliding in over the explosion is the same mistake as a dialog.
-            hold = collapse?.running == true || bigBang?.running == true,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 12.dp),
-        )
+        // Along the top, where nothing else is: the band sits above this box, not in it.
+        Column(
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // What is running, on a phone. Here rather than in the band above because the band has
+            // to stay exactly three lines tall however much is going on at once, and these come and
+            // go — a chip that is absent costs nothing, a row that is empty costs a row.
+            if (phone) {
+                StatusMarks(state = state, stats = stats, size = 9)
+                Spacer(Modifier.height(6.dp))
+            }
+            AchievementToast(
+                earned = state.achievements,
+                // Collected as normal, shown afterwards: a collapse earns two or three of these at
+                // once and a card sliding in over the explosion is the same mistake as a dialog.
+                hold = collapse?.running == true || bigBang?.running == true,
+            )
+        }
 
         // Along the bottom of the body, out of the way of the thumb that is tapping it. Both in
         // one column, because on a phone they would otherwise sit on top of each other in the
@@ -1085,11 +1062,20 @@ private fun TapArea(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 12.dp),
+                .padding(start = 14.dp, end = 14.dp, bottom = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             TutorialHint(state = state, onDismiss = actions::dismissTutorial)
             HeatMeter(heat = state.heat)
+            // Underneath both, so neither ever has to move around it.
+            if (phone) {
+                Spacer(Modifier.height(10.dp))
+                NextBuyRow(
+                    state = state,
+                    buyAmount = buyAmount,
+                    onBuy = actions::buyCollector,
+                )
+            }
         }
 
         // Last, so a comet is never covered by the body it drifts past.

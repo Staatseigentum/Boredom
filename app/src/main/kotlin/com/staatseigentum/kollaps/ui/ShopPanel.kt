@@ -75,16 +75,22 @@ import com.staatseigentum.kollaps.ui.theme.Starlight
  * Naming them lets [ShopPanel] hold on to which tab is open across an unlock instead of quietly
  * sliding the player one panel to the left.
  */
-private enum class ShopTab(val title: String) {
-    COLLECTORS("Kollektoren"),
+enum class ShopTab(val title: String) {
+    COLLECTORS("Flotte"),
     UPGRADES("Upgrades"),
     ORBITS("Bahnen"),
     FUSION("Fusion"),
-    ACHIEVEMENTS("Erfolge"),
     COSMOS("Kosmos"),
 }
 
-/** The tabs worth showing for this state, in strip order. */
+/**
+ * The tabs worth showing for this state, in strip order.
+ *
+ * Five where there were six: the achievements moved into the Kosmos panel as a section of their
+ * own. They are a record of what has been done rather than somewhere to spend anything, which is
+ * what every other Kosmos section is — and it is the tab nobody opened twice in a session, holding
+ * a sixth of a strip that both shells needed to get down to four or five.
+ */
 private fun tabsFor(state: GameState): List<ShopTab> =
     ShopTab.entries.filter {
         when (it) {
@@ -109,6 +115,15 @@ fun ShopPanel(
     updateSection: @Composable () -> Unit = {},
     /** The save slots, handed in for the same reason: the files are the platform's business. */
     saveSlots: @Composable () -> Unit = {},
+    /**
+     * Show one tab and no strip, because something outside has already chosen.
+     *
+     * This is what the phone's bottom bar hands in. Two levels of navigation for one list — a bar
+     * to reach the shop and a strip inside it to reach a tab — is one level too many on a screen
+     * that has room for neither, so on a phone the bar *is* the strip and the panel is told what to
+     * show. The collectors are a special case even then; see [FleetPanel].
+     */
+    pinned: ShopTab? = null,
 ) {
     val tabs = tabsFor(state)
     // Saved by name so that reopening the app, or unlocking fusion mid-session, still lands on
@@ -116,7 +131,7 @@ fun ShopPanel(
     var openTab by rememberSaveable {
         mutableStateOf(tabs.getOrElse(startTab) { ShopTab.COLLECTORS }.name)
     }
-    val tab = ShopTab.entries.firstOrNull { it.name == openTab }
+    val tab = pinned ?: ShopTab.entries.firstOrNull { it.name == openTab }
         ?.takeIf { it in tabs }
         ?: ShopTab.COLLECTORS
 
@@ -132,34 +147,42 @@ fun ShopPanel(
                 .background(Outline),
         )
 
-        // Scrolls rather than sharing the width six ways. Sharing was already tight at four —
-        // "Kollektoren" is eleven characters — and a sixth tab would have cut two labels in half.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                // As one piece: a tab strip whose six tabs each fell in on their own would read as
-                // the interface coming apart before it is pulled, which is the next phase's job.
-                .sog(SogDepth.CONTAINER, Nebula)
-                .urknall(Nebula),
-        ) {
-            tabs.forEach { entry ->
-                PixelTab(
-                    title = entry.title,
-                    selected = tab == entry,
-                    onClick = { openTab = entry.name },
-                )
+        // Scrolls rather than sharing the width. Sharing was already tight at four — and the
+        // strip is not drawn at all when something outside has already chosen the tab.
+        if (pinned == null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    // As one piece: a tab strip whose tabs each fell in on their own would read as
+                    // the interface coming apart before it is pulled, which is the next phase's job.
+                    .sog(SogDepth.CONTAINER, Nebula)
+                    .urknall(Nebula),
+            ) {
+                tabs.forEach { entry ->
+                    PixelTab(
+                        title = entry.title,
+                        selected = tab == entry,
+                        onClick = { openTab = entry.name },
+                    )
+                }
             }
         }
 
         when (tab) {
-            ShopTab.COLLECTORS -> CollectorList(
-                state = state,
-                buyAmount = buyAmount,
-                onBuyAmount = actions::setBuyAmount,
-                onBuy = actions::buyCollector,
-                onCycleRole = actions::cycleRole,
-            )
+            // Pinned, the collectors carry the upgrades with them behind a switch — that is the
+            // one place the phone's bar is not enough on its own.
+            ShopTab.COLLECTORS -> if (pinned == null) {
+                CollectorList(
+                    state = state,
+                    buyAmount = buyAmount,
+                    onBuyAmount = actions::setBuyAmount,
+                    onBuy = actions::buyCollector,
+                    onCycleRole = actions::cycleRole,
+                )
+            } else {
+                FleetPanel(state = state, buyAmount = buyAmount, actions = actions)
+            }
 
             ShopTab.UPGRADES -> UpgradeList(
                 offers = GameEngine.upgradeOffers(state),
@@ -173,8 +196,6 @@ fun ShopPanel(
                 buyAmount = buyAmount,
                 actions = actions,
             )
-
-            ShopTab.ACHIEVEMENTS -> AchievementList(state = state, onPickSkin = actions::setSkin)
 
             ShopTab.COSMOS -> CosmosPanel(
                 state = state,
@@ -213,6 +234,59 @@ private fun PixelTab(
             color = if (selected) Starlight else Muted,
             size = 10,
         )
+    }
+}
+
+/**
+ * The machines and what makes them better, under one heading.
+ *
+ * Only on a phone, where the bottom bar has five places and upgrades would be a sixth. The switch
+ * is two segments rather than two tabs, and they sit flush against each other — a segmented control
+ * says "two halves of one thing", which is exactly the relationship, where two tabs would say "two
+ * places" and put the player back where they started.
+ */
+@Composable
+private fun FleetPanel(state: GameState, buyAmount: BuyAmount, actions: GameActions) {
+    var upgrades by rememberSaveable { mutableStateOf(false) }
+    val sfx = LocalSfx.current
+    val offers = remember(state) { GameEngine.upgradeOffers(state) }
+
+    Column {
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
+            listOf(false to "Flotte", true to "Upgrades ${offers.count { it.affordable }}")
+                .forEach { (isUpgrades, title) ->
+                    val selected = upgrades == isUpgrades
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(if (selected) Nebula else SpaceCard)
+                            .clickable {
+                                sfx?.click()
+                                upgrades = isUpgrades
+                            }
+                            .padding(vertical = 9.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        PixelLabel(
+                            text = title,
+                            color = if (selected) Starlight else Muted,
+                            size = 11,
+                        )
+                    }
+                }
+        }
+
+        if (upgrades) {
+            UpgradeList(offers = offers, onBuy = actions::buyUpgrade)
+        } else {
+            CollectorList(
+                state = state,
+                buyAmount = buyAmount,
+                onBuyAmount = actions::setBuyAmount,
+                onBuy = actions::buyCollector,
+                onCycleRole = actions::cycleRole,
+            )
+        }
     }
 }
 
@@ -606,6 +680,7 @@ private enum class CosmosSection(val title: String) {
     SKY("Himmel"),
     LAB("Labor"),
     RULES("Regeln"),
+    ACHIEVEMENTS("Erfolge"),
     SYSTEM("System"),
 }
 
@@ -613,7 +688,7 @@ private enum class CosmosSection(val title: String) {
 private fun sectionsFor(state: GameState, stats: Stats): List<CosmosSection> =
     CosmosSection.entries.filter {
         when (it) {
-            CosmosSection.COLLAPSE, CosmosSection.SYSTEM -> true
+            CosmosSection.COLLAPSE, CosmosSection.SYSTEM, CosmosSection.ACHIEVEMENTS -> true
             // Only once there is a sky at all. Before the first big bang this would be a tab onto
             // an empty ring, which promises nothing and explains less.
             CosmosSection.SKY -> Multiverse.isUnlocked(state)
@@ -726,6 +801,13 @@ private fun CosmosPanel(
                             )
                         }
                     }
+                }
+
+                // Moved here from a tab of its own. The list already scrolls and already carries
+                // the palette picker, so it needs nothing from a strip position it was only
+                // holding because it had always held it.
+                CosmosSection.ACHIEVEMENTS -> {
+                    item { AchievementList(state = state, onPickSkin = actions::setSkin) }
                 }
 
                 CosmosSection.SYSTEM -> {
