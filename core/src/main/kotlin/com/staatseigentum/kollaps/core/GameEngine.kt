@@ -230,6 +230,7 @@ object GameEngine {
         ticked = automate(ticked)
         ticked = advanceEvents(ticked, seconds)
         ticked = raiseFind(ticked)
+        ticked = dealContracts(ticked)
         ticked = sample(ticked, seconds)
         if (ticked.runningChallengeIds.isNotEmpty()) {
             ticked = ticked.copy(challengeSeconds = ticked.challengeSeconds + seconds)
@@ -679,6 +680,10 @@ object GameEngine {
                 // and giving it up is the price of the answer that pays best while it lasts.
                 findsAnswered = state.findsAnswered,
                 findFragments = state.findFragments,
+                // The table survives both resets, because half of what it asks for is a reset.
+                contracts = state.contracts,
+                contractsDone = state.contractsDone,
+                contractMark = state.contractMark,
                 prestigeUpgrades = state.prestigeUpgrades,
                 investments = state.investments,
                 achievements = state.achievements,
@@ -760,6 +765,10 @@ object GameEngine {
                 // and giving it up is the price of the answer that pays best while it lasts.
                 findsAnswered = state.findsAnswered,
                 findFragments = state.findFragments,
+                // The table survives both resets, because half of what it asks for is a reset.
+                contracts = state.contracts,
+                contractsDone = state.contractsDone,
+                contractMark = state.contractMark,
                 lastRunSeconds = state.lastRunSeconds,
                 lastRunMass = state.lastRunMass,
                 bestRunSeconds = state.bestRunSeconds,
@@ -823,6 +832,54 @@ object GameEngine {
         spent[alloy.second.id] = (spent[alloy.second.id] ?: 0.0) - alloy.cost
 
         return award(state.copy(heavy = spent, alloys = state.alloys + alloy.id))
+    }
+
+    /**
+     * Keeps three contracts on the table.
+     *
+     * Dealt on the tick rather than when the tab is opened, so a player who has never looked still
+     * has three waiting — and so the mark that several of them count against is set at a moment
+     * the rules chose rather than one the interface did.
+     */
+    private fun dealContracts(state: GameState): GameState {
+        if (!Contract.isUnlocked(state)) return state
+        val wanted = Contract.refilled(state)
+        if (wanted == state.contracts) return state
+        return state.copy(
+            contracts = wanted,
+            // Only when the table was empty. Re-marking on every refill would reset the progress
+            // of the two contracts that stayed on it.
+            contractMark = if (state.contracts.isEmpty()) markFor(state) else state.contractMark,
+        )
+    }
+
+    /** The counters a freshly dealt table measures "more of" against. */
+    private fun markFor(state: GameState): Int =
+        maxOf(state.collapses, state.findsAnswered, state.challengesDone.size, state.research.size)
+
+    /**
+     * Hands a finished contract in.
+     *
+     * The mark moves with it, so the next contract dealt asks for more from here rather than
+     * counting the same progress twice.
+     */
+    fun claimContract(state: GameState, contractId: String): GameState {
+        val contract = Contract.byId(contractId) ?: return state
+        if (contractId !in state.contracts) return state
+        if (!contract.isMetBy(state)) return state
+
+        return award(
+            state.copy(
+                aeons = state.aeons + contract.reward,
+                // `filterNot` and not `- contractId`: Kotlin's list minus removes the *first*
+                // occurrence only, so a table that somehow held a duplicate would keep one of
+                // them — and it would be a contract that is already met, paying out again on the
+                // next press.
+                contracts = state.contracts.filterNot { it == contractId },
+                contractsDone = state.contractsDone + 1,
+                contractMark = markFor(state),
+            ),
+        )
     }
 
     /** Welds two galaxies into one, freeing a slot. See [Multiverse.merge]. */
@@ -1139,6 +1196,10 @@ object GameEngine {
         // and giving it up is the price of the answer that pays best while it lasts.
         findsAnswered = state.findsAnswered,
         findFragments = state.findFragments,
+        // The table survives both resets, because half of what it asks for is a reset.
+        contracts = state.contracts,
+        contractsDone = state.contractsDone,
+        contractMark = state.contractMark,
         lastRunSeconds = state.lastRunSeconds,
         lastRunMass = state.lastRunMass,
         bestRunSeconds = state.bestRunSeconds,

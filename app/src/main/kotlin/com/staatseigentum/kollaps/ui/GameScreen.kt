@@ -142,6 +142,9 @@ interface GameActions {
     /** Answers the catalogue find on the table. See [com.staatseigentum.kollaps.core.FindAnswer]. */
     fun answerFind(answerId: String)
 
+    /** Hands a finished contract in. See [com.staatseigentum.kollaps.core.Contract]. */
+    fun claimContract(id: String)
+
     /** Buys one node of the running universe's path tree. */
     fun buyPathNode(id: String)
 

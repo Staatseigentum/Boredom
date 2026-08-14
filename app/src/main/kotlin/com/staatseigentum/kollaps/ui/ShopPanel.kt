@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.staatseigentum.kollaps.core.Automation
 import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.Collector
+import com.staatseigentum.kollaps.core.Contract
 import com.staatseigentum.kollaps.core.CollectorOffer
 import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.GameEngine
@@ -605,7 +606,8 @@ private fun sectionsFor(state: GameState, stats: Stats): List<CosmosSection> =
             CosmosSection.SKY -> Multiverse.isUnlocked(state)
             CosmosSection.LAB -> ResearchTree.isUnlocked(state)
             CosmosSection.RULES ->
-                Automation.isUnlocked(state) || state.collapses > 0 || stats.challenge != null
+                Automation.isUnlocked(state) || state.collapses > 0 || stats.challenge != null ||
+                    Contract.isUnlocked(state)
         }
     }
 
@@ -692,6 +694,11 @@ private fun CosmosPanel(
                 CosmosSection.LAB -> item { ResearchPanel(state = state, actions = actions) }
 
                 CosmosSection.RULES -> {
+                    // First on the page: it is the only thing here that answers "what now", and
+                    // everything below it answers "how".
+                    if (Contract.isUnlocked(state)) {
+                        item { ContractPanel(state = state, actions = actions) }
+                    }
                     if (Automation.isUnlocked(state)) {
                         item { AutomationPanel(state = state, actions = actions) }
                     }

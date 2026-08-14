@@ -204,6 +204,22 @@ data class GameState(
      */
     val universes: List<ParkedUniverse> = emptyList(),
 
+    /** Ids of the contracts currently on the table. See [Contract]. */
+    val contracts: List<String> = emptyList(),
+
+    /** How many contracts have been handed in. Decides which are dealt next. */
+    val contractsDone: Int = 0,
+
+    /**
+     * Where the counters stood when the table was last dealt.
+     *
+     * Several contracts ask for *more* of something rather than a total — five further collapses,
+     * three further finds — and without a mark a save that already has forty collapses would
+     * finish those the moment they were dealt. One shared mark rather than one per contract,
+     * because the table is dealt as a table.
+     */
+    val contractMark: Int = 0,
+
     /** Id of the catalogue find waiting to be answered, if any. See [CatalogueFind]. */
     val pendingFind: String? = null,
 

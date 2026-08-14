@@ -77,6 +77,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun mergeGalaxies(keepSlot: Int, absorbSlot: Int) =
                 model.mergeGalaxies(keepSlot, absorbSlot)
             override fun answerFind(answerId: String) = model.answerFind(answerId)
+            override fun claimContract(id: String) = model.claimContract(id)
             override fun buyPathNode(id: String) = model.buyPathNode(id)
             override fun startChallenges(ids: Set<String>) = model.startChallenges(ids)
             override fun abortChallenge() = model.abortChallenge()

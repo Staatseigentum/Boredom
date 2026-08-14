@@ -197,6 +197,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.answerFind(state, answerId)
     }
 
+    override fun claimContract(id: String) {
+        state = GameEngine.claimContract(state, id)
+    }
+
     override fun buyPathNode(id: String) {
         state = GameEngine.buyPathNode(state, id)
     }
