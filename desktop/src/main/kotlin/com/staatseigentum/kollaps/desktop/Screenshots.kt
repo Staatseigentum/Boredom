@@ -27,9 +27,10 @@ fun main(args: Array<String>) {
     val height = 891
     val density = Density(2.75f)
 
-    // The sheet loads on a background coroutine, and a still frame will not wait for it. Warming
-    // the cache first means the first composition already has the sprite in hand.
-    for (tier in Tiers.all) runBlocking { SpriteCache.sheet(tier, DesktopSprites) }
+    // Building a body is synchronous now, so this is no longer load-bearing for the first frame —
+    // but it still keeps the cost out of the composition being measured, and it is the one place
+    // that proves every rung on the ladder can actually be built.
+    for (tier in Tiers.all) SpriteCache.sprite(tier)
 
     fun shoot(
         name: String,

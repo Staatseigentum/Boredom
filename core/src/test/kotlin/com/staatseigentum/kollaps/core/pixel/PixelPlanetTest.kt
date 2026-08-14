@@ -2,6 +2,7 @@ package com.staatseigentum.kollaps.core.pixel
 
 import com.staatseigentum.kollaps.core.BodyKind
 import com.staatseigentum.kollaps.core.Tiers
+import kotlin.math.floor
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -45,10 +46,14 @@ class PixelPlanetTest {
 
     @Test
     fun `a body uses a small palette rather than a gradient`() {
-        // The whole point of the pixel look: a handful of colours, not thousands.
+        // The whole point of the pixel look: a handful of colours, not thousands. The ceiling is
+        // the palette itself and not a taste — three materials at ten shading steps, plus the halo,
+        // the bloom and three ring colours. Anything above that would mean a shade came from
+        // somewhere other than the ramps, which is exactly what this is here to catch.
+        val ceiling = 3 * 10 + 5
         for (tier in Tiers.all) {
             val colours = PixelPlanet.frame(tier, 0).filter { it ushr 24 != 0 }.toSet()
-            assertTrue(colours.size in 2..24, "${tier.name} nutzt ${colours.size} Farben")
+            assertTrue(colours.size in 2..ceiling, "${tier.name} nutzt ${colours.size} Farben")
         }
     }
 
@@ -162,18 +167,28 @@ class PixelPlanetTest {
     }
 
     @Test
-    fun `resolution follows the tier so every body scales up by the same whole number`() {
-        // Sprites are blown up by a whole-number factor. If one resolution served every tier,
-        // the small bodies would land on factor one and lose their pixel blocks entirely. The
-        // buffer grows with the body instead, which has to keep the factor equal across the
-        // ladder — that shared factor is what makes the pixels one size in the whole game.
+    fun `resolution follows the tier so every body is drawn at the same scale`() {
+        // If one resolution served every tier, the small bodies would be blown up further than the
+        // large ones and a pixel block would be a different size on every rung. The buffer grows
+        // with the body instead, which has to leave the *ratio* equal across the ladder — that
+        // shared ratio is what makes a pixel one size in the whole game.
+        //
+        // Eighths rather than whole numbers, which is what `CelestialBody` draws with and is the
+        // point at which this test had to be rewritten: at the doubled resolution the whole-number
+        // factor is one for every rung, so it stayed uniform while quietly shrinking every body by
+        // a third. Uniformity alone was not saying enough.
         val box = 894f // a 411dp phone, short side of the tap area
-        val factors = Tiers.all.map { tier ->
+        val scales = Tiers.all.map { tier ->
             val available = box * PixelPlanet.spriteFraction(tier)
-            (available / PixelPlanet.size(tier)).toInt().coerceAtLeast(1)
+            floor(available / PixelPlanet.size(tier) * 8f) / 8f
         }.toSet()
-        assertEquals(1, factors.size, "Uneinheitliche Pixelgröße: Faktoren $factors")
-        assertTrue(factors.first() >= 2, "Faktor ${factors.first()}x — die Pixelblöcke wären unsichtbar")
+        assertEquals(1, scales.size, "Uneinheitliche Pixelgröße: Faktoren $scales")
+
+        // And the body still fills the area it is given. Under 1.0 the sprite would be sampled
+        // down — more buffer than screen, which throws away exactly the detail it was raised for.
+        assertTrue(scales.first() >= 1f, "Faktor ${scales.first()}x — der Sprite wird verkleinert")
+        val filled = PixelPlanet.size(Tiers.last) * scales.first() / box
+        assertTrue(filled > 0.9f, "Der Körper füllt nur ${(filled * 100).toInt()} % seiner Fläche")
     }
 
     @Test
@@ -190,24 +205,30 @@ class PixelPlanetTest {
     @Test
     fun `the white dwarf has no jets, and the neutron star does`() {
         // The jets are the whole reason these are two kinds. A pulsar throws light far out along
-        // one axis; a white dwarf is a hot sphere and nothing more. Sampling a band just outside
-        // the body separates them: the pulsar paints there on some frame, the dwarf never does.
-        fun paintsFarOut(name: String): Boolean {
+        // one axis and nothing at all across it; a white dwarf is a hot sphere with a halo, which
+        // is the same in every direction.
+        //
+        // So the test is *lopsidedness*, not reach. It used to be reach — "does anything paint far
+        // out" — and that stopped separating them the moment the halo grew a bloom shell: the
+        // dwarf's halo now reaches the sample ring too. It reaches it evenly, which is the whole
+        // difference and is what this asks about instead.
+        fun lopsidedOnSomeFrame(name: String): Boolean {
             val tier = Tiers.byName(name)
             val side = PixelPlanet.size(tier)
             val centre = side / 2
             val far = (side * 0.06f).toInt()
             return (0 until PixelPlanet.FRAMES).any { index ->
                 val frame = PixelPlanet.frame(tier, index)
-                frame.alphaAt(side, far, centre) > 0 ||
-                    frame.alphaAt(side, side - 1 - far, centre) > 0 ||
-                    frame.alphaAt(side, centre, far) > 0 ||
+                val horizontal = frame.alphaAt(side, far, centre) > 0 ||
+                    frame.alphaAt(side, side - 1 - far, centre) > 0
+                val vertical = frame.alphaAt(side, centre, far) > 0 ||
                     frame.alphaAt(side, centre, side - 1 - far) > 0
+                horizontal != vertical
             }
         }
 
-        assertTrue(paintsFarOut("Neutronenstern"), "Der Neutronenstern hat keine Jets mehr")
-        assertTrue(!paintsFarOut("Weißer Zwerg"), "Der Weiße Zwerg hat immer noch Jets")
+        assertTrue(lopsidedOnSomeFrame("Neutronenstern"), "Der Neutronenstern hat keine Jets mehr")
+        assertTrue(!lopsidedOnSomeFrame("Weißer Zwerg"), "Der Weiße Zwerg hat immer noch Jets")
     }
 
     @Test
@@ -222,6 +243,65 @@ class PixelPlanetTest {
         val centre = side / 2
         val opaque = (0 until side).count { frame.alphaAt(side, it, centre) > 0 }
         assertTrue(opaque > side / 2, "Der Weiße Zwerg ist nur $opaque von $side Pixeln breit")
+    }
+
+    // ------------------------------------------------------------------ the HD pass
+
+    @Test
+    fun `a ringed planet has a gap in its ring`() {
+        // The Cassini division. Walking outwards along the ring, painted texels have to stop and
+        // start again — one solid band with a dithered stripe in it would not do that.
+        val ringed = Tiers.all.first { it.hasRing }
+        val side = PixelPlanet.size(ringed)
+        val frame = PixelPlanet.frame(ringed, 0)
+        val centre = side / 2
+
+        // Left of the body along the middle row, from the outer edge inwards to the disc.
+        val row = (centre until side).map { frame.alphaAt(side, it, centre) > 0 }
+        val runs = row.zipWithNext().count { (a, b) -> a != b }
+        assertTrue(runs >= 4, "Der Ring hat keine Lücke: nur $runs Wechsel entlang der Zeile")
+    }
+
+    @Test
+    fun `the halo fades out through a second, weaker shell`() {
+        // The bloom. Without it the halo ends on one alpha and therefore on a visible circle.
+        val star = Tiers.all.first { it.kind == BodyKind.STAR }
+        val side = PixelPlanet.size(star)
+        val alphas = PixelPlanet.frame(star, 0).map { it ushr 24 }.filter { it in 1..0xFE }.toSet()
+        assertTrue(
+            alphas.size >= 2,
+            "Der Halo hat nur ${alphas.size} Transparenzstufe(n) auf $side Pixeln: $alphas",
+        )
+    }
+
+    @Test
+    fun `shading is quantised into ten steps, not six`() {
+        // Counted off a body with one material doing most of the work, so the number that comes
+        // back is the ramp rather than the composition. Ten distinct shades have to be reachable.
+        val rock = Tiers.first
+        val opaque = PixelPlanet.frame(rock, 0).filter { it ushr 24 == 0xFF }.toSet()
+        assertTrue(opaque.size >= 10, "Nur ${opaque.size} Farbstufen — die Rampe ist zu kurz")
+    }
+
+    @Test
+    fun `a gas giant's equator turns faster than its poles`() {
+        // Differential rotation. Between two frames the middle of the body has to move further
+        // than the top of it — measured as how much of each band actually changed.
+        val giant = Tiers.all.first { it.kind == BodyKind.GAS }
+        val side = PixelPlanet.size(giant)
+        val first = PixelPlanet.frame(giant, 0)
+        val later = PixelPlanet.frame(giant, 1)
+
+        fun changedInRow(y: Int): Int =
+            (0 until side).count { first.at(side, it, y) != later.at(side, it, y) }
+
+        // A quarter of the way down is well inside the body; the middle is the equator.
+        val equator = changedInRow(side / 2)
+        val temperate = changedInRow(side * 5 / 16)
+        assertTrue(
+            equator > temperate,
+            "Äquator ($equator) bewegt sich nicht mehr als die Breiten darüber ($temperate)",
+        )
     }
 
     @Test

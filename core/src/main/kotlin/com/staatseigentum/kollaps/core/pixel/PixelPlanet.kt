@@ -24,11 +24,23 @@ import kotlin.random.Random
  */
 object PixelPlanet {
 
-    /** Edge length of the largest sprite, in sprite pixels. */
-    const val BASE_SIZE = 288
+    /**
+     * Edge length of the largest sprite, in sprite pixels.
+     *
+     * Doubled for the HD pass. The bodies are drawn at the same size on screen — what changes is
+     * that each of them is made of four times as many sprite pixels, so a crater is a crater
+     * rather than three dots. See [Sprite] for what that costs and how it is paid for.
+     */
+    const val BASE_SIZE = 576
 
-    /** Rotation frames per body. */
-    const val FRAMES = 24
+    /**
+     * Rotation frames per body.
+     *
+     * Doubled with the resolution, because at 288 the step between frames was already visible on
+     * the fast bodies. Forty-eight frames of a 424 pixel sprite is thirty-four megabytes if they
+     * are all kept, which is why they are not — [Sprite] renders the one that is on screen.
+     */
+    const val FRAMES = 48
 
     /**
      * Edge length of this tier's sprite, in sprite pixels.
@@ -43,17 +55,54 @@ object PixelPlanet {
         ((BASE_SIZE * spriteFraction(tier) / GRID).roundToInt() * GRID).coerceAtLeast(MIN_SIZE)
 
     /**
+     * One body, ready to be turned: its palette and its surface, built once.
+     *
+     * This exists because of arithmetic. A sheet of every frame used to be rendered up front, and
+     * at 288 pixels and 24 frames that was a couple of megabytes — fine. At 576 and 48 it is
+     * thirty-four megabytes for Saturn and sixty-four for the hypergiant, which is not something to
+     * hold on a phone, let alone two of at once.
+     *
+     * So the frames are not kept. What is kept is everything that is *expensive and shared*: the
+     * palette, and above all the [Texture], whose craters and cloud bands are the slow part and are
+     * identical for every frame of a body. With those in hand a frame is one pass over the pixels,
+     * and only the frame actually on screen is ever computed — at a six second turn and 48 frames
+     * that is eight of them a second.
+     *
+     * Not thread-confined: [render] only reads the palette and the texture, so two callers drawing
+     * the same body into their own buffers do not interfere.
+     */
+    class Sprite private constructor(
+        /** Edge length of the frames this renders, in sprite pixels. */
+        val side: Int,
+        private val tier: CelestialTier,
+        private val palette: Palette,
+        private val texture: Texture,
+    ) {
+        /** Draws frame [index] of the turn into [out], which must hold [side] × [side] pixels. */
+        fun render(index: Int, out: IntArray) {
+            val phase = ((index % FRAMES) + FRAMES) % FRAMES / FRAMES.toFloat()
+            renderFrame(tier, side, palette, texture, phase, out)
+        }
+
+        /** A buffer of the right size for [render], for a caller that wants to keep one around. */
+        fun buffer(): IntArray = IntArray(side * side)
+
+        companion object {
+            fun of(tier: CelestialTier, skin: Skin = Skins.ORIGINAL, side: Int = size(tier)): Sprite =
+                Sprite(side, tier, Palette.of(tier, skin), Texture.of(tier, side))
+        }
+    }
+
+    /**
      * Renders the full sprite sheet for a tier as raw ARGB buffers, each [size] by [size].
-     * Costs tens of milliseconds, so it belongs on a background thread.
+     *
+     * Kept for the tests and the launcher icon, which want every frame at once and are not running
+     * on a phone. Nothing on the drawing path calls this any more — see [Sprite].
      */
     fun frames(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): List<IntArray> {
-        val side = size(tier)
-        val palette = Palette.of(tier, skin)
-        val texture = Texture.of(tier, side)
+        val sprite = Sprite.of(tier, skin)
         return List(FRAMES) { frame ->
-            val pixels = IntArray(side * side)
-            renderFrame(tier, side, palette, texture, frame.toFloat() / FRAMES, pixels)
-            pixels
+            sprite.buffer().also { sprite.render(frame, it) }
         }
     }
 
@@ -71,10 +120,8 @@ object PixelPlanet {
         size: Int,
         skin: Skin = Skins.ORIGINAL,
     ): IntArray {
-        val pixels = IntArray(size * size)
-        val phase = index.toFloat() / FRAMES
-        renderFrame(tier, size, Palette.of(tier, skin), Texture.of(tier, size), phase, pixels)
-        return pixels
+        val sprite = Sprite.of(tier, skin, size)
+        return sprite.buffer().also { sprite.render(index, it) }
     }
 
     /**
@@ -125,15 +172,20 @@ object PixelPlanet {
     ) {
         val centre = size / 2f
         val bodyRadius = size / 2f * BODY_FRACTION
-        val glowRadius = bodyRadius * when (tier.kind) {
-            BodyKind.STAR -> 1.5f
-            // Tight and fierce rather than broad: the light comes off a body the size of a
-            // planet, so it does not spill the way a giant's corona does.
-            BodyKind.REMNANT -> 1.34f
-            else -> 1.18f
-        }
+        val glowRadius = bodyRadius * (
+            when (tier.kind) {
+                BodyKind.STAR -> 1.5f
+                // Tight and fierce rather than broad: the light comes off a body the size of a
+                // planet, so it does not spill the way a giant's corona does.
+                BodyKind.REMNANT -> 1.34f
+                else -> 1.18f
+            } + BLOOM_REACH
+            )
         val emissive = tier.kind == BodyKind.STAR || tier.kind == BodyKind.REMNANT
         val spin = phase * TWO_PI
+        // Gas giants turn faster at the equator than at the poles, which is why their bands shear
+        // apart instead of travelling as one rigid shell. Only they: a rock does not do this.
+        val shear = if (tier.kind == BodyKind.GAS) GAS_SHEAR else 0f
 
         for (y in 0 until size) {
             for (x in 0 until size) {
@@ -145,7 +197,9 @@ object PixelPlanet {
                 if (tier.hasRing && ny < 0f) colour = ringColour(nx, ny, distance, palette, x, y)
 
                 if (distance <= 1f) {
-                    colour = spherePixel(nx, ny, distance, spin, palette, texture, emissive, x, y)
+                    colour = spherePixel(
+                        nx, ny, distance, spin, shear, palette, texture, emissive, x, y,
+                    )
                 } else if (colour == 0) {
                     colour = glowPixel(distance, bodyRadius, glowRadius, palette, x, y)
                 }
@@ -165,6 +219,7 @@ object PixelPlanet {
         ny: Float,
         distance: Float,
         spin: Float,
+        shear: Float,
         palette: Palette,
         texture: Texture,
         emissive: Boolean,
@@ -175,7 +230,10 @@ object PixelPlanet {
 
         // Surface coordinates, so the texture turns with the body instead of sliding over it.
         val latitude = asin(ny.coerceIn(-1f, 1f))
-        val longitude = atan2(nx, nz) + spin
+        // The `- shear * 0.5` is not decoration: without it the whole planet would turn faster than
+        // `spinMillis` says, because every latitude would be sped up and none slowed down. This
+        // keeps the mean turn where it was and only spreads the rates around it.
+        val longitude = atan2(nx, nz) + spin * (1f + shear * cos(latitude) - shear * 0.5f)
         val texel = texture.texelAt(latitude, longitude)
         val material = texture.materialAt(texel)
         val tone = texture.toneAt(texel)
@@ -189,6 +247,10 @@ object PixelPlanet {
         }
         // Rim light, the classic trick that makes a pixel sphere read as round.
         if (distance > 0.88f) light += 0.25f * (distance - 0.88f) / 0.12f
+        // And a hard bright edge in the outermost three per cent, which is what separates a lit
+        // ball from the background at this resolution. Not for the emissive bodies: a star is
+        // already brightest at its limb and this would only clip it flat.
+        if (!emissive && distance > 0.965f) light += 0.35f * (distance - 0.965f) / 0.035f
 
         return palette.shade(material, light, x, y)
     }
@@ -204,8 +266,15 @@ object PixelPlanet {
         val reach = glowRadius / bodyRadius
         if (distance >= reach) return 0
         val strength = 1f - (distance - 1f) / (reach - 1f)
-        // Dithered instead of smoothly faded, so the halo stays made of pixels.
-        return if (strength > bayer(x, y)) palette.glow else 0
+        // Dithered instead of smoothly faded, so the halo stays made of pixels. Two thresholds
+        // rather than one: the second, weaker shell is the bloom, and it is what keeps the halo
+        // from ending on a visible circle.
+        val threshold = bayer(x, y)
+        return when {
+            strength > threshold -> palette.glow
+            strength > threshold * 0.55f -> palette.bloom
+            else -> 0
+        }
     }
 
     private fun ringColour(
@@ -223,9 +292,15 @@ object PixelPlanet {
         // Hide the part that passes behind the body.
         if (distance <= 1f && ny < 0f) return 0
 
-        val band = ((ring - RING_INNER) / (1f - RING_INNER) * 3f).toInt().coerceIn(0, 2)
-        if (band == 1 && bayer(x, y) > 0.55f) return 0
-        return palette.ring[band]
+        // Five bands rather than three, which is what buys the ring its structure: a real gap and
+        // a frayed outer ringlet instead of one dithered stripe through the middle.
+        val bands = 5
+        val band = ((ring - RING_INNER) / (1f - RING_INNER) * bands).toInt().coerceIn(0, bands - 1)
+        // The Cassini division: empty, not dithered. It is a gap, and a gap you can see half of
+        // is a haze.
+        if (band == 2) return 0
+        if (band == 3 && bayer(x, y) > 0.62f) return 0
+        return palette.ring[if (band == 0) 0 else if (band == 1) 1 else 2]
     }
 
     private fun renderNeutronStar(size: Int, palette: Palette, phase: Float, out: IntArray) {
@@ -254,6 +329,16 @@ object PixelPlanet {
                     if (fade > bayer(x, y) * 0.55f) {
                         colour = if (across < width * 0.5f) palette.ring[0] else palette.ring[1]
                     }
+                }
+
+                // Field lines: faint shells standing off the core, sweeping with the star. Only
+                // where nothing has been drawn yet, so they pass behind the jets rather than
+                // through them.
+                val shell = distance / (core * 6f)
+                if (colour == 0 && shell < 1f &&
+                    abs(sin(shell * 9f - phase * TWO_PI)) > 0.93f && bayer(x, y) < 0.5f
+                ) {
+                    colour = palette.bloom
                 }
 
                 // A tight halo, so the star reads as brutally bright rather than fuzzy.
@@ -291,7 +376,11 @@ object PixelPlanet {
                     // Brightest at the inner edge, with a hot spot travelling around the ring.
                     val inner = 1f - (ring - DISK_INNER) / (1f - DISK_INNER)
                     val travel = 0.5f + 0.5f * sin(atan2(ringY, ringX) - spin)
-                    val heat = inner * 0.6f + travel * 0.4f
+                    // Doppler beaming: the side of the disc coming towards us is brighter, and
+                    // stays brighter — it is not a hot spot going round, it is which way the
+                    // material is moving. Real black holes are lopsided for exactly this reason.
+                    val beam = DOPPLER_BEAM * if (dx > 0f) 1f else -1f
+                    val heat = inner * 0.6f + travel * 0.4f + beam
                     val step = (heat * 2f + bayer(x, y) - 0.5f).roundToInt().coerceIn(0, 2)
                     palette.ring[2 - step]
                 } else {
@@ -345,6 +434,8 @@ object PixelPlanet {
     private class Palette(
         val ramps: Array<IntArray>,
         val glow: Int,
+        /** The halo's outer, weaker shell. See [glowPixel]. */
+        val bloom: Int,
         val ring: IntArray,
     ) {
         fun shade(material: Int, light: Float, x: Int, y: Int): Int {
@@ -394,21 +485,24 @@ object PixelPlanet {
                 return Palette(
                     ramps = Array(materials.size) { rampOf(materials[it], glow) },
                     glow = withAlpha(mix(glow, SHADOW, 0.35f), 0xB0),
+                    bloom = withAlpha(mix(glow, SHADOW, 0.62f), 0x70),
                     ring = ring,
                 )
             }
 
             /**
-             * Dark to light, shadows tinted cool and highlights pulled towards the glow. One
-             * more step than the sprites used to have: at this resolution the bands between
-             * shading levels are wide enough to be read as bands rather than as shape.
+             * Dark to light, shadows tinted cool and highlights pulled towards the glow.
+             *
+             * Computed rather than listed, and that is what makes ten steps possible at all. The
+             * span is the one the six hand-picked steps used to cover — from -0.62 in shadow to
+             * +0.48 towards the glow — so nothing about the look changes except how finely it is
+             * divided. A written-out table would have to be re-picked by hand every time [LEVELS]
+             * moved, and the six values in it were themselves evenly spread; there was nothing in
+             * them worth preserving that the arithmetic does not say better.
              */
-            private fun rampOf(base: Int, glow: Int): IntArray {
-                val steps = floatArrayOf(-0.62f, -0.42f, -0.20f, 0f, 0.24f, 0.48f)
-                return IntArray(LEVELS) { index ->
-                    val amount = steps[index]
-                    if (amount < 0f) mix(base, SHADOW, -amount) else mix(base, glow, amount)
-                }
+            private fun rampOf(base: Int, glow: Int): IntArray = IntArray(LEVELS) { index ->
+                val amount = RAMP_FLOOR + (RAMP_SPAN / (LEVELS - 1)) * index
+                if (amount < 0f) mix(base, SHADOW, -amount) else mix(base, glow, amount)
             }
         }
     }
@@ -450,7 +544,10 @@ object PixelPlanet {
             fun of(tier: CelestialTier, spriteSize: Int): Texture {
                 val width = ((spriteSize * TEXELS_PER_PIXEL).roundToInt() / 2) * 2
                 val height = width / 2
-                val detail = height / REFERENCE_HEIGHT
+                // One factor above what the map alone would give, and every feature count below is
+                // measured in it — so raising this here is what makes the whole surface finer,
+                // rather than each kind of body needing its own tuning.
+                val detail = (height / REFERENCE_HEIGHT) * DETAIL_GAIN
                 val materials = ByteArray(width * height)
                 val tones = FloatArray(width * height)
                 val random = Random(tier.index * 6_151L + 17L)
@@ -488,7 +585,7 @@ object PixelPlanet {
                 }
                 // The small ones are what the extra resolution buys: pitting between the large
                 // craters that simply had nowhere to live on a coarse map.
-                repeat((26 * detail).roundToInt()) {
+                repeat((42 * detail).roundToInt()) {
                     crater(map, random, 1.2f * detail + random.nextFloat() * detail)
                 }
             }
@@ -531,7 +628,7 @@ object PixelPlanet {
                     }
                 }
                 // A handful of islands, enough to break up the open ocean without speckling it.
-                repeat((4 * detail).roundToInt()) {
+                repeat((9 * detail).roundToInt()) {
                     landmass(
                         map,
                         random,
@@ -541,11 +638,16 @@ object PixelPlanet {
                     )
                 }
 
-                // Ice caps.
+                // Ice caps, with a ragged edge rather than a drawn line. The transition band is
+                // painted at random instead of solidly, so the cap ends in flecks of ice the way
+                // a snow line does — a cap that stops on an exact latitude reads as a hat.
                 for (y in 0 until map.height) {
                     val polar = abs(y - (map.height - 1) / 2f) / (map.height / 2f)
                     if (polar < 0.82f) continue
-                    for (x in 0 until map.width) map.paint(x, y, 2, 0.8f)
+                    for (x in 0 until map.width) {
+                        if (polar < 0.86f && random.nextFloat() < 0.45f) continue
+                        map.paint(x, y, 2, 0.8f)
+                    }
                 }
             }
 
@@ -589,7 +691,7 @@ object PixelPlanet {
                 // The one big storm every gas giant deserves — an oval, stretched with the bands.
                 storm(map, random, 7f * detail, 3f * detail, 2, 0.72f)
                 // Smaller eddies trailing in the same latitudes.
-                repeat((5 * detail).roundToInt()) {
+                repeat((11 * detail).roundToInt()) {
                     storm(map, random, 1.5f * detail, 0.8f * detail, 2, 0.66f)
                 }
             }
@@ -698,8 +800,33 @@ object PixelPlanet {
      */
     private fun bayer(x: Int, y: Int): Float = BAYER[(y and 7) * 8 + (x and 7)] * (1f / 64f)
 
-    private const val LEVELS = 6
+    /**
+     * Shading steps per material.
+     *
+     * Ten rather than six. The bands between steps are half as wide, which is what stops a body
+     * this size from reading as a set of contour lines — and [DITHER_STRENGTH] deliberately does
+     * *not* rise with it: narrower bands need less dithering to hide, not more.
+     */
+    private const val LEVELS = 10
     private const val DITHER_STRENGTH = 0.9f
+
+    /** Darkest step of a ramp, as a pull towards [SHADOW]. */
+    private const val RAMP_FLOOR = -0.62f
+
+    /** And how far it travels from there, ending as a pull towards the body's glow. */
+    private const val RAMP_SPAN = 1.10f
+
+    /** How much finer every surface feature is than the map alone would make it. */
+    private const val DETAIL_GAIN = 1.6f
+
+    /** How much faster a gas giant's equator turns than its mean. See [spherePixel]. */
+    private const val GAS_SHEAR = 0.22f
+
+    /** How far past the halo the bloom shell reaches, as a fraction of the body's radius. */
+    private const val BLOOM_REACH = 0.22f
+
+    /** How lopsided the accretion disc is, from the material's own motion. */
+    private const val DOPPLER_BEAM = 0.22f
     /** Sprite sizes snap to this grid so a scaled sprite never lands on a half pixel. */
     private const val GRID = 8
     private const val MIN_SIZE = 64

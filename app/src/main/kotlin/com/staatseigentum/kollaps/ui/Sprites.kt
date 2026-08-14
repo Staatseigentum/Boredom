@@ -6,26 +6,41 @@ import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.pixel.PixelPlanet
 import com.staatseigentum.kollaps.core.pixel.Skin
 import com.staatseigentum.kollaps.core.pixel.Skins
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 /**
- * A rendered sprite sheet together with the edge length its frames were rendered at.
- *
- * The two travel together on purpose. Sprite size varies per tier, so a sheet and a separately
- * derived edge length can disagree — and when they did, the draw took a crop of the wrong size
- * out of the previous tier's sheet and showed a piece of the wrong body.
- */
-class SpriteSheet(val side: Int, val frames: List<ImageBitmap>)
-
-/**
- * Turning raw pixels into a bitmap is the one step in the whole renderer that each platform does
- * its own way, so it is the only thing the interface has to be handed from outside.
+ * Turning raw sprite pixels into a bitmap is the one step in the whole renderer that each platform
+ * does its own way, so it is the only thing the interface has to be handed from outside.
  */
 fun interface SpriteFactory {
     fun bitmap(pixels: IntArray, side: Int): ImageBitmap
+
+    /**
+     * A target that can be written to over and over, for a body that is being turned.
+     *
+     * The default allocates a fresh bitmap per write, which is correct everywhere and is what the
+     * desktop uses — it has the memory and the churn does not show. A platform where it does show
+     * overrides this with something that writes into pixels it already owns; see the Android one.
+     */
+    fun surface(side: Int): SpriteSurface = object : SpriteSurface {
+        override var image: ImageBitmap? = null
+            private set
+
+        override fun write(pixels: IntArray) {
+            image = bitmap(pixels, side)
+        }
+    }
+}
+
+/**
+ * One body's worth of pixels on the screen, rewritten as it turns.
+ *
+ * [image] is null until the first [write], which is the ordinary state for a body that has just
+ * appeared and whose first frame is still being rendered.
+ */
+interface SpriteSurface {
+    val image: ImageBitmap?
+
+    fun write(pixels: IntArray)
 }
 
 val LocalSpriteFactory = staticCompositionLocalOf<SpriteFactory> {
@@ -44,25 +59,38 @@ val LocalSpriteFactory = staticCompositionLocalOf<SpriteFactory> {
 val LocalSkin = staticCompositionLocalOf { Skins.ORIGINAL }
 
 /**
- * Keeps the last couple of sprite sheets around.
+ * Keeps the expensive half of a body around: its palette and its surface texture.
  *
- * Two is enough on purpose: the game only ever shows the current body, and the sheet for the
- * largest tier is several megabytes. Holding all eighteen would cost far more memory than the
- * rendering it saves is worth.
+ * This used to hold rendered sprite *sheets*, and that stopped being possible when the sprites
+ * doubled in resolution and in frame count — forty-eight frames of Saturn is thirty-four megabytes,
+ * and the cache held two bodies at a time. What is cached now is [PixelPlanet.Sprite], which is the
+ * part that is slow to build and identical for every frame: the craters, the cloud bands, the
+ * ramps. Drawing a frame from one is a single pass over the pixels, and only the frame actually on
+ * screen is ever drawn.
+ *
+ * Everything else about it is unchanged, including why the key is a data class rather than a
+ * string — see [Key].
  */
 object SpriteCache {
 
-    private const val KEEP = 2
+    /**
+     * How many bodies to keep.
+     *
+     * More than the two sheets used to be, and it still costs a fraction of what they did: a
+     * texture is one byte and one float per texel, not four bytes per pixel per frame. Four covers
+     * the case the old cache could not — the tap area, the celebration of the rung just reached and
+     * a couple of satellites, all different bodies at the same moment.
+     */
+    private const val KEEP = 4
 
-    private val lock = Mutex()
-    private val sheets = LinkedHashMap<Key, SpriteSheet>()
+    private val sprites = LinkedHashMap<Key, PixelPlanet.Sprite>()
 
     /**
-     * What identifies a rendered sheet: the rung and the colour scheme baked into its pixels.
+     * What identifies a built body: the rung and the colour scheme baked into its ramps.
      *
      * A data class rather than a formatted string, and that is not a matter of taste. This was a
      * string once, and a mangled escape turned the interpolation into a literal — so every tier
-     * and every palette shared one key. The cache then handed back whichever sheet it happened to
+     * and every palette shared one key. The cache then handed back whichever entry it happened to
      * hold: switching palette appeared to do nothing, and climbing a rung could leave the previous
      * body on screen. Neither failed loudly; both just looked wrong.
      *
@@ -70,32 +98,21 @@ object SpriteCache {
      */
     private data class Key(val tier: Int, val skin: String)
 
-    private fun keyOf(tier: CelestialTier, skin: Skin) = Key(tier.index, skin.id)
-
-    /** The sheet if it has already been built, for showing a body without a blank frame first. */
-    fun ready(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): SpriteSheet? =
-        synchronized(sheets) { sheets[keyOf(tier, skin)] }
-
-    suspend fun sheet(
-        tier: CelestialTier,
-        factory: SpriteFactory,
-        skin: Skin = Skins.ORIGINAL,
-    ): SpriteSheet {
-        ready(tier, skin)?.let { return it }
-        return lock.withLock {
-            // Another caller may have finished it while this one waited for the lock.
-            ready(tier, skin) ?: withContext(Dispatchers.Default) {
-                val side = PixelPlanet.size(tier)
-                SpriteSheet(side, PixelPlanet.frames(tier, skin).map { factory.bitmap(it, side) })
-            }.also { built ->
-                synchronized(sheets) {
-                    sheets[keyOf(tier, skin)] = built
-                    while (sheets.size > KEEP) sheets.remove(sheets.keys.first())
-                }
+    /**
+     * The body, built if this is the first time anybody has asked for it.
+     *
+     * Synchronous, which the sheet version could not be — building a texture is milliseconds where
+     * building forty-eight frames was tens of them, so there is nothing here worth a background
+     * thread and a frame of blankness while it finishes.
+     */
+    fun sprite(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): PixelPlanet.Sprite =
+        synchronized(sprites) {
+            val key = Key(tier.index, skin.id)
+            sprites.getOrPut(key) { PixelPlanet.Sprite.of(tier, skin) }.also {
+                while (sprites.size > KEEP) sprites.remove(sprites.keys.first())
             }
         }
-    }
 
     /** Drops everything. Only the desktop harness needs this, to measure a cold render. */
-    fun clear() = synchronized(sheets) { sheets.clear() }
+    fun clear() = synchronized(sprites) { sprites.clear() }
 }

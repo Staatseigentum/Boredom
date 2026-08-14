@@ -33,11 +33,36 @@ import java.util.Collections
  * the screen stays free of `android.*` imports and can be compiled for the desktop harness.
  */
 
-/** Raw sprite pixels into an Android bitmap. */
-private val AndroidSprites = SpriteFactory { pixels, side ->
-    val bitmap = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
-    bitmap.setPixels(pixels, 0, side, 0, 0, side, side)
-    bitmap.asImageBitmap()
+/**
+ * Raw sprite pixels into an Android bitmap.
+ *
+ * The single-shot [SpriteFactory.bitmap] allocates, because its callers want a bitmap that will be
+ * kept. [SpriteFactory.surface] must not: it is written eight times a second for as long as a body
+ * is on screen, and at the resolution the sprites are drawn at that would be megabytes a second of
+ * garbage on the device least able to absorb it. So the phone gets a real reusable surface — one
+ * mutable bitmap, written in place — while the desktop keeps the allocating default.
+ */
+private object AndroidSprites : SpriteFactory {
+
+    override fun bitmap(pixels: IntArray, side: Int): ImageBitmap =
+        Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888).also {
+            it.setPixels(pixels, 0, side, 0, 0, side, side)
+        }.asImageBitmap()
+
+    override fun surface(side: Int): SpriteSurface = object : SpriteSurface {
+        // Allocated once and written for ever after. `asImageBitmap` wraps this very bitmap rather
+        // than copying it, so the wrapper does not have to be rebuilt when the pixels change.
+        private val bitmap = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+        private val wrapper = bitmap.asImageBitmap()
+
+        override var image: ImageBitmap? = null
+            private set
+
+        override fun write(pixels: IntArray) {
+            bitmap.setPixels(pixels, 0, side, 0, 0, side, side)
+            image = wrapper
+        }
+    }
 }
 
 /**
