@@ -814,6 +814,12 @@ object GameEngine {
         return award(state.copy(heavy = spent, alloys = state.alloys + alloy.id))
     }
 
+    /** Welds two galaxies into one, freeing a slot. See [Multiverse.merge]. */
+    fun mergeGalaxies(state: GameState, keepSlot: Int, absorbSlot: Int): GameState {
+        if (!Multiverse.canMerge(state, keepSlot, absorbSlot)) return state
+        return award(Multiverse.merge(state, keepSlot, absorbSlot))
+    }
+
     /** Puts a galaxy on a job. See [GalaxyJob]. */
     fun assignGalaxy(state: GameState, slot: Int, jobId: String): GameState =
         award(Multiverse.assign(state, slot, GalaxyJob.byId(jobId)))

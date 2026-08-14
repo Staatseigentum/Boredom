@@ -86,6 +86,13 @@ data class ParkedUniverse(
     val singularities: Double = 0.0,
     /** Wall-clock milliseconds at which it was parked, for the "läuft seit" line. */
     val parkedAt: Long = 0L,
+    /**
+     * A second lean, from a galaxy welded into this one. See [Multiverse.merge].
+     *
+     * Only ever set by a merge, and only once — a galaxy that carried three paths would be worth
+     * more than three galaxies and the sky would collapse into one entry.
+     */
+    val secondPathId: String? = null,
     /** What it has been put to work at. See [GalaxyJob]; absent means the default. */
     val jobId: String? = null,
     /**
@@ -108,6 +115,15 @@ data class ParkedUniverse(
 
     /** The path's lean, or `null` where there was none. */
     val path: Path? get() = Path.byId(pathId)
+
+    /** The second lean, where this galaxy is a weld of two. */
+    val secondPath: Path? get() = Path.byId(secondPathId)
+
+    /** Both leans, in a fixed order, with nothing repeated. */
+    val paths: List<Path> get() = listOfNotNull(path, secondPath).distinct()
+
+    /** Whether this galaxy is a weld of two. */
+    val isMerged: Boolean get() = secondPathId != null
 
     /**
      * What this galaxy is called.
@@ -210,7 +226,10 @@ object Multiverse {
     fun weightedYieldOf(state: GameState, universe: ParkedUniverse): Double {
         val ranked = parked(state).sortedByDescending { yieldOf(it) }
         val rank = ranked.indexOfFirst { it.slot == universe.slot }.coerceAtLeast(0)
-        return yieldOf(universe) * SLOT_FALLOFF.pow(rank)
+        // The orbit bonus is added before the falloff, not after, so tending the satellite over a
+        // strong galaxy is worth more than tending the one over a weak galaxy. Otherwise the right
+        // play would be to feed whichever body is cheapest and ignore where it sits.
+        return (yieldOf(universe) + orbitBonusFor(state, universe)) * SLOT_FALLOFF.pow(rank)
     }
 
     /**
@@ -321,7 +340,10 @@ object Multiverse {
                 emptyList()
             } else {
                 val share = leanShare(strength)
-                universe.path?.effects.orEmpty().mapNotNull { softened(it, share) }
+                // Both leans where there are two, each at the same share. That is what a merged
+                // galaxy is *for*: it is worth less than the two it was made of, and it does two
+                // things at once.
+                universe.paths.flatMap { it.effects }.mapNotNull { softened(it, share) }
             }
         }
 
@@ -373,6 +395,84 @@ object Multiverse {
 
     /** A multiplier at [share] strength: 1 at nothing, the full factor at everything. */
     private fun taper(factor: Double, share: Double): Double = 1.0 + (factor - 1.0) * share
+
+    /**
+     * Welds two galaxies into one, freeing the slot the second one stood in.
+     *
+     * A full sky used to be an ending: the ninth big bang displaced the weakest galaxy, and that
+     * galaxy was simply gone. Nothing a player spent thirty collapses on should evaporate because
+     * they pressed the button that the game had spent thirty collapses telling them to press.
+     *
+     * So the sky becomes a puzzle instead. Two galaxies merge into one that keeps the deeper of
+     * the two everywhere it matters and carries both leans at once — the only object in the game
+     * that does — and the slot the other one held opens up for the universe you are about to
+     * finish. Filling all eight is no longer the last thing that happens up there; it is the point
+     * at which the sky starts asking questions.
+     *
+     * The merged galaxy is deliberately *not* the sum. Two galaxies of ten collapses do not make
+     * one of twenty: a sum would make merging strictly better than not merging, and the whole
+     * decision is that a merge buys a slot and costs some of what was standing in it.
+     */
+    fun merge(state: GameState, keepSlot: Int, absorbSlot: Int): GameState {
+        if (keepSlot == absorbSlot) return state
+        val keep = state.universes.firstOrNull { it.slot == keepSlot } ?: return state
+        val absorb = state.universes.firstOrNull { it.slot == absorbSlot } ?: return state
+        // Neither may be mid-changeover: a galaxy that is doing nothing is not a galaxy anybody
+        // can judge the worth of, and merging one away would hide the cost of the ramp inside the
+        // cost of the merge.
+        if (keep.isRamping || absorb.isRamping) return state
+
+        val merged = keep.copy(
+            bestTier = maxOf(keep.bestTier, absorb.bestTier),
+            collapses = maxOf(keep.collapses, absorb.collapses) +
+                (minOf(keep.collapses, absorb.collapses) * MERGE_SHARE).toInt(),
+            singularities = maxOf(keep.singularities, absorb.singularities) +
+                minOf(keep.singularities, absorb.singularities) * MERGE_SHARE,
+            // The second lean is remembered separately, because a galaxy has one path and this one
+            // has two. Everything downstream reads both.
+            secondPathId = absorb.pathId ?: keep.secondPathId,
+        )
+        return state.copy(universes = state.universes.filterNot { it.slot == absorbSlot } - keep + merged)
+    }
+
+    /** How much of the weaker galaxy survives the weld. */
+    const val MERGE_SHARE = 0.5
+
+    /**
+     * What an occupied orbit does for the galaxy standing in the matching slot.
+     *
+     * The two systems had nothing to do with each other. Orbits were the mid-game's puzzle and the
+     * sky quietly took the endgame's attention, which left eight slots up there and eight slots
+     * down here that never once looked at one another — and the orbit system slowly became the
+     * thing you set up once and stopped thinking about.
+     *
+     * Slot for slot, then: a body in orbit four lends its weight to the galaxy in slot four. It
+     * costs nothing to discover, because both systems already number their slots the same way and
+     * the numbering was always visible; what it costs is the choice of *which* orbits to occupy,
+     * which the tides already make into a real decision.
+     */
+    fun orbitBonusFor(state: GameState, universe: ParkedUniverse): Double {
+        val orbit = Orbits.at(universe.slot) ?: return 0.0
+        if (universe.slot >= state.orbits) return 0.0
+        if (!Orbits.isOccupied(state, orbit)) return 0.0
+        // Counted off the satellite's rung rather than its mass, for the same reason the orbit
+        // system's own yield is: mass up there spans thirty orders of magnitude and rungs span
+        // twenty-four.
+        return ORBIT_PER_TIER * (Orbits.tierOn(state, orbit).index + 1)
+    }
+
+    /** What one rung of a matching satellite is worth to its galaxy. */
+    const val ORBIT_PER_TIER = 0.012
+
+    /** Whether two galaxies can be welded right now. */
+    fun canMerge(state: GameState, keepSlot: Int, absorbSlot: Int): Boolean {
+        if (keepSlot == absorbSlot) return false
+        val keep = state.universes.firstOrNull { it.slot == keepSlot } ?: return false
+        val absorb = state.universes.firstOrNull { it.slot == absorbSlot } ?: return false
+        // Only ever with a full sky. With a slot free there is nothing to buy, and a merge would
+        // be pure loss dressed up as a choice.
+        return !hasRoom(state) && !keep.isRamping && !absorb.isRamping && keep.secondPathId == null
+    }
 
     /**
      * Puts a galaxy on a job, starting its changeover.

@@ -2,6 +2,8 @@ package com.staatseigentum.kollaps.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -95,9 +97,19 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
                 return@Column
             }
 
+            if (!Multiverse.hasRoom(state)) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "Der Himmel ist voll. Zwei Galaxien lassen sich verschweißen — die " +
+                        "verschmolzene trägt beide Ausrichtungen und macht einen Platz frei.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Muted,
+                )
+            }
+
             Spacer(Modifier.height(12.dp))
             parked.forEach { universe ->
-                GalaxyRow(state, universe, actions)
+                GalaxyRow(state, universe, actions, parked)
                 Spacer(Modifier.height(6.dp))
             }
         }
@@ -173,6 +185,7 @@ private fun GalaxyRow(
     state: GameState,
     universe: ParkedUniverse,
     actions: GameActions,
+    others: List<ParkedUniverse>,
     modifier: Modifier = Modifier,
 ) {
     val path = universe.path
@@ -203,7 +216,10 @@ private fun GalaxyRow(
             )
             Text(
                 text = "${body.label} · ${universe.collapses} Kollapse · " +
-                    (path?.label ?: "ohne Ausrichtung"),
+                    when {
+                        universe.paths.size > 1 -> universe.paths.joinToString(" + ") { it.label }
+                        else -> path?.label ?: "ohne Ausrichtung"
+                    },
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
                 maxLines = 1,
@@ -247,6 +263,32 @@ private fun GalaxyRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
             )
+
+            // Only offered with a full sky, and only onto galaxies this one can actually absorb.
+            // A row of buttons that all refuse is worse than no row at all.
+            val absorbable = others.filter { Multiverse.canMerge(state, universe.slot, it.slot) }
+            if (absorbable.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                PixelLabel("Hierher verschweißen", color = Muted, size = 10)
+                Spacer(Modifier.height(3.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    absorbable.forEach { other ->
+                        Text(
+                            text = other.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Ember,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier
+                                .clickable { actions.mergeGalaxies(universe.slot, other.slot) }
+                                .padding(horizontal = 6.dp, vertical = 4.dp),
+                        )
+                    }
+                }
+            }
         }
     }
 }

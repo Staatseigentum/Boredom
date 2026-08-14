@@ -189,6 +189,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.assignGalaxy(state, slot, jobId)
     }
 
+    override fun mergeGalaxies(keepSlot: Int, absorbSlot: Int) {
+        state = GameEngine.mergeGalaxies(state, keepSlot, absorbSlot)
+    }
+
     override fun buyPathNode(id: String) {
         state = GameEngine.buyPathNode(state, id)
     }

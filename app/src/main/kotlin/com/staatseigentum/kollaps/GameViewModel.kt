@@ -247,6 +247,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun mergeGalaxies(keepSlot: Int, absorbSlot: Int) {
+        _state.value = GameEngine.mergeGalaxies(_state.value, keepSlot, absorbSlot)
+        persist()
+    }
+
     fun buyPathNode(nodeId: String) {
         _state.value = GameEngine.buyPathNode(_state.value, nodeId)
         persist()

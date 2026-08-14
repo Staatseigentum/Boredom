@@ -136,6 +136,9 @@ interface GameActions {
     /** Puts a parked galaxy on a job. See [com.staatseigentum.kollaps.core.GalaxyJob]. */
     fun assignGalaxy(slot: Int, jobId: String)
 
+    /** Welds two galaxies into one, freeing a slot. */
+    fun mergeGalaxies(keepSlot: Int, absorbSlot: Int)
+
     /** Buys one node of the running universe's path tree. */
     fun buyPathNode(id: String)
 
