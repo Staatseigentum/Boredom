@@ -97,6 +97,91 @@ object Achievements {
                 "Jedes Äonen-Upgrade gekauft. Die Galaxien zahlen jetzt auf ein volles Konto ein.",
             ) { state -> AeonUpgrades.all.all { it.id in state.aeonUpgrades } },
         )
+
+        // ---- the sky
+
+        add(
+            Achievement(
+                "a_erste_galaxie",
+                "Es ging weiter",
+                "Ein Universum überlebt seinen eigenen Urknall und arbeitet weiter.",
+            ) { state -> Multiverse.count(state) >= 1 },
+        )
+        add(
+            Achievement(
+                "a_halber_himmel",
+                "Halber Himmel",
+                "Vier Galaxien am Laufen. Die Hälfte der Arbeit macht schon jemand anders.",
+            ) { state -> Multiverse.count(state) >= Multiverse.SLOTS / 2 },
+        )
+        add(
+            Achievement(
+                "a_voller_himmel",
+                "Voller Himmel",
+                "Acht Galaxien, alle besetzt. Über dem Schwarzen Loch geht es jetzt weiter.",
+            ) { state -> Multiverse.count(state) >= Multiverse.SLOTS },
+        )
+        add(
+            Achievement(
+                "a_alle_pfade",
+                "Vier Ausrichtungen",
+                "Von jedem Pfad eine Galaxie. Der Himmel tut vier Dinge gleichzeitig.",
+            ) { state ->
+                val leanings = Multiverse.parked(state).mapNotNull { it.pathId }.toSet()
+                Path.entries.all { it.id in leanings }
+            },
+        )
+
+        // ---- the catalogue ladder
+
+        add(
+            Achievement(
+                "a_kennung_erste",
+                "Katalogisiert",
+                "Die erste Sprosse über dem Schwarzen Loch. Ab hier haben die Körper Nummern.",
+            ) { state -> state.bestTier > Tiers.last.index },
+        )
+        add(
+            Achievement(
+                "a_kennung_hundert",
+                "Hundert Nummern weiter",
+                "Hundert Katalogsprossen. Der Meteorit sieht aus wie am Anfang und wiegt es nicht.",
+            ) { state -> state.bestTier >= Tiers.last.index + 100 },
+        )
+        add(
+            Achievement(
+                "a_kennung_koerper",
+                "Durchgezählt",
+                "Einen ganzen Körper durch alle Kennungen von AA bis ZZ getrieben.",
+            ) { state -> state.bestTier >= Tiers.last.index + Designations.PER_BODY },
+        )
+
+        // ---- the forge
+
+        add(
+            Achievement(
+                "a_erste_legierung",
+                "Zusammengeschweißt",
+                "Die erste Legierung. Das Metall aus dem Kollaps ist endlich für etwas gut.",
+            ) { state -> state.alloys.isNotEmpty() },
+        )
+        add(
+            Achievement(
+                "a_alle_legierungen",
+                "Vollständige Schmiede",
+                "Jede Legierung geschmiedet. Es gibt nichts mehr zu verschweißen.",
+            ) { state -> Alloy.entries.all { it.id in state.alloys } },
+        )
+
+        // ---- the deeper fleet
+
+        add(
+            Achievement(
+                "a_katalogflotte",
+                "Katalogflotte",
+                "Von jeder Maschine der Katalogleiter mindestens eine.",
+            ) { state -> Collectors.all.filter { it.catalogueOnly }.all { state.ownedOf(it.id) > 0 } },
+        )
         add(
             Achievement(
                 "a_all_collectors",
