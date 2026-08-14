@@ -2,6 +2,7 @@ package com.staatseigentum.kollaps.core
 
 import com.staatseigentum.kollaps.core.pixel.Skins
 import kotlin.math.floor
+import kotlin.math.ln
 import kotlin.math.min
 import kotlin.math.sqrt
 
@@ -586,8 +587,38 @@ object GameEngine {
     fun pendingSingularities(state: GameState): Double {
         if (state.runMass < Tiers.last.threshold) return 0.0
         val base = SINGULARITY_SCALE * sqrt(state.runMass / Tiers.last.threshold)
-        return floor(base * modifiersOf(state).singularityGain)
+        return floor(base * modifiersOf(state).singularityGain * overshootBonus(state))
     }
+
+    /**
+     * What climbing past the black hole is worth, on top of the mass it took to get there.
+     *
+     * There was nothing above the black hole to climb, so a collapse was a decision about one
+     * number and the honest answer was always "press it now" — the square root means the next
+     * doubling of mass is worth only forty per cent more, and waiting for a doubling costs a whole
+     * further stretch of run. Now there is a ladder up there, and staying on it has to be a real
+     * option rather than a way of being slow on purpose.
+     *
+     * Logarithmic in the rungs and not linear. Sixteen thousand rungs times anything is a number
+     * that eats the rest of the game; a logarithm keeps the tenth rung worth noticing and the ten
+     * thousandth still worth something, which is the shape a decision wants.
+     */
+    private fun overshootBonus(state: GameState): Double {
+        val rungs = tierOf(state).index - Tiers.last.index
+        if (rungs <= 0) return 1.0
+        return 1.0 + OVERSHOOT_BONUS * ln(1.0 + rungs)
+    }
+
+    /**
+     * How hard overshooting pays.
+     *
+     * One, so the bonus reads off the natural logarithm directly: ten catalogue rungs are worth
+     * about three and a half times the singularities, a hundred about five and a half, a thousand
+     * about eight. Against a mass term that has grown by a factor of fifty million over those
+     * thousand rungs it is a kicker rather than a strategy of its own — which is the point. It has
+     * to be worth staying up there, not worth doing nothing else.
+     */
+    const val OVERSHOOT_BONUS = 1.0
 
     fun singularityMultiplier(state: GameState): Double =
         singularityMultiplier(state, modifiersOf(state))

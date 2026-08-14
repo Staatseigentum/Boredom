@@ -1,6 +1,7 @@
 package com.staatseigentum.kollaps.core
 
 import kotlin.math.floor
+import kotlin.math.ln
 import kotlin.math.sqrt
 
 /**
@@ -51,8 +52,30 @@ object BigBang {
     fun pending(state: GameState): Double {
         val needed = requiredNow(state)
         if (state.collapses < needed) return 0.0
-        return floor(SCALE * sqrt(state.collapses.toDouble() / needed))
+        val fromCollapses = SCALE * sqrt(state.collapses.toDouble() / needed)
+        return floor(fromCollapses * depthBonus(state))
     }
+
+    /**
+     * What the universe being ended was worth, beyond how many times it was collapsed.
+     *
+     * A big bang used to read only the collapse counter, so two universes that had been collapsed
+     * the same number of times paid the same — whether one of them had been pushed a thousand
+     * rungs up the catalogue ladder or parked the moment the button lit up. The counter is a
+     * measure of patience; this is a measure of how far the universe actually got, and both should
+     * be worth something at the moment it is given up.
+     *
+     * The same logarithm the collapse uses, for the same reason and deliberately in the same
+     * shape: two rewards for depth that grew differently would be two things to learn.
+     */
+    fun depthBonus(state: GameState): Double {
+        val rungs = maxOf(state.bestTier, GameEngine.tierOf(state).index) - Tiers.last.index
+        if (rungs <= 0) return 1.0
+        return 1.0 + DEPTH_BONUS * ln(1.0 + rungs)
+    }
+
+    /** How hard depth pays at the big bang. Gentler than the collapse's, which is paid far oftener. */
+    const val DEPTH_BONUS = 0.5
 
     fun canBang(state: GameState): Boolean =
         state.runningChallengeIds.isEmpty() && pending(state) >= 1.0
