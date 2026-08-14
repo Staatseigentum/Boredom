@@ -175,6 +175,46 @@ object Achievements {
 
         // ---- the deeper fleet
 
+        // ---- the sky at work, the survey, and the table
+
+        add(
+            Achievement(
+                "a_alle_auftraege",
+                "Auftragslage",
+                "Zwanzig Aufträge abgegeben. Es gab immer etwas zu tun.",
+            ) { state -> state.contractsDone >= 20 },
+        )
+        add(
+            Achievement(
+                "a_verschmolzen",
+                "Zusammengeschweißt",
+                "Zwei Galaxien zu einer gemacht. Sie trägt jetzt beide Ausrichtungen.",
+            ) { state -> state.universes.any { it.isMerged } },
+        )
+        add(
+            Achievement(
+                "a_alle_auftraege_himmel",
+                "Vollbeschäftigung",
+                "Jede der vier Aufgaben läuft irgendwo am Himmel.",
+            ) { state ->
+                val running = Multiverse.parked(state).filterNot { it.isRamping }.map { it.job }.toSet()
+                GalaxyJob.entries.all { it in running }
+            },
+        )
+        add(
+            Achievement(
+                "a_funde_zehn",
+                "Vermessen",
+                "Zehn Katalogfunde beantwortet. Der Katalog wird länger als die Leiter.",
+            ) { state -> state.findsAnswered >= 10 },
+        )
+        add(
+            Achievement(
+                "a_funde_ruhe",
+                "Nicht angerührt",
+                "Fünf Funde in Ruhe gelassen. Manches ist mehr wert, wenn man es stehen lässt.",
+            ) { state -> state.findFragments.size >= 5 },
+        )
         add(
             Achievement(
                 "a_katalogflotte",
