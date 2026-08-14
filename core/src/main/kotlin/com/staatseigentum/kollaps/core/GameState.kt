@@ -204,6 +204,15 @@ data class GameState(
      */
     val universes: List<ParkedUniverse> = emptyList(),
 
+    /**
+     * Alloys forged in the workshop above the heavy elements. See [Alloy].
+     *
+     * Kept through both resets, exactly like the metals they are made of: whatever an alloy is, it
+     * was welded out of something a dying star made, and neither a collapse nor a big bang is
+     * going to unweld it.
+     */
+    val alloys: Set<String> = emptySet(),
+
     /** How often the player has finished a universe and started the next one. */
     val bigBangs: Int = 0,
 

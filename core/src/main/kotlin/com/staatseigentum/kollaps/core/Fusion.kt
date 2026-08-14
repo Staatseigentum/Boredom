@@ -12,6 +12,12 @@ enum class FusionBonus(val label: String) {
     OFFLINE("Offline-Ausbeute"),
     COMETS("Kometenhäufigkeit"),
     SINGULARITY("Singularitäten"),
+
+    /** How fast the chain itself runs. The one bonus that feeds the thing that makes it. */
+    FUSION("Fusionstempo"),
+
+    /** How fast the bench works through a project. */
+    RESEARCH("Forschungstempo"),
 }
 
 /**

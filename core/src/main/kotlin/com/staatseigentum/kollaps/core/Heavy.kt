@@ -55,6 +55,33 @@ enum class HeavyElement(
         perDecade = 0.30,
         bonus = FusionBonus.TAP,
     ),
+    IRIDIUM(
+        id = "ir",
+        symbol = "Ir",
+        label = "Iridium",
+        flavor = "Liegt weltweit in genau einer Gesteinsschicht. Darunter Dinosaurier, darüber keine.",
+        perRoot = 0.030,
+        perDecade = 0.34,
+        bonus = FusionBonus.FUSION,
+    ),
+    OSMIUM(
+        id = "os",
+        symbol = "Os",
+        label = "Osmium",
+        flavor = "Das dichteste Ding, das man anfassen kann. Ein Würfel davon steht, wo man ihn hinstellt.",
+        perRoot = 0.018,
+        perDecade = 0.38,
+        bonus = FusionBonus.RESEARCH,
+    ),
+    PLUTONIUM(
+        id = "pu",
+        symbol = "Pu",
+        label = "Plutonium",
+        flavor = "Kommt in der Natur praktisch nicht vor. In einem sterbenden Stern schon.",
+        perRoot = 0.007,
+        perDecade = 0.44,
+        bonus = FusionBonus.COMETS,
+    ),
     ;
 
     companion object {

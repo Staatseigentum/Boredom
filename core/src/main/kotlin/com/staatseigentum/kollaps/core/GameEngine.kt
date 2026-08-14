@@ -670,6 +670,7 @@ object GameEngine {
                 bestRunSeconds = bestRunOf(state.bestRunSeconds, state.runSeconds),
                 // Everything below is the point of collapsing: it is what carries over.
                 heavy = forged,
+                alloys = state.alloys,
                 prestigeUpgrades = state.prestigeUpgrades,
                 investments = state.investments,
                 achievements = state.achievements,
@@ -745,6 +746,7 @@ object GameEngine {
                 challengesDone = state.challengesDone,
                 challengeDuos = state.challengeDuos,
                 heavy = state.heavy,
+                alloys = state.alloys,
                 lastRunSeconds = state.lastRunSeconds,
                 lastRunMass = state.lastRunMass,
                 bestRunSeconds = state.bestRunSeconds,
@@ -790,6 +792,24 @@ object GameEngine {
         val incoming = Multiverse.park(state, weakest.slot, nowMillis)
         if (Multiverse.yieldOf(incoming) <= Multiverse.yieldOf(weakest)) return state.universes
         return state.universes.filterNot { it.slot == weakest.slot } + incoming
+    }
+
+    /**
+     * Welds two heavy elements into an alloy, if both piles are deep enough.
+     *
+     * The one place the heavy elements are ever spent. Refused outright rather than partially
+     * charged when either pile is short: taking half the metal for nothing is the sort of thing a
+     * player only finds out about after it has happened.
+     */
+    fun forgeAlloy(state: GameState, alloyId: String): GameState {
+        val alloy = Alloy.byId(alloyId) ?: return state
+        if (!Alloy.canForge(state, alloy)) return state
+
+        val spent = state.heavy.toMutableMap()
+        spent[alloy.first.id] = (spent[alloy.first.id] ?: 0.0) - alloy.cost
+        spent[alloy.second.id] = (spent[alloy.second.id] ?: 0.0) - alloy.cost
+
+        return award(state.copy(heavy = spent, alloys = state.alloys + alloy.id))
     }
 
     /** Buys an Äonen upgrade if it is unbought and affordable. */
@@ -1060,6 +1080,7 @@ object GameEngine {
         prestigeUpgrades = state.prestigeUpgrades,
         investments = state.investments,
         heavy = state.heavy,
+        alloys = state.alloys,
         lastRunSeconds = state.lastRunSeconds,
         lastRunMass = state.lastRunMass,
         bestRunSeconds = state.bestRunSeconds,
@@ -1705,6 +1726,14 @@ object GameEngine {
         mods.global *= Heavy.factorFor(state, FusionBonus.GLOBAL)
         mods.tapMultiplier *= Heavy.factorFor(state, FusionBonus.TAP)
         mods.singularityGain *= Heavy.factorFor(state, FusionBonus.SINGULARITY)
+        mods.fusionRate *= Heavy.factorFor(state, FusionBonus.FUSION)
+        mods.researchSpeed *= Heavy.factorFor(state, FusionBonus.RESEARCH)
+        mods.cometFrequency *= Heavy.factorFor(state, FusionBonus.COMETS)
+
+        // And what has been welded out of them, which is the only thing the metals are ever spent
+        // on. Same fold as everything else permanent: an alloy is a different way to earn a lasting
+        // bonus, not a different kind of bonus.
+        Alloy.effects(state).forEach { apply(mods, it) }
 
         if (Fusion.isUnlocked(state)) {
             mods.global *= Fusion.factorFor(state, FusionBonus.GLOBAL)
