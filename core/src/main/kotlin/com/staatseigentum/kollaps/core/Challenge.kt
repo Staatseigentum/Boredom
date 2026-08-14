@@ -35,6 +35,18 @@ sealed interface ChallengeRule {
 
     /** Nothing stays in orbit, so the system contributes nothing. */
     data object NoOrbits : ChallengeRule
+
+    /** Every collector counts as a single copy of itself: the serial bonuses are off. */
+    data object NoMilestones : ChallengeRule
+
+    /** A closed app earns nothing. The run only advances while somebody is watching it. */
+    data object NoOffline : ChallengeRule
+
+    /** The chain is cold. Nothing fuses, so none of the element bonuses grow. */
+    data object NoFusion : ChallengeRule
+
+    /** The parked universes contribute nothing. Whatever this run manages, it manages alone. */
+    data object NoSky : ChallengeRule
 }
 
 /** What finishes a challenge. */
@@ -133,6 +145,82 @@ enum class Challenge(
         reward = PrestigeEffect.GlobalMultiplier(3.0),
         requiredCollapses = 5,
     ),
+
+    // Everything below here is for the long road to a full sky. Eight universes is a great many
+    // more collapses than the first eight challenges were written against, and a list that ran out
+    // by the third universe left the other five with nothing optional to do.
+    SERIENSTOPP(
+        id = "c_nomiles",
+        title = "Serienstopp",
+        flavor = "Jede Maschine zählt einzeln. Die Fertigungsstraßen haben Betriebsferien.",
+        rule = ChallengeRule.NoMilestones,
+        goal = ChallengeGoal.ReachTier("Roter Zwerg"),
+        reward = PrestigeEffect.MilestoneBonus(0.04),
+        requiredCollapses = 6,
+    ),
+    WACHDIENST(
+        id = "c_nooffline",
+        title = "Wachdienst",
+        flavor = "Zugeklappt läuft nichts weiter. Was du willst, musst du sehen.",
+        rule = ChallengeRule.NoOffline,
+        goal = ChallengeGoal.ReachTier("Blauer Riese"),
+        reward = PrestigeEffect.OfflineEfficiency(1.0),
+        requiredCollapses = 8,
+    ),
+    KALTE_KETTE(
+        id = "c_nofusion",
+        title = "Kalte Kette",
+        flavor = "Kein Ofen brennt. Schwere Kerne musst du diesmal woanders herbekommen.",
+        rule = ChallengeRule.NoFusion,
+        goal = ChallengeGoal.ReachTier("Neutronenstern"),
+        reward = PrestigeEffect.FusionRate(2.0),
+        requiredCollapses = 10,
+    ),
+    EINSAMES_UNIVERSUM(
+        id = "c_nosky",
+        title = "Einsames Universum",
+        flavor = "Die anderen Galaxien schweigen. Dieses hier schafft es allein oder gar nicht.",
+        rule = ChallengeRule.NoSky,
+        goal = ChallengeGoal.ReachTier("Schwarzes Loch"),
+        reward = PrestigeEffect.GlobalMultiplier(4.0),
+        requiredCollapses = 12,
+    ),
+    HANDBETRIEB(
+        id = "c_hand2",
+        title = "Handbetrieb",
+        flavor = "Noch einmal ohne Flotte, und diesmal bis zur Sonne.",
+        rule = ChallengeRule.NoCollectors,
+        goal = ChallengeGoal.ReachTier("Sonne"),
+        reward = PrestigeEffect.TapMultiplier(6.0),
+        requiredCollapses = 14,
+    ),
+    VIERTELKRAFT(
+        id = "c_quarter",
+        title = "Viertelkraft",
+        flavor = "Alles bringt ein Viertel. Bis zum Schwarzen Loch trotzdem.",
+        rule = ChallengeRule.Handicap(0.25),
+        goal = ChallengeGoal.ReachTier("Schwarzes Loch"),
+        reward = PrestigeEffect.GlobalMultiplier(6.0),
+        requiredCollapses = 16,
+    ),
+    HETZE(
+        id = "c_dash",
+        title = "Hetze",
+        flavor = "Bis zum Schwarzen Loch, in zwei Stunden. Die Uhr läuft nur, wenn du spielst.",
+        rule = ChallengeRule.Handicap(1.0),
+        goal = ChallengeGoal.ReachTierWithin("Schwarzes Loch", 120 * 60.0),
+        reward = PrestigeEffect.SingularityGain(1.6),
+        requiredCollapses = 18,
+    ),
+    ROHBAU_ZWEI(
+        id = "c_raw2",
+        title = "Rohbau II",
+        flavor = "Der Laden bleibt zu, den ganzen Weg bis zum Schwarzen Loch.",
+        rule = ChallengeRule.NoUpgrades,
+        goal = ChallengeGoal.ReachTier("Schwarzes Loch"),
+        reward = PrestigeEffect.MilestoneBonus(0.05),
+        requiredCollapses = 20,
+    ),
     ;
 
     /** What the goal asks for, as a line the player can read. */
@@ -155,6 +243,10 @@ enum class Challenge(
 
             is ChallengeRule.NoUpgrades -> "Der Upgrade-Laden bleibt zu"
             is ChallengeRule.NoOrbits -> "Nichts hält sich auf einer Bahn"
+            is ChallengeRule.NoMilestones -> "Keine Meilenstein-Boni"
+            is ChallengeRule.NoOffline -> "Geschlossen zählt nicht"
+            is ChallengeRule.NoFusion -> "Die Fusionskette bleibt kalt"
+            is ChallengeRule.NoSky -> "Die Galaxien tragen nichts bei"
         }
 
     /** Whether this one, on its own, has been met by the state given. */
@@ -197,6 +289,15 @@ enum class Challenge(
         fun canCombine(first: Challenge, second: Challenge): Boolean {
             if (first == second) return false
             val rules = setOf(first.rule, second.rule)
+            // Both sources of mass switched off is a run that produces nothing at all. NoTaps now
+            // brings a fleet of its own, but NoCollectors switches that fleet off too, so the pair
+            // is still exactly as dead as it always was — and still the only pair that is refused.
+            //
+            // Two handicaps together were briefly refused as well, on the theory that a quarter of
+            // a half is a run nobody finishes. That was wrong twice over: the timed challenges are
+            // written as `Handicap(1.0)`, which handicaps nothing, so the rule would have blocked
+            // pairing a stopwatch with anything; and a brutal duo is not a broken one. A pair is
+            // supposed to be worse than either half — that is what the bonus is paid for.
             return !(ChallengeRule.NoCollectors in rules && ChallengeRule.NoTaps in rules)
         }
 

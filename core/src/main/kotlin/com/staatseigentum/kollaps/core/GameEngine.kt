@@ -864,7 +864,7 @@ object GameEngine {
     fun researchSpeed(state: GameState): Double = modifiersOf(state).researchSpeed
 
     /** How much faster this player's furnaces run than their stated rates. */
-    fun fusionRate(state: GameState): Double = modifiersOf(state).fusionRate
+    fun fusionRate(state: GameState): Double = modifiersOf(state).fusionSpeed()
 
     /**
      * Starts a project: the mass is taken now, the result arrives on the wall clock.
@@ -1248,7 +1248,7 @@ object GameEngine {
         // Crediting hours of production at a rate the body only held for twenty seconds would
         // turn a reason to stay into a trick — tap it hot, close the app, come back richer.
         val cold = state.copy(heat = 0.0)
-        val gained = massPerSecond(cold) * capped * mods.offlineEfficiency
+        val gained = massPerSecond(cold) * capped * mods.offlineShare()
         // The galaxies are paid for the whole absence, uncapped and at full rate. Everything that
         // limits offline production is about the player not being there to run the fleet — and
         // nobody was ever running these. A universe left behind does not notice being left behind.
@@ -1259,7 +1259,7 @@ object GameEngine {
             seconds = capped.toLong(),
             gained = gained,
             awaySeconds = elapsedSeconds,
-            efficiency = mods.offlineEfficiency,
+            efficiency = mods.offlineShare(),
             // The same breakdown the statistics tab shows, so the player can see which machine
             // actually worked the night shift instead of only that some of them did.
             shares = if (gained > 0.0) Statistics.shares(state) else emptyList(),
@@ -1278,7 +1278,7 @@ object GameEngine {
         val tier = Tiers.forState(state)
         if (!mods.collectorsWork) return 0.0
         return owned * collector.baseRate * mods.collectorFactor(collector.id) *
-            Milestones.factor(owned, mods.milestoneFactor) *
+            mods.milestones(owned) *
             mods.global * tier.productionMultiplier * singularityMultiplier(state, mods)
     }
 
@@ -1308,7 +1308,7 @@ object GameEngine {
                 cost = cost,
                 output = if (mods.collectorsWork) {
                     owned * collector.baseRate * mods.collectorFactor(collector.id) *
-                        Milestones.factor(owned, mods.milestoneFactor) * scale
+                        mods.milestones(owned) * scale
                 } else {
                     0.0
                 },
@@ -1336,7 +1336,7 @@ object GameEngine {
      */
     fun fusionOffers(state: GameState, amount: BuyAmount): List<FusionOffer> {
         val perSecond = fusionThroughput(state)
-        val rate = modifiersOf(state).fusionRate
+        val rate = modifiersOf(state).fusionSpeed()
         return Fusion.stages.map { stage ->
             val level = Fusion.levelOf(state, stage)
             val count = if (amount == BuyAmount.MAX) {
@@ -1487,7 +1487,7 @@ object GameEngine {
             if (owned > 0) {
                 base += owned * collector.baseRate *
                     mods.collectorFactor(collector.id) *
-                    Milestones.factor(owned, mods.milestoneFactor)
+                    mods.milestones(owned)
             }
         }
         return base * mods.global * tier.productionMultiplier *
@@ -1557,12 +1557,6 @@ object GameEngine {
         Path.of(state)?.effects?.forEach { apply(mods, it) }
         PathTrees.effects(state).forEach { apply(mods, it) }
 
-        // And the universes that came before this one, which did not end — they are still out
-        // there, each leaning the way it leaned, at a fraction of the strength. Eight big bangs
-        // down four different paths is a sky that does four things at once, which is the whole
-        // reason to pick a different one each time.
-        Multiverse.effects(state).forEach { apply(mods, it) }
-        mods.global *= Multiverse.multiplier(state)
 
         // Finished research, likewise. It is the fourth kind of permanent thing and the fourth
         // list to walk, and all four say what they do in the same vocabulary — which is the whole
@@ -1586,7 +1580,31 @@ object GameEngine {
                 is ChallengeRule.Handicap -> mods.global *= rule.factor
                 is ChallengeRule.NoUpgrades -> mods.upgradesWork = false
                 is ChallengeRule.NoOrbits -> mods.orbitsWork = false
+                // All four are switches and not values, and that distinction was learned the hard
+                // way. Written as `mods.offlineEfficiency = 0.0` and `mods.milestoneFactor = 1.0`
+                // they were quietly undone further down the same pass: the shop's offline upgrade
+                // sets the efficiency back to one, and a milestone bonus adds itself back on. A
+                // rule that is read after everything that could overwrite it cannot be overwritten.
+                is ChallengeRule.NoMilestones -> mods.milestonesWork = false
+                is ChallengeRule.NoOffline -> mods.offlineWorks = false
+                is ChallengeRule.NoFusion -> mods.fusionWorks = false
+                is ChallengeRule.NoSky -> mods.skyWorks = false
             }
+        }
+
+        /*
+         * And the universes that came before this one, which did not end — they are still out
+         * there, each leaning the way it leaned, at a fraction of the strength. Eight big bangs
+         * down four different paths is a sky that does four things at once, which is the whole
+         * reason to pick a different one each time.
+         *
+         * Folded in *after* the challenge rules and not before, because one of those rules is
+         * allowed to switch it off. Read in the old order `NoSky` was a no-op that still printed
+         * its promise on the card.
+         */
+        if (mods.skyWorks) {
+            Multiverse.effects(state).forEach { apply(mods, it) }
+            mods.global *= Multiverse.multiplier(state)
         }
 
         // Every achievement is worth a little, which is what stops them being decoration.
@@ -1720,6 +1738,20 @@ object GameEngine {
         var tapsWork = true
         var upgradesWork = true
         var orbitsWork = true
+        var skyWorks = true
+        var milestonesWork = true
+        var offlineWorks = true
+        var fusionWorks = true
+
+        /** The serial bonus [owned] copies have earned, or none of it while a rule says so. */
+        fun milestones(owned: Int): Double =
+            if (milestonesWork) Milestones.factor(owned, milestoneFactor) else 1.0
+
+        /** What a closed app is credited at, which a rule can take to nothing. */
+        fun offlineShare(): Double = if (offlineWorks) offlineEfficiency else 0.0
+
+        /** How fast the chain runs, which a rule can stop entirely. */
+        fun fusionSpeed(): Double = if (fusionWorks) fusionRate else 0.0
 
         /**
          * What the whole fleet is worth, on top of whatever each kind is worth on its own.
