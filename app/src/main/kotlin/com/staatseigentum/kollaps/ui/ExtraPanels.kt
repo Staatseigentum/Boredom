@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
@@ -59,19 +60,26 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import com.staatseigentum.kollaps.core.NumberFormat
 
-/** Achievements, and the statistics that explain how they were earned. */
-@Composable
-fun AchievementList(
+/**
+ * Achievements, and the statistics that explain how they were earned.
+ *
+ * Emitted into a list somebody else owns rather than owning one.
+ *
+ * This used to be a `LazyColumn` of its own, which was right while it was a shop tab with the whole
+ * panel to itself. It stopped being right the moment it moved into the Kosmos panel: that is also a
+ * `LazyColumn`, and a lazy list nested inside another one is measured with unbounded height, which
+ * Compose refuses outright — it is not a layout that renders badly, it is one that throws. The whole
+ * section crashed the game the first time anybody opened it.
+ *
+ * As a [LazyListScope] extension there is one list, which is also simply better: the palettes, the
+ * statistics, the chronicle and the achievements scroll as one page instead of a page containing a
+ * scrolling window.
+ */
+fun LazyListScope.achievementItems(
     state: GameState,
-    modifier: Modifier = Modifier,
     onPickSkin: (String) -> Unit = {},
 ) {
     val earned = state.achievements
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
         // The palettes live here rather than in the settings, because this is where they are
         // earned: the next one along is a line in the same list as the achievements paying for it.
         item { SkinPicker(state = state, onPick = onPickSkin) }
@@ -232,7 +240,6 @@ fun AchievementList(
                     color = Muted,
                 )
             }
-        }
     }
 }
 

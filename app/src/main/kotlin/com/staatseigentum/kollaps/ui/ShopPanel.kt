@@ -807,7 +807,7 @@ internal fun CosmosPanel(
                 // the palette picker, so it needs nothing from a strip position it was only
                 // holding because it had always held it.
                 CosmosSection.ACHIEVEMENTS -> {
-                    item { AchievementList(state = state, onPickSkin = actions::setSkin) }
+                    achievementItems(state = state, onPickSkin = actions::setSkin)
                 }
 
                 CosmosSection.SYSTEM -> {
@@ -878,15 +878,15 @@ private fun CosmosChip(
                 sfx?.click()
                 onClick()
             }
-            .padding(top = 9.dp),
+            .padding(top = 11.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         PixelLabel(
             text = title,
             color = if (selected) Ember else Muted,
-            size = 10,
+            size = 12,
         )
-        Spacer(Modifier.height(7.dp))
+        Spacer(Modifier.height(8.dp))
         Box(
             Modifier
                 .fillMaxWidth()

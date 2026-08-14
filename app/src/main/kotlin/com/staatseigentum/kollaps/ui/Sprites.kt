@@ -98,20 +98,31 @@ object SpriteCache {
      */
     private data class Key(val tier: Int, val skin: String)
 
+    /** The body if it has already been built, for showing one without waiting. */
+    fun ready(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): PixelPlanet.Sprite? =
+        synchronized(sprites) { sprites[Key(tier.index, skin.id)] }
+
     /**
      * The body, built if this is the first time anybody has asked for it.
      *
-     * Synchronous, which the sheet version could not be — building a texture is milliseconds where
-     * building forty-eight frames was tens of them, so there is nothing here worth a background
-     * thread and a frame of blankness while it finishes.
+     * Call this off the main thread. Building the texture means scattering thousands of craters or
+     * cloud bands across a quarter of a million texels, which at the resolution the sprites are
+     * drawn at now is tens of milliseconds — and a run climbs twenty-five rungs, so on the main
+     * thread that is twenty-five freezes per run. It was cheap enough to do inline before the
+     * surfaces doubled; it is not any more.
      */
-    fun sprite(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): PixelPlanet.Sprite =
-        synchronized(sprites) {
-            val key = Key(tier.index, skin.id)
-            sprites.getOrPut(key) { PixelPlanet.Sprite.of(tier, skin) }.also {
+    fun sprite(tier: CelestialTier, skin: Skin = Skins.ORIGINAL): PixelPlanet.Sprite {
+        ready(tier, skin)?.let { return it }
+        // Built outside the lock: two threads racing here would each build one and the loser's copy
+        // is simply dropped, which is far cheaper than every caller queueing behind whoever is
+        // building a body they do not want.
+        val built = PixelPlanet.Sprite.of(tier, skin)
+        return synchronized(sprites) {
+            sprites.getOrPut(Key(tier.index, skin.id)) { built }.also {
                 while (sprites.size > KEEP) sprites.remove(sprites.keys.first())
             }
         }
+    }
 
     /** Drops everything. Only the desktop harness needs this, to measure a cold render. */
     fun clear() = synchronized(sprites) { sprites.clear() }

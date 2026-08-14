@@ -81,9 +81,11 @@ fun WideShop(
             stats = stats,
             buyAmount = buyAmount,
             actions = actions,
-            // A little more than the half it would otherwise get: the fleet is a list of up to a
-            // dozen rows and the panel below it is a grid, which tolerates being short far better.
-            modifier = Modifier.fillMaxWidth().weight(1.15f),
+            // Deliberately the smaller half now. The fleet is a list of a dozen short rows and it
+            // reads fine cut off — you scroll it. The panel below holds cards with paragraphs in
+            // them, two strips of its own and the collapse footer, and at an equal share it was
+            // showing one card and a lot of empty space under it.
+            modifier = Modifier.fillMaxWidth().weight(0.85f),
         )
         Rule()
         LowerSection(
@@ -94,7 +96,7 @@ fun WideShop(
             startSection = startSection,
             updateSection = updateSection,
             saveSlots = saveSlots,
-            modifier = Modifier.fillMaxWidth().weight(1f),
+            modifier = Modifier.fillMaxWidth().weight(1.3f),
         )
     }
 }
@@ -319,12 +321,12 @@ private fun LowerSection(
                     modifier = Modifier
                         .background(if (selected) Nebula else Color.Transparent)
                         .clickable { openTab = entry.name }
-                        .padding(horizontal = 14.dp, vertical = 11.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                 ) {
                     PixelLabel(
                         text = label,
                         color = if (selected) Starlight else Muted,
-                        size = 11,
+                        size = 12,
                     )
                 }
             }

@@ -7,15 +7,24 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.pixel.PixelPlanet
 import com.staatseigentum.kollaps.core.pixel.Skin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.withContext
 import kotlin.math.floor
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -59,13 +68,12 @@ fun CelestialBody(
     // whose backing remember carries no key, so on a tier change the state kept the previous
     // body's sprite and the producer — seeing a non-null value — never loaded the new one. A
     // palette change has exactly the same shape, and would otherwise not show until the next rung.
-    val sprite = remember(tier.index, skin.id) { SpriteCache.sprite(tier, skin) }
-    val surface = remember(tier.index, skin.id, factory) { factory.surface(sprite.side) }
-    val buffer = remember(tier.index, skin.id) { sprite.buffer() }
-    // Which frame the surface currently holds. Deliberately not Compose state: it is read and
-    // written inside the draw, and making it state would invalidate the composition from within
-    // the draw phase — the redraw already happens, because `phase` is what triggered it.
-    val drawn = remember(tier.index, skin.id) { intArrayOf(NOTHING_DRAWN) }
+    var sprite by remember(tier.index, skin.id) { mutableStateOf(SpriteCache.ready(tier, skin)) }
+    LaunchedEffect(tier.index, skin.id) {
+        // Off the main thread: building a body means scattering thousands of surface features, and
+        // a run climbs twenty-five rungs. Done inline that is twenty-five stalls per run.
+        if (sprite == null) sprite = withContext(Dispatchers.Default) { SpriteCache.sprite(tier, skin) }
+    }
 
     val transition = rememberInfiniteTransition(label = "body-${tier.index}")
     val phase by transition.animateFloat(
@@ -77,19 +85,52 @@ fun CelestialBody(
         label = "spin",
     )
 
-    Canvas(modifier = modifier) {
-        val side = sprite.side
-        // Wrapped rather than clamped: the extra turns keep counting up for as long as the
-        // collapse lasts, and a clamp would park the disc on its last frame instead of spinning it.
-        val turn = ((phase + extraTurns()) % 1f + 1f) % 1f
-        val index = (turn * PixelPlanet.FRAMES).toInt().coerceIn(0, PixelPlanet.FRAMES - 1)
-
-        if (drawn[0] != index) {
-            sprite.render(index, buffer)
-            surface.write(buffer)
-            drawn[0] = index
+    /*
+     * The frame the canvas is currently allowed to draw.
+     *
+     * This is the fix for the stutter, and the mistake it corrects is worth naming: the first
+     * version rendered the frame *inside the draw phase*, on the main thread, whenever the frame
+     * index changed. That is a third of a million pixels of trigonometry eight times a second, and
+     * every one of those renders happened between two frames of the interface — so the game hitched
+     * eight times a second, on the device least able to hide it.
+     *
+     * Now the pixels are computed on a background thread and only the finished bitmap is published.
+     * The draw phase does nothing but blit.
+     *
+     * `conflate` is load-bearing. During a collapse the disc spins up and the index changes far
+     * faster than a phone can render; without it those requests queue and the body goes on spinning
+     * for seconds after the sequence has ended. With it, whatever frame is current when the renderer
+     * comes free is the one that gets drawn and the rest are dropped — which is exactly what a
+     * dropped frame should mean.
+     */
+    var shown by remember(tier.index, skin.id, factory) { mutableStateOf<ImageBitmap?>(null) }
+    val ready = sprite
+    LaunchedEffect(ready, factory) {
+        val current = ready ?: return@LaunchedEffect
+        val surface = factory.surface(current.side)
+        val buffer = current.buffer()
+        snapshotFlow {
+            // Wrapped rather than clamped: the extra turns keep counting up for as long as the
+            // collapse lasts, and a clamp would park the disc on its last frame instead of
+            // spinning it.
+            val turn = ((phase + extraTurns()) % 1f + 1f) % 1f
+            (turn * PixelPlanet.FRAMES).toInt().coerceIn(0, PixelPlanet.FRAMES - 1)
         }
-        val image = surface.image ?: return@Canvas
+            .distinctUntilChanged()
+            .conflate()
+            .collect { index ->
+                withContext(Dispatchers.Default) { current.render(index, buffer) }
+                // Back on the main thread for the handover: writing the pixels into a bitmap the
+                // renderer may be reading from is the one part that must not race the draw.
+                surface.write(buffer)
+                shown = surface.image
+            }
+    }
+
+    Canvas(modifier = modifier) {
+        val current = sprite ?: return@Canvas
+        val image = shown ?: return@Canvas
+        val side = current.side
 
         val available = min(size.width, size.height) * PixelPlanet.spriteFraction(tier)
         val edge = drawnEdge(available, side)
@@ -135,6 +176,3 @@ private fun drawnEdge(available: Float, side: Int): Int {
     val scale = (floor(available / side * 8f) / 8f).coerceAtLeast(0.125f)
     return (side * scale).toInt().coerceAtLeast(1)
 }
-
-/** No frame has been rendered into the surface yet. Not a valid frame index. */
-private const val NOTHING_DRAWN = -1
