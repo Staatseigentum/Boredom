@@ -104,6 +104,7 @@ fun CometOverlay(
      *
      * Keyed on the strike count: every hit restarts it, and it runs to nothing on its own.
      */
+    val quietMotion = LocalReduceMotion.current
     val chips = remember(current) { Animatable(1f) }
     LaunchedEffect(struck) {
         if (struck == 0) return@LaunchedEffect
@@ -202,7 +203,11 @@ fun CometOverlay(
 
             // And the pieces that came off, if one just did. Stepped like everything else in this
             // pass, so they travel in visible jumps rather than sliding.
-            val life = chips.value
+            //
+            // Skipped under reduced motion — but the ring above still loses a step per hit, so a
+            // strike that did not catch the comet is still visible. That was the whole point of
+            // adding these, and it must survive the setting that removes them.
+            val life = if (quietMotion) 1f else chips.value
             if (life < 1f) {
                 val flung = quantise(life, CHIP_STEPS)
                 for (index in 0 until CHIP_COUNT) {

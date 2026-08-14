@@ -971,6 +971,20 @@ private fun TapArea(
     // whatever body was on screen when the game opened.
     val hitTier by rememberUpdatedState(tier)
 
+    /*
+     * Whether the player has asked the system to move less, read the same way as everything else
+     * the handler needs: fresh, not captured on the first composition.
+     *
+     * The rule this file follows for it: *information stays, decoration goes*. The floating number
+     * says what a tap was worth and is the only feedback that a tap paid anything at all, so it
+     * remains — it simply stops travelling. The shock rings and the squash say nothing the number
+     * does not, so under this setting they do not happen.
+     *
+     * Not a gentler version of them. Somebody who switches this on is not asking for a smaller
+     * bounce, which is the same mistake the collapse sequence already refuses to make.
+     */
+    val quiet by rememberUpdatedState(LocalReduceMotion.current)
+
     // A ring thrown off the body every time it climbs a rung. Only upwards: a collapse drops the
     // tier by twenty-four steps at once and already has a blast of its own.
     val lastTier = remember { mutableIntStateOf(tier.index) }
@@ -1012,6 +1026,7 @@ private fun TapArea(
                 effects += TapEffect(nextId++, position, Numbers.format(gained))
                 sfx?.click()
                 if (hapticsOn) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                if (quiet) return@detectTapGestures
                 scope.launch {
                     /*
                      * A stepped squash-and-stretch rather than a spring.
@@ -1164,6 +1179,7 @@ private fun TapArea(
  */
 @Composable
 private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit) {
+    val quiet = LocalReduceMotion.current
     val progress = remember { Animatable(0f) }
     LaunchedEffect(effect.id) {
         progress.animateTo(1f, animationSpec = tween(900, easing = LinearOutSlowInEasing))
@@ -1173,7 +1189,8 @@ private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit)
     // Its own full-size box, so the offsets below are measured from the top left of the tap
     // area and not from the centre where the planet sits.
     Box(modifier = Modifier.fillMaxSize()) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        // Decoration, and the first thing to go when the player has asked for less movement.
+        if (!quiet) Canvas(modifier = Modifier.fillMaxSize()) {
             // The leading ring is done at 620 ms of the 900; the trailing one starts 90 ms in and
             // runs to 790. Both are read off the same clock so they can never drift apart.
             ring(
@@ -1197,7 +1214,9 @@ private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit)
         // The number climbs in fourteen steps and fades in over the first fifteen per cent, so it
         // arrives rather than being simply present. It starts a little below the tap and never
         // overshoots — a number that springs past its mark reads as a different number.
-        val climb = quantise(progress.value, TAP_NUMBER_STEPS)
+        // Still there, still fading, but it no longer travels: the reading is the information, the
+        // journey up the screen is the decoration.
+        val climb = if (quiet) 0f else quantise(progress.value, TAP_NUMBER_STEPS)
         Text(
             text = "+${effect.label}",
             color = Color.White,

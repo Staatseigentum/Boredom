@@ -34,6 +34,58 @@ fun main(args: Array<String>) {
     // that proves every rung on the ladder can actually be built.
     for (tier in Tiers.all) SpriteCache.sprite(tier)
 
+    /**
+     * What a rendered screen has to be true of, checked from the pixels themselves.
+     *
+     * The sweep added earlier proves a screen does not *throw*. That is a real class of fault and
+     * it caught a real crash — but it is a low bar, and the overhaul it was written for had already
+     * produced a fault it would have sailed past: the whole-number scaling rule that would have
+     * drawn every body at two thirds of its size. Nothing about that throws. Everything about it is
+     * wrong.
+     *
+     * These are intrinsic properties rather than a stored reference image, and that is a deliberate
+     * trade. A golden image catches more — every stray pixel — at the cost of a baseline that has to
+     * be regenerated for every legitimate change, on a machine that can run the renderer, which is
+     * not the one this is usually developed on. These catch the failures that matter (a blank
+     * screen, a screen that is one flat colour, a body that stopped filling its area) and cost
+     * nothing to maintain.
+     */
+    fun inspect(name: String, image: org.jetbrains.skia.Image) {
+        val bitmap = org.jetbrains.skia.Bitmap().apply {
+            allocPixels(org.jetbrains.skia.ImageInfo.makeN32Premul(image.width, image.height))
+        }
+        check(image.readPixels(bitmap, 0, 0)) { "$name: konnte nicht ausgelesen werden" }
+
+        var lit = 0
+        var total = 0
+        val histogram = HashMap<Int, Int>()
+        // Every eighth pixel in each direction: a sixty-fourth of the work for an answer that is
+        // identical at this granularity.
+        var y = 0
+        while (y < image.height) {
+            var x = 0
+            while (x < image.width) {
+                val colour = bitmap.getColor(x, y)
+                histogram[colour] = (histogram[colour] ?: 0) + 1
+                // Anything that is not the background counts as something being drawn.
+                if (colour != BACKGROUND) lit++
+                total++
+                x += 8
+            }
+            y += 8
+        }
+        bitmap.close()
+
+        val drawn = lit.toFloat() / total
+        check(drawn > 0.04f) {
+            "$name: praktisch leer, nur ${(drawn * 100).toInt()} % der Fläche ist bemalt"
+        }
+        val commonest = histogram.values.max().toFloat() / total
+        check(commonest < 0.97f) {
+            "$name: zu ${(commonest * 100).toInt()} % eine einzige Farbe — vermutlich nichts gerendert"
+        }
+    }
+
     fun shoot(
         name: String,
         game: DesktopGame,
@@ -58,9 +110,9 @@ fun main(args: Array<String>) {
                 // A couple of frames so layout settles and the spin animation has a value.
                 scene.render(0)
                 val image = scene.render(16_000_000)
-                File(out, "$name.png").writeBytes(
-                    image.encodeToData(EncodedImageFormat.PNG)!!.bytes,
-                )
+                val bytes = image.encodeToData(EncodedImageFormat.PNG)!!.bytes
+                File(out, "$name.png").writeBytes(bytes)
+                inspect(name, image)
             } finally {
                 scene.close()
             }
@@ -242,8 +294,52 @@ fun main(args: Array<String>) {
         shoot("91-breit-${section.name.lowercase()}", veteran, section = sectionIndex, wide = true)
     }
 
+    /*
+     * What one frame of a body costs to compute.
+     *
+     * The phone renders these live, eight times a second, and the resolution was doubled on the
+     * strength of an argument rather than a measurement. This is the measurement. It is printed for
+     * every rung and bounded for the worst of them, so raising the resolution again is a decision
+     * somebody takes with a number in front of them.
+     *
+     * A generous ceiling: a build machine is not a phone and this is not a benchmark. It is here to
+     * notice an order of magnitude, which is what a change to the renderer would cost.
+     */
+    println("Renderkosten je Sprosse:")
+    var worst = 0L
+    for (tier in Tiers.all) {
+        val sprite = SpriteCache.sprite(tier)
+        val buffer = sprite.buffer()
+        sprite.render(0, buffer)
+        val nanos = (0 until 4).minOf {
+            var taken = 0L
+            taken = kotlin.system.measureNanoTime { sprite.render(it + 1, buffer) }
+            taken
+        }
+        worst = maxOf(worst, nanos)
+        println("  ${tier.name.padEnd(18)} ${sprite.side}px  ${nanos / 1_000_000.0} ms")
+    }
+    check(worst < FRAME_BUDGET_MILLIS * 1_000_000) {
+        "Ein Frame braucht ${worst / 1_000_000.0} ms — über dem Budget von $FRAME_BUDGET_MILLIS ms"
+    }
+
     println("geschrieben nach ${out.absolutePath}")
 }
+
+/**
+ * The window's own background, as Skia reports it. See [Space] — everything else on screen is
+ * something the game drew.
+ */
+private const val BACKGROUND = 0xFF05060F.toInt()
+
+/**
+ * How long one sprite frame may take to compute, in milliseconds.
+ *
+ * Deliberately loose. At a six second turn the phone asks for eight of these a second, so even a
+ * tenth of this would be comfortable — the number is here to catch a renderer change that costs an
+ * order of magnitude, not to police a few per cent on a shared build machine.
+ */
+private const val FRAME_BUDGET_MILLIS = 120
 
 /** A landscape tablet, where the screen puts the body and the shop side by side. */
 private const val TABLET_WIDTH = 1_024

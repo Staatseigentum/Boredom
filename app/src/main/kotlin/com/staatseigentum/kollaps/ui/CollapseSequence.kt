@@ -228,6 +228,20 @@ class CollapseSequence {
             return now < CRUSH_END
         }
 
+    /**
+     * How many elements have declared themselves as things the hole can take.
+     *
+     * Exposed for the harness. Every panel has to carry [sog] by hand, and a new file that forgets
+     * does not fail, break or warn — it simply stands still while the rest of the screen falls into
+     * the hole, which nobody notices until they collapse on that screen. Three files added in the
+     * interface overhaul needed it added by hand; the fourth would have been the one that forgot.
+     *
+     * A count is a coarse guard and deliberately so: it catches "a whole panel is missing from the
+     * sequence", which is the failure that actually happens, without pinning a number that every
+     * layout tweak would have to update.
+     */
+    val registeredCount: Int get() = nodes.size
+
     internal fun register(node: SogNode) {
         nodes += node
     }

@@ -141,6 +141,10 @@ fun TierPulse(
     modifier: Modifier = Modifier,
 ) {
     if (trigger == null) return
+    // Nothing here carries information — reaching a rung already announces itself in the HUD, the
+    // ladder column and the celebration. So under reduced motion it simply does not happen, rather
+    // than happening more gently.
+    if (LocalReduceMotion.current) return
 
     val progress = remember(trigger) { Animatable(0f) }
     LaunchedEffect(trigger) {
