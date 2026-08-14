@@ -56,6 +56,17 @@ enum class AutomationRule(
             AutomationOption("×100", 100.0),
         ),
     ),
+    ORBITS(
+        id = "au_orbits",
+        label = "Bahnen ausbauen",
+        flavor = "Setzt Körper auf freie Bahnen und öffnet die nächste, wenn sie leicht drin ist.",
+        setting = "Rücklage",
+        options = listOf(
+            AutomationOption("×2", 2.0),
+            AutomationOption("×5", 5.0),
+            AutomationOption("×20", 20.0),
+        ),
+    ),
     RESEARCH(
         id = "au_research",
         label = "Forschung anstoßen",
@@ -114,6 +125,7 @@ object Automation {
             AutomationRule.COLLECTORS -> true
             AutomationRule.UPGRADES -> true
             AutomationRule.FUSION -> Fusion.isUnlocked(state)
+            AutomationRule.ORBITS -> Orbits.isUnlocked(state)
             AutomationRule.RESEARCH -> ResearchTree.isUnlocked(state)
         }
     }

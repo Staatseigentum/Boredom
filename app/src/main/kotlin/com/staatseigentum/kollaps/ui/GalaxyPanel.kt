@@ -417,20 +417,26 @@ private fun GalaxyVisit(
             state.visiting == universe.slot ->
                 PixelLabel("Du spielst gerade hier", color = Ember, size = 11)
 
-            !universe.isPlayable -> Text(
-                text = "Dieses Universum stammt aus einer Fassung, die es noch nicht aufbewahrt " +
-                    "hat. Es trägt weiter bei, besuchen lässt es sich nicht.",
-                style = MaterialTheme.typography.bodySmall,
-                color = Muted,
-            )
-
-            else -> PixelButton(
-                label = "Hineingehen · ${Numbers.formatDuration(Multiverse.VISIT_SECONDS.toLong())}",
-                onClick = { actions.visitGalaxy(universe.slot) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = Multiverse.canVisit(state, universe.slot),
-                accent = Ember,
-            )
+            else -> {
+                if (!universe.isRestored) {
+                    Text(
+                        text = "Diese Galaxie wurde geparkt, bevor Universen aufbewahrt wurden. " +
+                            "Sie wird aus ihrer Chronik aufgebaut: Sprosse, Kollapse und " +
+                            "Singularitäten stimmen, die Masse bekommst du ungenutzt zurück — " +
+                            "die Flotte musst du neu kaufen.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Muted,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                PixelButton(
+                    label = "Hineingehen · ${Numbers.formatDuration(Multiverse.VISIT_SECONDS.toLong())}",
+                    onClick = { actions.visitGalaxy(universe.slot) },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = Multiverse.canVisit(state, universe.slot),
+                    accent = Ember,
+                )
+            }
         }
 
         if (cost != null) {

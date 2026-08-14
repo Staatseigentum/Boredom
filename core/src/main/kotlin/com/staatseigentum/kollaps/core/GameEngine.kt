@@ -421,6 +421,7 @@ object GameEngine {
         var next = autoCollectors(state)
         next = autoUpgrades(next)
         next = autoFusion(next)
+        next = autoOrbits(next)
         return next
     }
 
@@ -480,6 +481,33 @@ object GameEngine {
             ?: return state
 
         return buyFuser(state, next.stage.id, BuyAmount.ONE)
+    }
+
+    /**
+     * Builds the system out: puts a body on an open slot, or opens the next one.
+     *
+     * Seeding comes first, and that ordering is the whole rule. An open slot with nothing on it
+     * produces exactly nothing — it is a hole the player paid for — and a body costs a fraction of
+     * the slot under it. Opening ahead of seeding would spend the reserve on the expensive half of
+     * a pair and leave the cheap, productive half unbought, so the automatic version of this would
+     * be strictly worse at it than a player doing it by hand.
+     *
+     * Only the innermost free slot is seeded, because the inner slots pay more and the rule should
+     * make the same choice the player would.
+     */
+    private fun autoOrbits(state: GameState): GameState {
+        if (!Automation.isAvailable(state, AutomationRule.ORBITS)) return state
+        val reserve = Automation.valueOf(state, AutomationRule.ORBITS) ?: return state
+        if (!modifiersOf(state).orbitsWork) return state
+
+        val empty = Orbits.opened(state).firstOrNull { !Orbits.isOccupied(state, it) }
+        if (empty != null && empty.seedCost * reserve <= state.mass) {
+            return seedSatellite(state, empty.index)
+        }
+
+        val next = Orbits.next(state) ?: return state
+        if (next.cost * reserve > state.mass) return state
+        return openOrbit(state)
     }
 
     /**

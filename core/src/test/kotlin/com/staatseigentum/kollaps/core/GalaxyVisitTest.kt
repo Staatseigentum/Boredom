@@ -36,7 +36,7 @@ class GalaxyVisitTest {
         val after = afterBigBang()
         val galaxy = after.universes.single()
 
-        assertTrue(galaxy.isPlayable, "Die Galaxie ist leer, es gibt nichts zu besuchen")
+        assertTrue(galaxy.isRestored, "Die Galaxie ist leer, es gibt nichts zu besuchen")
         val run = assertNotNull(galaxy.run)
         assertEquals(400, run.collectors["dust"])
         assertEquals(250.0, run.singularities)
@@ -100,18 +100,41 @@ class GalaxyVisitTest {
     }
 
     @Test
-    fun `nothing can be visited from inside a visit, a challenge, or an empty galaxy`() {
+    fun `nothing can be visited from inside a visit or a challenge`() {
         val visit = GameEngine.visitGalaxy(afterBigBang(), 0)
         assertFalse(Multiverse.canVisit(visit, 0), "Aus einem Besuch heraus lässt sich besuchen")
 
         val challenged = GameEngine.startChallenge(afterBigBang().copy(collapses = 5), "c_hand", now)
         assertFalse(Multiverse.canVisit(challenged, 0), "Aus einer Herausforderung heraus")
 
-        // A galaxy from before this existed carries no universe.
+        assertFalse(Multiverse.canVisit(afterBigBang(), 3), "Eine Bahn ohne Galaxie")
+    }
+
+    /**
+     * The case that made this worth doing: a player with a full sky, every galaxy of it parked
+     * before universes were kept, and therefore — before this — nothing to visit anywhere.
+     */
+    @Test
+    fun `a galaxy from before this existed is rebuilt from its chronicle`() {
         val old = afterBigBang().let { it.copy(universes = it.universes.map { g -> g.copy(run = null) }) }
-        assertFalse(old.universes.single().isPlayable)
-        assertFalse(Multiverse.canVisit(old, 0))
-        assertEquals(old.universes, GameEngine.visitGalaxy(old, 0).universes)
+        val galaxy = old.universes.single()
+        assertFalse(galaxy.isRestored, "Nichts aufbewahrt, also nichts wiederhergestellt")
+        assertTrue(Multiverse.canVisit(old, 0), "Eine alte Galaxie muss sich trotzdem betreten lassen")
+
+        val visit = GameEngine.visitGalaxy(old, 0)
+        assertEquals(0, visit.visiting)
+        assertEquals(galaxy.collapses, visit.collapses)
+        assertEquals(galaxy.singularities, visit.singularities)
+        assertEquals(Path.MASCHINE.id, visit.path, "Die Ausrichtung gehört dem Universum")
+        assertEquals(galaxy.bestTier, Tiers.forMass(visit.runMass, deep = true).index)
+        // Not one rung's fanfare for something that happened months ago.
+        assertEquals(galaxy.bestTier, visit.celebratedTier)
+
+        // And once it has been left, it is a real universe: the second visit continues the first.
+        val built = GameEngine.buyCollector(visit, "dust", BuyAmount.ONE)
+        val back = Multiverse.leave(built)
+        assertTrue(back.universes.single().isRestored)
+        assertEquals(built.ownedOf("dust"), assertNotNull(back.universes.single().run).collectors["dust"])
     }
 
     @Test

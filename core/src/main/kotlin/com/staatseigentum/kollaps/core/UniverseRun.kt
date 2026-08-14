@@ -103,6 +103,40 @@ data class UniverseRun(
     fun bestTierOf(): Int = Tiers.forMass(runMass, deep = true).index
 
     companion object {
+        /**
+         * Builds a universe for a galaxy that was parked before universes were kept.
+         *
+         * Saves made before visiting existed stored a galaxy as four numbers and nothing else, so
+         * the honest answer to "can I go back in" was no — and for a player with a full sky, *every*
+         * galaxy was one of those. The feature would have been invisible to exactly the people who
+         * had earned it, until they finished another universe from scratch.
+         *
+         * So it is rebuilt from the chronicle instead. Everything the galaxy actually recorded is
+         * put back exactly: it stands on the rung it reached, with the collapses it had behind it
+         * and the singularities it had earned. What was never written down is not invented — there
+         * is no note of which fleet was flying or which upgrades were bought, so there is none.
+         * The mass is handed over unspent to pay for that: a universe that got to a black hole
+         * collected at least that much, and buying the fleet again is a few minutes, not an evening.
+         *
+         * [celebratedTier] matters more than it looks. Without it, walking into a rebuilt black
+         * hole sets off every rung's celebration in turn, and the player watches twenty-five
+         * fanfares for steps they took months ago.
+         *
+         * Only ever used once per galaxy: leaving stows the real universe, so the second visit
+         * continues the first rather than starting it over.
+         */
+        fun reconstruct(galaxy: ParkedUniverse): UniverseRun {
+            val mass = Tiers.byIndex(galaxy.bestTier).threshold
+            return UniverseRun(
+                mass = mass,
+                runMass = mass,
+                singularities = galaxy.singularities,
+                collapses = galaxy.collapses,
+                celebratedTier = galaxy.bestTier,
+                path = galaxy.pathId,
+            )
+        }
+
         /** Takes the universe out of [state], leaving the player behind. */
         fun of(state: GameState): UniverseRun = UniverseRun(
         mass = state.mass,

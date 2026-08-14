@@ -141,8 +141,16 @@ data class ParkedUniverse(
     /** Whether this galaxy is a weld of two. */
     val isMerged: Boolean get() = secondPathId != null
 
-    /** Whether there is a universe in here to go back into. */
-    val isPlayable: Boolean get() = run != null
+    /**
+     * Whether the universe in here is the one that was actually played.
+     *
+     * `false` for a galaxy parked before universes were kept. Those are still enterable — see
+     * [UniverseRun.reconstruct] — but what you walk into is rebuilt from the chronicle rather than
+     * restored, so it is worth saying so before somebody goes looking for a fleet that was never
+     * written down. Once such a galaxy has been visited and left, its universe is real and this
+     * turns true for good.
+     */
+    val isRestored: Boolean get() = run != null
 
     /**
      * What this galaxy is called.
@@ -590,7 +598,10 @@ object Multiverse {
         // Not out of a challenge. A challenge is a set of rules on the run in front of you, and
         // walking out of the run to somewhere the rules do not apply is not beating it.
         if (state.runningChallengeIds.isNotEmpty()) return false
-        return state.universes.firstOrNull { it.slot == slot }?.isPlayable == true
+        // Every galaxy can be entered. The ones from before this existed get a universe built from
+        // their chronicle on the way in, so having a full sky is no longer a reason to be locked
+        // out of the sky.
+        return state.universes.any { it.slot == slot }
     }
 
     /**
@@ -602,7 +613,7 @@ object Multiverse {
     fun visit(state: GameState, slot: Int): GameState {
         if (!canVisit(state, slot)) return state
         val galaxy = state.universes.first { it.slot == slot }
-        val loaded = galaxy.run ?: return state
+        val loaded = galaxy.run ?: UniverseRun.reconstruct(galaxy)
 
         return loaded.applyTo(state).copy(
             homeRun = UniverseRun.of(state),

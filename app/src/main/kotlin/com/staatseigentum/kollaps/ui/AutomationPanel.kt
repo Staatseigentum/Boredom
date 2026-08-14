@@ -137,5 +137,6 @@ private fun RuleRow(state: GameState, rule: AutomationRule, onCycle: () -> Unit)
 private fun lockedReason(rule: AutomationRule): String = when (rule) {
     AutomationRule.COLLECTORS, AutomationRule.UPGRADES -> "noch nicht freigeschaltet"
     AutomationRule.FUSION -> "erst, wenn der Kern brennt"
+    AutomationRule.ORBITS -> "erst mit dem eigenen System"
     AutomationRule.RESEARCH -> "erst mit dem Labor"
 }

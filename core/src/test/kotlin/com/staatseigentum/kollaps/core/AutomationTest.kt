@@ -146,6 +146,36 @@ class AutomationTest {
         )
     }
 
+    // ------------------------------------------------------------------ the system
+
+    /** A state deep enough for the system to exist at all, with mass to spare. */
+    private fun withOrbits(mass: Double): GameState = automated(mass = mass)
+        .copy(runMass = Tiers.byName(Orbits.UNLOCK_TIER).threshold)
+
+    @Test
+    fun `the orbit rule seeds a free slot before it opens the next one`() {
+        val state = on(withOrbits(mass = 1e14).copy(orbits = 1), AutomationRule.ORBITS, 0)
+        assertTrue(Automation.isAvailable(state, AutomationRule.ORBITS))
+
+        val after = GameEngine.tick(state, 1.0)
+        assertEquals(1, after.orbits, "Es wurde eine Bahn geöffnet, statt die leere zu besetzen")
+        assertTrue(Orbits.isOccupied(after, Orbits.all.first()))
+
+        // Only once the system is full does it buy the next slot.
+        val next = GameEngine.tick(after, 1.0)
+        assertEquals(2, next.orbits)
+    }
+
+    @Test
+    fun `the orbit rule keeps its reserve`() {
+        // Enough for the slot itself, but not the multiple the dial asks to be left over.
+        val thin = Orbits.all.first().cost * 1.5
+        val state = on(withOrbits(mass = thin), AutomationRule.ORBITS, 2)
+
+        val after = GameEngine.tick(state, 1.0)
+        assertEquals(0, after.orbits, "Die Rücklage wurde übergangen")
+    }
+
     @Test
     fun `the research rule fills the bench`() {
         val cheapest = ResearchTree.all.filter { it.requires.isEmpty() }.minBy { it.cost }
