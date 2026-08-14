@@ -210,6 +210,13 @@ object Achievements {
         )
         add(
             Achievement(
+                "a_ausgebaut",
+                "Ausgebaut",
+                "Eine Galaxie vollständig ausgebaut. Sie ist besser als an dem Tag, an dem sie endete.",
+            ) { state -> state.universes.any { it.level >= Multiverse.MAX_LEVEL } },
+        )
+        add(
+            Achievement(
                 "a_funde_ruhe",
                 "Nicht angerührt",
                 "Fünf Funde in Ruhe gelassen. Manches ist mehr wert, wenn man es stehen lässt.",

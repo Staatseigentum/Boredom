@@ -252,6 +252,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun developGalaxy(slot: Int) {
+        _state.value = GameEngine.developGalaxy(_state.value, slot)
+        persist()
+    }
+
     fun answerFind(answerId: String) {
         _state.value = GameEngine.answerFind(_state.value, answerId)
         persist()

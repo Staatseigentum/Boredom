@@ -141,6 +141,9 @@ interface GameActions {
     /** Welds two galaxies into one, freeing a slot. */
     fun mergeGalaxies(keepSlot: Int, absorbSlot: Int)
 
+    /** Builds one level onto a parked galaxy, paid in Äonen. */
+    fun developGalaxy(slot: Int)
+
     /** Answers the catalogue find on the table. See [com.staatseigentum.kollaps.core.FindAnswer]. */
     fun answerFind(answerId: String)
 

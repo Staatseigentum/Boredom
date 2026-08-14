@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -108,8 +112,18 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
             }
 
             Spacer(Modifier.height(12.dp))
+            // Which galaxy is open, by slot. One at a time: eight galaxies each showing their own
+            // history, contribution and build-out at once is a page nobody reads.
+            var visiting by rememberSaveable { mutableStateOf(-1) }
             parked.forEach { universe ->
-                GalaxyRow(state, universe, actions, parked)
+                GalaxyRow(
+                    state = state,
+                    universe = universe,
+                    actions = actions,
+                    others = parked,
+                    open = visiting == universe.slot,
+                    onToggle = { visiting = if (visiting == universe.slot) -1 else universe.slot },
+                )
                 Spacer(Modifier.height(6.dp))
             }
         }
@@ -186,6 +200,8 @@ private fun GalaxyRow(
     universe: ParkedUniverse,
     actions: GameActions,
     others: List<ParkedUniverse>,
+    open: Boolean,
+    onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val path = universe.path
@@ -193,7 +209,7 @@ private fun GalaxyRow(
 
     Column(modifier = modifier.fillMaxWidth().background(SpaceElevated).padding(10.dp)) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onToggle),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -232,6 +248,21 @@ private fun GalaxyRow(
             maxLines = 1,
         )
     }
+
+        if (!open) {
+            // Closed, the row is one line about a galaxy. The controls live inside the visit,
+            // because a list of eight rows each carrying four chips and a weld strip is a wall.
+            Spacer(Modifier.height(4.dp))
+            PixelLabel(
+                if (universe.isRamping) "Stellt um · tippen" else "${universe.job.label} · tippen",
+                color = Muted,
+                size = 10,
+            )
+            return@Column
+        }
+
+        Spacer(Modifier.height(10.dp))
+        GalaxyVisit(state, universe, actions)
 
         Spacer(Modifier.height(8.dp))
         if (universe.isRamping) {
@@ -289,6 +320,75 @@ private fun GalaxyRow(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * What a galaxy is, and the one thing about it that can still be changed.
+ *
+ * The sky was a shelf of trophies: eight records of finished universes, each contributing its
+ * number and none of them touchable. This is the answer — a galaxy can be built out, level by
+ * level, with the Äonen the sky itself earns.
+ *
+ * The breakdown above the button is the reason it is worth doing. A galaxy's worth comes from four
+ * places, three of which were fixed the day it was parked; showing them apart is what makes the
+ * fourth read as the one that is still open.
+ */
+@Composable
+private fun GalaxyVisit(
+    state: GameState,
+    universe: ParkedUniverse,
+    actions: GameActions,
+    modifier: Modifier = Modifier,
+) {
+    val cost = Multiverse.costOfNextLevel(universe)
+    val finished = cost == null
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        SkyStat("Tiefste Sprosse", Tiers.byIndex(universe.bestTier).label)
+        SkyStat("Kollapse", universe.collapses.toString())
+        SkyStat("Singularitäten", Numbers.format(universe.singularities))
+        if (Multiverse.orbitBonusFor(state, universe) > 0.0) {
+            SkyStat(
+                "Trabant auf Bahn ${universe.slot + 1}",
+                "+${Numbers.formatMultiplier(1.0 + Multiverse.orbitBonusFor(state, universe))}",
+            )
+        }
+
+        Spacer(Modifier.height(10.dp))
+        PixelLabel(
+            "Ausbau ${universe.level} von ${Multiverse.MAX_LEVEL}",
+            color = if (finished) Positive else Nebula,
+            size = 12,
+        )
+        Spacer(Modifier.height(4.dp))
+        PixelBar(
+            progress = universe.level.toFloat() / Multiverse.MAX_LEVEL,
+            color = if (finished) Positive else Nebula,
+            modifier = Modifier.fillMaxWidth().height(6.dp),
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = if (finished) {
+                "Vollständig ausgebaut. Mehr geht hier nicht."
+            } else {
+                "Jede Stufe bringt der Galaxie dauerhaft mehr Gewicht — auch für ihre Äonen, " +
+                    "ihre Kometen und ihr Metall."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = Muted,
+        )
+
+        if (cost != null) {
+            Spacer(Modifier.height(8.dp))
+            PixelButton(
+                label = "Ausbauen · ${Numbers.format(cost)} Äonen",
+                onClick = { actions.developGalaxy(universe.slot) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = Multiverse.canDevelop(state, universe.slot),
+                accent = Nebula,
+            )
         }
     }
 }

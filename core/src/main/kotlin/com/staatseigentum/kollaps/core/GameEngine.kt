@@ -972,6 +972,9 @@ object GameEngine {
         )
     }
 
+    /** Builds one level onto a parked galaxy, paid in Äonen. See [Multiverse.develop]. */
+    fun developGalaxy(state: GameState, slot: Int): GameState = award(Multiverse.develop(state, slot))
+
     /** Puts a galaxy on a job. See [GalaxyJob]. */
     fun assignGalaxy(state: GameState, slot: Int, jobId: String): GameState =
         award(Multiverse.assign(state, slot, GalaxyJob.byId(jobId)))

@@ -93,6 +93,14 @@ data class ParkedUniverse(
      * more than three galaxies and the sky would collapse into one entry.
      */
     val secondPathId: String? = null,
+    /**
+     * How far this galaxy has been built out since it was parked. See [Multiverse.develop].
+     *
+     * A parked universe used to be frozen at whatever it was on the day it ended, which made the
+     * sky a shelf of trophies: eight things you look at and cannot touch. This is the one number
+     * about a galaxy the player can still move, and it is what makes visiting one worth doing.
+     */
+    val level: Int = 0,
     /** What it has been put to work at. See [GalaxyJob]; absent means the default. */
     val jobId: String? = null,
     /**
@@ -219,7 +227,65 @@ object Multiverse {
         val depth = YIELD_PER_TIER * (universe.bestTier + 1)
         val history = YIELD_PER_COLLAPSE * universe.collapses
         val hoard = 0.02 * ln(1.0 + universe.singularities.coerceAtLeast(0.0))
-        return depth + history + hoard
+        val built = YIELD_PER_LEVEL * universe.level.coerceIn(0, MAX_LEVEL)
+        return depth + history + hoard + built
+    }
+
+    /**
+     * Building a galaxy out, one level at a time, paid in Äonen.
+     *
+     * The sky earns Äonen and Äonen build the sky, which is a loop that feeds itself — so it is
+     * bounded twice over. [MAX_LEVEL] is a finish line each galaxy actually reaches, and the price
+     * climbs at [COST_GROWTH] so the last level of one galaxy costs about what the first ten did.
+     * The same care the singularity accounts get, and for the same reason: the one posting there
+     * that pays in its own currency is also the shortest list on the shelf.
+     *
+     * The price does *not* scale with how good the galaxy already is, and that is the interesting
+     * part. It means a shallow galaxy is the cheap one to improve — so the sky's weakest slot is
+     * now a question rather than an obvious weld. Merge it away and free a place, or spend the
+     * Äonen and keep the lean it carries.
+     */
+    const val MAX_LEVEL = 15
+
+    /** What one level adds to a galaxy's yield. */
+    const val YIELD_PER_LEVEL = 0.06
+
+    /** Äonen for the first level. */
+    const val LEVEL_BASE_COST = 2.0
+
+    /** And what each further one multiplies that by. */
+    const val COST_GROWTH = 1.18
+
+    /** What the next level of [universe] costs, or `null` when it is finished. */
+    fun costOfNextLevel(universe: ParkedUniverse): Double? {
+        if (universe.level >= MAX_LEVEL) return null
+        return LEVEL_BASE_COST * COST_GROWTH.pow(universe.level)
+    }
+
+    fun canDevelop(state: GameState, slot: Int): Boolean {
+        val universe = state.universes.firstOrNull { it.slot == slot } ?: return false
+        val cost = costOfNextLevel(universe) ?: return false
+        return state.aeons >= cost
+    }
+
+    /**
+     * Builds one level onto the galaxy in [slot].
+     *
+     * A galaxy mid-changeover can still be built out: the ramp is about what it is *doing*, and
+     * this is about what it *is*. Refusing here would only make the player wait for a timer that
+     * has nothing to do with the purchase.
+     */
+    fun develop(state: GameState, slot: Int): GameState {
+        val universe = state.universes.firstOrNull { it.slot == slot } ?: return state
+        val cost = costOfNextLevel(universe) ?: return state
+        if (state.aeons < cost) return state
+
+        return state.copy(
+            aeons = state.aeons - cost,
+            universes = state.universes.map {
+                if (it.slot == slot) it.copy(level = it.level + 1) else it
+            },
+        )
     }
 
     /** The same, weighted by how many better galaxies are already standing. */
@@ -431,6 +497,10 @@ object Multiverse {
             // The second lean is remembered separately, because a galaxy has one path and this one
             // has two. Everything downstream reads both.
             secondPathId = absorb.pathId ?: keep.secondPathId,
+            // The better of the two build-outs, not the sum. Äonen spent on the absorbed galaxy
+            // are not simply lost — but two half-built galaxies do not weld into a finished one,
+            // or the cheapest route to a maximum level would be to build two and merge them.
+            level = maxOf(keep.level, absorb.level),
         )
         // Both removals by slot, and neither by value. `List - element` removes the first entry
         // that compares equal, and `ParkedUniverse` is a data class — two galaxies that happened
