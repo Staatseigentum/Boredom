@@ -87,6 +87,14 @@ data class ParkedUniverse(
     /** Wall-clock milliseconds at which it was parked, for the "läuft seit" line. */
     val parkedAt: Long = 0L,
     /**
+     * The universe itself, paused, so it can be played again. See [UniverseRun].
+     *
+     * `null` for the galaxies of a save from before this existed — those were only ever a record,
+     * and there is nothing to load. They keep contributing exactly as they did; they simply cannot
+     * be visited.
+     */
+    val run: UniverseRun? = null,
+    /**
      * A second lean, from a galaxy welded into this one. See [Multiverse.merge].
      *
      * Only ever set by a merge, and only once — a galaxy that carried three paths would be worth
@@ -132,6 +140,9 @@ data class ParkedUniverse(
 
     /** Whether this galaxy is a weld of two. */
     val isMerged: Boolean get() = secondPathId != null
+
+    /** Whether there is a universe in here to go back into. */
+    val isPlayable: Boolean get() = run != null
 
     /**
      * What this galaxy is called.
@@ -557,6 +568,78 @@ object Multiverse {
     }
 
     /**
+     * How long one visit to an old universe lasts, in seconds.
+     *
+     * An hour, and then it hands the player back to the newest universe. A visit is a session with
+     * a clock on it rather than a second home — without the clock the newest universe becomes the
+     * one you *left*, and eight parallel games all being nudged along is a different game from
+     * this one.
+     *
+     * The clock runs on the tick, so it is an hour of *play* and not an hour of wall time. Closing
+     * the app in the middle of a visit does not spend it.
+     */
+    const val VISIT_SECONDS = 60.0 * 60.0
+
+    /** The galaxy currently being played, or `null` in the newest universe. */
+    fun visited(state: GameState): ParkedUniverse? =
+        state.visiting?.let { slot -> state.universes.firstOrNull { it.slot == slot } }
+
+    /** Whether [slot] can be dropped into right now. */
+    fun canVisit(state: GameState, slot: Int): Boolean {
+        if (state.visiting != null) return false
+        // Not out of a challenge. A challenge is a set of rules on the run in front of you, and
+        // walking out of the run to somewhere the rules do not apply is not beating it.
+        if (state.runningChallengeIds.isNotEmpty()) return false
+        return state.universes.firstOrNull { it.slot == slot }?.isPlayable == true
+    }
+
+    /**
+     * Drops into the universe parked in [slot].
+     *
+     * The universe being left is stowed exactly where a visited one is stowed, so coming back is
+     * the same operation in the other direction and there is only one piece of code to be wrong.
+     */
+    fun visit(state: GameState, slot: Int): GameState {
+        if (!canVisit(state, slot)) return state
+        val galaxy = state.universes.first { it.slot == slot }
+        val loaded = galaxy.run ?: return state
+
+        return loaded.applyTo(state).copy(
+            homeRun = UniverseRun.of(state),
+            visiting = slot,
+            visitSecondsLeft = VISIT_SECONDS,
+        )
+    }
+
+    /**
+     * Puts the visited universe back in its galaxy and returns to the newest one.
+     *
+     * Whatever was done during the visit is kept: the galaxy is stowed as it stands now, not as it
+     * was when the visit began. That is the whole point of going.
+     */
+    fun leave(state: GameState): GameState {
+        val slot = state.visiting ?: return state
+        val home = state.homeRun ?: return state
+        val stowed = UniverseRun.of(state)
+
+        return home.applyTo(state).copy(
+            universes = state.universes.map {
+                if (it.slot == slot) it.copy(run = stowed, bestTier = maxOf(it.bestTier, stowed.bestTierOf())) else it
+            },
+            homeRun = null,
+            visiting = null,
+            visitSecondsLeft = 0.0,
+        )
+    }
+
+    /** Counts the visit down, and shows the player out when it runs out. */
+    fun advanceVisit(state: GameState, seconds: Double): GameState {
+        if (state.visiting == null || seconds <= 0.0) return state
+        val left = state.visitSecondsLeft - seconds
+        return if (left > 0.0) state.copy(visitSecondsLeft = left) else leave(state)
+    }
+
+    /**
      * Puts a galaxy on a job, starting its changeover.
      *
      * Setting the job it is already on does nothing at all, rather than restarting the ramp — a
@@ -600,6 +683,8 @@ object Multiverse {
      */
     fun park(state: GameState, slot: Int, nowMillis: Long): ParkedUniverse = ParkedUniverse(
         slot = slot,
+        // The universe itself, paused rather than discarded — this is what makes it visitable.
+        run = UniverseRun.of(state),
         pathId = state.path,
         bestTier = maxOf(state.bestTier, GameEngine.tierOf(state).index),
         collapses = state.collapses,

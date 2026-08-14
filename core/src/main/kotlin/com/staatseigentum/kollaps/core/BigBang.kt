@@ -78,7 +78,11 @@ object BigBang {
     const val DEPTH_BONUS = 0.5
 
     fun canBang(state: GameState): Boolean =
-        state.runningChallengeIds.isEmpty() && pending(state) >= 1.0
+        state.runningChallengeIds.isEmpty() &&
+            // Not from inside a visit. A big bang parks the universe being played, and the one
+            // being played is already parked — it would try to put a galaxy inside itself.
+            state.visiting == null &&
+            pending(state) >= 1.0
 
     /** Not yet bought. Äonen upgrades are never gated on anything but their price. */
     fun offered(state: GameState): List<AeonUpgrade> =

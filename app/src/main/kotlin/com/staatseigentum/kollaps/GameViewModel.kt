@@ -257,6 +257,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun visitGalaxy(slot: Int) {
+        _state.value = GameEngine.visitGalaxy(_state.value, slot)
+        persist()
+    }
+
+    fun leaveGalaxy() {
+        _state.value = GameEngine.leaveGalaxy(_state.value)
+        persist()
+    }
+
     fun answerFind(answerId: String) {
         _state.value = GameEngine.answerFind(_state.value, answerId)
         persist()

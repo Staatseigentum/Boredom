@@ -223,6 +223,20 @@ data class GameState(
     /** The day [contractsToday] belongs to, as whole days since the epoch. */
     val contractDay: Long = 0,
 
+    /**
+     * Which galaxy is being played right now, or `null` for the newest universe.
+     *
+     * See [Multiverse.visit]. A visit is a session with a clock on it — [visitSecondsLeft] — after
+     * which the player is handed back.
+     */
+    val visiting: Int? = null,
+
+    /** Seconds of play left in the current visit. Counted by the tick, so a closed app pauses it. */
+    val visitSecondsLeft: Double = 0.0,
+
+    /** The newest universe, stowed while an older one is being visited. */
+    val homeRun: UniverseRun? = null,
+
     /** Ids of the contracts currently on the table. See [Contract]. */
     val contracts: List<String> = emptyList(),
 

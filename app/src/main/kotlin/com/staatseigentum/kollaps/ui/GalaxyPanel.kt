@@ -74,6 +74,38 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
                 color = Muted,
             )
 
+            // The visit sits above everything, because while it runs it is the most important
+            // fact on the screen: the universe under the player's hands is not the newest one.
+            Multiverse.visited(state)?.let { here ->
+                Spacer(Modifier.height(10.dp))
+                PixelPanel(border = Ember, padding = 10) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        PixelLabel("Du bist in ${here.name}", color = Ember, size = 13)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Noch ${Numbers.formatDuration(state.visitSecondsLeft.toLong())} " +
+                                "Spielzeit, dann geht es zurück ins neueste Universum. Alles, was " +
+                                "du hier tust, bleibt hier.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Muted,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        PixelBar(
+                            progress = (state.visitSecondsLeft / Multiverse.VISIT_SECONDS).toFloat(),
+                            color = Ember,
+                            modifier = Modifier.fillMaxWidth().height(6.dp),
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        PixelButton(
+                            label = "Zurück ins neueste Universum",
+                            onClick = { actions.leaveGalaxy() },
+                            modifier = Modifier.fillMaxWidth(),
+                            accent = Ember,
+                        )
+                    }
+                }
+            }
+
             Spacer(Modifier.height(12.dp))
             GalaxyRing(parked)
 
@@ -379,6 +411,27 @@ private fun GalaxyVisit(
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
+
+        Spacer(Modifier.height(10.dp))
+        when {
+            state.visiting == universe.slot ->
+                PixelLabel("Du spielst gerade hier", color = Ember, size = 11)
+
+            !universe.isPlayable -> Text(
+                text = "Dieses Universum stammt aus einer Fassung, die es noch nicht aufbewahrt " +
+                    "hat. Es trägt weiter bei, besuchen lässt es sich nicht.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Muted,
+            )
+
+            else -> PixelButton(
+                label = "Hineingehen · ${Numbers.formatDuration(Multiverse.VISIT_SECONDS.toLong())}",
+                onClick = { actions.visitGalaxy(universe.slot) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = Multiverse.canVisit(state, universe.slot),
+                accent = Ember,
+            )
+        }
 
         if (cost != null) {
             Spacer(Modifier.height(8.dp))

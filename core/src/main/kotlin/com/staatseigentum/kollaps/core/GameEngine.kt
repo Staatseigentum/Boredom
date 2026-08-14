@@ -237,6 +237,9 @@ object GameEngine {
         ticked = Multiverse.advance(ticked, seconds)
         ticked = Multiverse.advanceMetal(ticked, seconds)
         ticked = Multiverse.advanceRamps(ticked, seconds)
+        // An hour of play in an old universe, then back. Counted here rather than on the wall
+        // clock, so putting the phone down does not spend the visit.
+        ticked = Multiverse.advanceVisit(ticked, seconds)
         ticked = automate(ticked)
         ticked = advanceEvents(ticked, seconds)
         ticked = raiseFind(ticked)
@@ -655,6 +658,9 @@ object GameEngine {
      */
     const val OVERSHOOT_BONUS = 1.0
 
+    /** The most absence the sky is ever paid for at once. See [applyOffline]. */
+    const val SKY_OFFLINE_CAP_SECONDS = 30.0 * 24.0 * 3_600.0
+
     /**
      * What waiting a little longer would be worth, so pressing now is a choice and not a reflex.
      *
@@ -734,6 +740,11 @@ object GameEngine {
                 // Everything below is the point of collapsing: it is what carries over.
                 heavy = forged,
                 alloys = state.alloys,
+                // The visit rides through both resets. Without this, collapsing inside an old
+                // universe dropped `homeRun` on the floor — and with it the newest universe.
+                visiting = state.visiting,
+                visitSecondsLeft = state.visitSecondsLeft,
+                homeRun = state.homeRun,
                 // The catalogue's own record: which finds have been answered, and what was written down
                 // about the ones left alone. `findsTapped` is deliberately not here — that one is the run's,
                 // and giving it up is the price of the answer that pays best while it lasts.
@@ -821,6 +832,8 @@ object GameEngine {
                 challengeDuos = state.challengeDuos,
                 heavy = state.heavy,
                 alloys = state.alloys,
+                // Deliberately absent: a big bang cannot happen inside a visit at all (see
+                // `BigBang.canBang`), so the new universe starts with no visit in progress.
                 // The catalogue's own record: which finds have been answered, and what was written down
                 // about the ones left alone. `findsTapped` is deliberately not here — that one is the run's,
                 // and giving it up is the price of the answer that pays best while it lasts.
@@ -999,6 +1012,12 @@ object GameEngine {
             },
         )
     }
+
+    /** Drops into the universe parked in [slot]. See [Multiverse.visit]. */
+    fun visitGalaxy(state: GameState, slot: Int): GameState = award(Multiverse.visit(state, slot))
+
+    /** Puts the visited universe back and returns to the newest one. */
+    fun leaveGalaxy(state: GameState): GameState = award(Multiverse.leave(state))
 
     /** Builds one level onto a parked galaxy, paid in Äonen. See [Multiverse.develop]. */
     fun developGalaxy(state: GameState, slot: Int): GameState = award(Multiverse.develop(state, slot))
@@ -1276,6 +1295,11 @@ object GameEngine {
         investments = state.investments,
         heavy = state.heavy,
         alloys = state.alloys,
+        // The visit rides through both resets. Without this, collapsing inside an old
+        // universe dropped `homeRun` on the floor — and with it the newest universe.
+        visiting = state.visiting,
+        visitSecondsLeft = state.visitSecondsLeft,
+        homeRun = state.homeRun,
         // The catalogue's own record: which finds have been answered, and what was written down
         // about the ones left alone. `findsTapped` is deliberately not here — that one is the run's,
         // and giving it up is the price of the answer that pays best while it lasts.
@@ -1525,10 +1549,19 @@ object GameEngine {
         // The galaxies are paid for the whole absence, uncapped and at full rate. Everything that
         // limits offline production is about the player not being there to run the fleet — and
         // nobody was ever running these. A universe left behind does not notice being left behind.
-        // Every one of the three runs on the *whole* absence rather than the capped, discounted
-        // one: the caps are about the player not being there to run the fleet, and nobody was ever
-        // running these.
-        val away = elapsedSeconds.toDouble()
+        /*
+         * The whole absence rather than the capped, discounted one: the caps on production are
+         * about the player not being there to run the fleet, and nobody was ever running these.
+         *
+         * With one exception, and it is not about fairness. Nothing here validates the clock — a
+         * machine that corrects itself, a save carried between devices, a date set forward by hand
+         * all arrive as "you were away for a very long time", and an uncapped rate turns that into
+         * minted currency. Measured: a four-hundred-day jump paid a hundred and thirty Äonen,
+         * which is more than the deepest big bang in the game.
+         *
+         * A month is far more than anybody is away and far less than a clock glitch.
+         */
+        val away = elapsedSeconds.toDouble().coerceAtMost(SKY_OFFLINE_CAP_SECONDS)
         val credited = Multiverse.advanceRamps(
             Multiverse.advanceMetal(Multiverse.advance(credit(cold, gained), away), away),
             away,

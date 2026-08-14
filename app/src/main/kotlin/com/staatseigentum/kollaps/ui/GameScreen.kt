@@ -144,6 +144,12 @@ interface GameActions {
     /** Builds one level onto a parked galaxy, paid in Äonen. */
     fun developGalaxy(slot: Int)
 
+    /** Drops into the universe parked in a galaxy, for an hour of play. */
+    fun visitGalaxy(slot: Int)
+
+    /** Puts it back and returns to the newest universe. */
+    fun leaveGalaxy()
+
     /** Answers the catalogue find on the table. See [com.staatseigentum.kollaps.core.FindAnswer]. */
     fun answerFind(answerId: String)
 

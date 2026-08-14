@@ -197,6 +197,14 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.developGalaxy(state, slot)
     }
 
+    override fun visitGalaxy(slot: Int) {
+        state = GameEngine.visitGalaxy(state, slot)
+    }
+
+    override fun leaveGalaxy() {
+        state = GameEngine.leaveGalaxy(state)
+    }
+
     override fun answerFind(answerId: String) {
         state = GameEngine.answerFind(state, answerId)
     }
