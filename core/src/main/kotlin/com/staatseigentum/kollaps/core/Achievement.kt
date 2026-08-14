@@ -64,13 +64,19 @@ object Achievements {
             Achievement(
                 "a_alle_voll",
                 "Ausgebaut",
-                "Jede Sorte fünfhundert Mal. Es passt buchstäblich nichts mehr rein.",
+                // Read off the cap rather than written out, because the cap has moved once and
+                // a sentence that says "fünfhundert" while the rules say 2 500 is a lie the tests
+                // cannot catch.
+                "Jede Sorte ${Collector.MAX_OWNED} Mal. Es passt buchstäblich nichts mehr rein.",
             ) { state ->
                 Collectors.all.all { state.ownedOf(it.id) >= Collector.MAX_OWNED }
             },
         )
         add(collector("a_weber_5", "Verwoben", "Fünf Weber an derselben Kausalkette.", "weber", 5))
         add(collector("a_omega_1", "Das letzte Gerät", "Sammelt ein, was übrig sein wird.", "omega", 1))
+        add(collector("a_entropie_10", "Rückwärts gemahlen", "Zehn Mühlen, die die Unordnung zurückdrehen.", "entropie", 10))
+        add(collector("a_nullpunkt_5", "Aus dem Nichts gepresst", "Fünf Pressen am leersten Vakuum, das es gibt.", "nullpunkt", 5))
+        add(collector("a_alpha_1", "Vor dem Anfang", "Einmal zurückgegriffen bis vor den ersten Augenblick.", "alpha", 1))
         add(
             Achievement(
                 "a_all_collectors",

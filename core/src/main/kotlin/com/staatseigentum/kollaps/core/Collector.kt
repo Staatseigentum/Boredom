@@ -16,6 +16,21 @@ data class Collector(
     val germanFlavor: String,
     val baseCost: Double,
     val baseRate: Double,
+    /**
+     * Whether this machine belongs to the catalogue ladder rather than to the named one.
+     *
+     * A gate and not a price. The obvious way to keep the endgame fleet out of a first run is to
+     * make it unaffordable, but the cost curve is not free to move: every collector's price sits
+     * about seven orders above its output, and that ratio is what makes buying the next machine a
+     * decision rather than an obvious yes. Pricing these above the black hole would have meant
+     * lifting their output to match, which puts a factor of a million between the Omega and its
+     * successor and turns a smooth ladder into a cliff.
+     *
+     * So the curve stays smooth and the shop simply does not offer them yet. Measured, not
+     * guessed: on the old rules the bot bought three of these before the black hole and finished
+     * the opening run in three hours instead of three and a half.
+     */
+    val catalogueOnly: Boolean = false,
 ) {
     /** What the shop row says. Translated here so no call site has to remember to. */
     val name: String get() = Lang.t(germanName)
@@ -45,16 +60,24 @@ data class Collector(
          * The most copies of any one collector that can be built.
          *
          * There was no limit at all before this, and the only thing stopping anybody was the price
-         * curve — which is not a design, it is arithmetic that happens to look like one. Five
-         * hundred is a number the player can see coming and aim at: it is exactly twenty
-         * milestones, so the counter arrives at the cap and at its last bonus in the same purchase
+         * curve — which is not a design, it is arithmetic that happens to look like one. A number
+         * the player can see coming and aim at is a design, and this one lands exactly on a
+         * milestone, so the counter arrives at the cap and at its last bonus in the same purchase
          * rather than trailing off between two of them.
          *
-         * A save from before the cap that somehow holds more keeps every copy it has. Taking them
+         * Five hundred to begin with, and two and a half thousand since the ladder grew. Five
+         * hundred was chosen against a game that ended at the black hole; above it the catalogue
+         * runs for sixteen thousand rungs, and a cap that low turned every one of them into the
+         * same fleet with a larger multiplier in front of it. At 2 500 the price curve is what
+         * bites again — the last copy costs 1.15^2499 times the first, which is a number with a
+         * hundred and fifty digits — so the cap is a horizon rather than a wall somebody hits on
+         * a Tuesday.
+         *
+         * A save from before any cap that somehow holds more keeps every copy it has. Taking them
          * away would be the rules reaching backwards into a game already played; refusing to sell
-         * a five hundred and first is enough.
+         * one more is enough.
          */
-        const val MAX_OWNED = 500
+        const val MAX_OWNED = 2_500
     }
 }
 
@@ -179,6 +202,49 @@ object Collectors {
             germanFlavor = "Sammelt ein, was übrig sein wird. Rückwärts, vom Ende her.",
             baseCost = 7_500_000_000_000_000_000.0,
             baseRate = 750_000_000_000.0,
+        ),
+        // Everything past here exists because the ladder does. The catalogue rungs above the black
+        // hole run for sixteen thousand steps, and a fleet that topped out at the Omega would have
+        // spent all of them buying the same seventeen machines.
+        Collector(
+            id = "entropie",
+            germanName = "Entropiemühle",
+            germanFlavor = "Mahlt Unordnung zurück zu Ordnung. Läuft rückwärts und beschwert sich nicht.",
+            baseCost = 1.0e20,
+            baseRate = 5.0e12,
+            catalogueOnly = true,
+        ),
+        Collector(
+            id = "horizont",
+            germanName = "Horizontpflug",
+            germanFlavor = "Zieht Furchen in den Ereignishorizont und erntet, was dabei hochkommt.",
+            baseCost = 1.4e21,
+            baseRate = 3.2e13,
+            catalogueOnly = true,
+        ),
+        Collector(
+            id = "nullpunkt",
+            germanName = "Nullpunktpresse",
+            germanFlavor = "Presst das leerste Vakuum, bis unten Zahlen herauslaufen.",
+            baseCost = 2.0e22,
+            baseRate = 2.1e14,
+            catalogueOnly = true,
+        ),
+        Collector(
+            id = "schleuse",
+            germanName = "Ewigkeitsschleuse",
+            germanFlavor = "Öffnet sich einmal pro Ewigkeit. Die Ewigkeiten sind kürzer geworden.",
+            baseCost = 3.0e23,
+            baseRate = 1.4e15,
+            catalogueOnly = true,
+        ),
+        Collector(
+            id = "alpha",
+            germanName = "Alpha-Rückgriff",
+            germanFlavor = "Greift zurück bis vor den Anfang und nimmt mit, was dort noch liegt.",
+            baseCost = 4.5e24,
+            baseRate = 9.0e15,
+            catalogueOnly = true,
         ),
     )
 

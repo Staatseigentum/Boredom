@@ -15,22 +15,63 @@ import kotlin.test.assertTrue
 class CollectorLadderTest {
 
     @Test
-    fun `the last collector is affordable before the ladder runs out`() {
-        // A collector nobody can ever buy is a row in the shop that only ever says no. The final
-        // body's threshold is the most mass a run will ever hold, so the priciest machine has to
-        // sit comfortably under it.
-        val priciest = Collectors.all.last()
+    fun `every collector is affordable somewhere on the ladder it belongs to`() {
+        // A collector nobody can ever buy is a row in the shop that only ever says no.
+        //
+        // Two ladders now, and each machine has to sit on the one it belongs to. The named ladder
+        // ends at the black hole, so everything offered during it has to fit under that. The
+        // catalogue machines are allowed to need the ladder above it — but its opening rungs, not
+        // rung sixteen thousand, or they are shop rows nobody will ever see either.
+        val earlyCatalogue = Designations.at(Designations.FIRST_INDEX + 499).threshold
+
+        for (collector in Collectors.all) {
+            val ceiling = if (collector.catalogueOnly) earlyCatalogue else Tiers.last.threshold
+            assertTrue(
+                collector.baseCost < ceiling / 10.0,
+                "${collector.name} kostet ${collector.baseCost}, erreichbar ist bis $ceiling",
+            )
+        }
+
+        // And the named ladder must keep a fleet of its own rather than becoming a prologue to
+        // the shop: most of the machines still have to be buyable before the black hole.
+        val named = Collectors.all.count { !it.catalogueOnly }
+        assertTrue(named > Collectors.all.size / 2, "Nur $named Kollektoren vor dem Schwarzen Loch")
+    }
+
+    @Test
+    fun `the catalogue fleet stays shut until the ladder opens`() {
+        val rich = GameState.new(0).copy(mass = 1e40, totalMass = 1e40, runMass = 1e40)
+        val catalogue = Collectors.all.first { it.catalogueOnly }
+
+        // Not merely hidden — refused. The shop is a view; this is the rule.
+        assertEquals(rich, GameEngine.buyCollector(rich, catalogue.id, BuyAmount.ONE))
         assertTrue(
-            priciest.baseCost < Tiers.last.threshold / 10.0,
-            "${priciest.name} kostet ${priciest.baseCost}, die Leiter endet bei ${Tiers.last.threshold}",
+            GameEngine.collectorOffers(rich, BuyAmount.ONE)
+                .none { it.collector.catalogueOnly && it.visible },
+            "Die Katalogflotte steht schon im Laden",
         )
+
+        val opened = rich.copy(
+            bigBangs = Multiverse.SLOTS,
+            universes = (0 until Multiverse.SLOTS).map { ParkedUniverse(slot = it) },
+        )
+        assertTrue(GameEngine.buyCollector(opened, catalogue.id, BuyAmount.ONE).ownedOf(catalogue.id) > 0)
     }
 
     @Test
     fun `every collector becomes visible before it becomes affordable`() {
         // Visibility keys off lifetime mass and affordability off the purse, so a collector that
         // only appeared once it was already payable would pop into the shop pre-bought.
-        var state = GameState.new(0).copy(totalMass = 0.0, mass = 0.0)
+        //
+        // With the catalogue ladder open, because that is the state in which every machine in the
+        // game is on sale — the gate is tested on its own in the test above, and mixing the two
+        // questions here would only ask the gate twice.
+        var state = GameState.new(0).copy(
+            totalMass = 0.0,
+            mass = 0.0,
+            bigBangs = Multiverse.SLOTS,
+            universes = (0 until Multiverse.SLOTS).map { ParkedUniverse(slot = it) },
+        )
         for (collector in Collectors.all) {
             state = state.copy(totalMass = collector.baseCost, mass = collector.baseCost)
             val offer = GameEngine.collectorOffers(state, BuyAmount.ONE)
@@ -75,7 +116,11 @@ class CollectorLadderTest {
             val marks = Upgrades.all.count {
                 (it.effect as? UpgradeEffect.CollectorMultiplier)?.collectorId == collector.id
             }
-            assertEquals(5, marks, "${collector.name} hat $marks Mk-Stufen")
+            assertEquals(
+                Upgrades.MARKS_PER_COLLECTOR,
+                marks,
+                "${collector.name} hat $marks Mk-Stufen",
+            )
         }
     }
 

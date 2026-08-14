@@ -161,12 +161,31 @@ private fun nameOf(collectorId: String): String =
 object Upgrades {
 
     /** Multipliers applied to a collector's base price to get the price of its upgrades. */
+    /**
+     * The marks: how many copies each one waits for, what it costs, and what it is called.
+     *
+     * Every entry here is one upgrade *per collector*, so a row added at the bottom is twenty-two
+     * upgrades. The first five stop at two hundred copies, which was most of the way to the old
+     * cap of five hundred; the cap is now 2 500, so the ladder of marks follows it up rather than
+     * leaving the last two thousand purchases with nothing to unlock.
+     *
+     * Where they sit was measured rather than argued about. Moving them from four hundred copies
+     * to fifteen hundred changed the opening run by nothing at all — the first run never builds
+     * that deep into any one machine — so they sit at the reachable end, where a fleet grown on
+     * prestige actually meets them. What *did* cut the opening run from three and a half hours to
+     * three was something else entirely: the five new collectors, before they were gated behind
+     * the catalogue ladder. See [Collector.catalogueOnly].
+     */
     private val COLLECTOR_UPGRADE_STEPS = listOf(
         Triple(10, 20.0, "Mk II"),
         Triple(25, 250.0, "Mk III"),
         Triple(50, 3_000.0, "Mk IV"),
         Triple(100, 40_000.0, "Mk V"),
         Triple(200, 600_000.0, "Mk VI"),
+        Triple(400, 9_000_000.0, "Mk VII"),
+        Triple(700, 140_000_000.0, "Mk VIII"),
+        Triple(1_200, 2_200_000_000.0, "Mk IX"),
+        Triple(2_000, 35_000_000_000.0, "Mk X"),
     )
 
     /**
@@ -325,6 +344,11 @@ object Upgrades {
         Synergy("faltwerk", "weber", 0.001, "Kurze Fäden", "Zwischen zwei Falten ist der Weg von Ursache zu Wirkung kaum noch einer."),
         Synergy("weber", "urgrund", 0.001, "Gespanntes Gewebe", "Wo alles zusammenhängt, hängt auch der Grund mit dran."),
         Synergy("urgrund", "omega", 0.001, "Vom Ende her", "Wer weiß, was unten liegt, weiß auch, was übrig bleibt."),
+        Synergy("omega", "entropie", 0.001, "Vorsortierte Unordnung", "Was am Ende übrig bleibt, ist schon halb geordnet."),
+        Synergy("entropie", "horizont", 0.001, "Gemahlener Boden", "In geordnetem Grund zieht sich die Furche von allein."),
+        Synergy("horizont", "nullpunkt", 0.001, "Aufgebrochener Rand", "Ein gepflügter Horizont gibt beim Pressen leichter nach."),
+        Synergy("nullpunkt", "schleuse", 0.001, "Unter Druck", "Gepresstes Nichts drückt die Schleuse von selbst auf."),
+        Synergy("schleuse", "alpha", 0.001, "Offener Durchgang", "Wenn die Schleuse steht, ist der Weg vor den Anfang kurz."),
     )
 
     private val fleetSynergies = listOf(
@@ -332,6 +356,8 @@ object Upgrades {
         Triple("extractor", 0.001, "Geteilter Horizont" to "Alle zapfen dieselbe Quelle an, und keiner merkt es dem anderen an."),
         Triple("echo", 0.002, "Gleichgeschaltet" to "Die ganze Anlage schwingt im Takt des ersten Augenblicks."),
         Triple("omega", 0.002, "Rückwärts geplant" to "Jede Maschine tut schon jetzt, was sie am Ende getan haben wird."),
+        Triple("nullpunkt", 0.002, "Unter gleichem Druck" to "Die ganze Anlage steht im selben gepressten Nichts."),
+        Triple("alpha", 0.003, "Vor dem Anfang gebaut" to "Jede Maschine stand schon da, bevor es ein Davor gab."),
     )
 
     private val synergyPairUpgrades: List<Upgrade> =
@@ -368,6 +394,9 @@ object Upgrades {
         val name: String,
         val flavor: String,
     )
+
+    /** Marks each collector carries. One row of [COLLECTOR_UPGRADE_STEPS] is one mark. */
+    val MARKS_PER_COLLECTOR: Int get() = COLLECTOR_UPGRADE_STEPS.size
 
     private val collectorUpgrades: List<Upgrade> = Collectors.all.flatMap { collector ->
         COLLECTOR_UPGRADE_STEPS.map { (required, priceFactor, suffix) ->

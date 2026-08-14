@@ -535,6 +535,9 @@ object GameEngine {
     /** Buys [amount] copies of a collector, or nothing if they are not affordable. */
     fun buyCollector(state: GameState, collectorId: String, amount: BuyAmount): GameState {
         val collector = Collectors.byId(collectorId) ?: return state
+        // The catalogue fleet is not for sale until the ladder it belongs to is open. Checked here
+        // and not only in the shop, because the shop is a view and this is the rule.
+        if (collector.catalogueOnly && !Designations.isUnlocked(state)) return state
         val owned = state.ownedOf(collectorId)
         val count = resolveAmount(collector, owned, state.mass, amount, Roles.costFactor(state, collectorId))
         if (count <= 0) return state
@@ -1291,9 +1294,12 @@ object GameEngine {
             val cost = collectorCost(state, collector, owned, count)
             // A collector appears once it is roughly within reach, or once one is owned. The
             // very first one is always visible so a fresh save has something to buy.
-            val visible = position == 0 ||
-                owned > 0 ||
-                state.totalMass >= collector.baseCost * VISIBILITY_FACTOR
+            val visible = (owned > 0 || !collector.catalogueOnly || Designations.isUnlocked(state)) &&
+                (
+                    position == 0 ||
+                        owned > 0 ||
+                        state.totalMass >= collector.baseCost * VISIBILITY_FACTOR
+                    )
 
             CollectorOffer(
                 collector = collector,
