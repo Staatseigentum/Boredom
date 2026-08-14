@@ -487,8 +487,22 @@ object GameEngine {
      * play time and has no business holding a wall clock. The caller has one; it passes it here.
      */
     fun onWallClock(state: GameState, nowMillis: Long): GameState {
-        val settled = settleResearch(state, nowMillis)
+        val settled = rollContractDay(settleResearch(state, nowMillis), nowMillis)
         return autoResearch(settled, nowMillis)
+    }
+
+    /**
+     * Empties the day's contract allowances when the day has turned.
+     *
+     * On the wall clock and not the tick, because a day is a wall-clock thing and the tick has no
+     * idea what time it is. A clock that ran backwards — a machine correcting itself, a player
+     * changing the date — also lands here as "a different day", which resets the allowance rather
+     * than leaving it stuck; being generous about a clock nobody controls is the right way round.
+     */
+    private fun rollContractDay(state: GameState, nowMillis: Long): GameState {
+        val today = Contract.dayOf(nowMillis)
+        if (today == state.contractDay) return state
+        return state.copy(contractDay = today, contractsToday = emptyMap())
     }
 
     /** Puts something on the bench whenever it is free. */
@@ -728,6 +742,8 @@ object GameEngine {
                 // The table survives both resets, because half of what it asks for is a reset.
                 contracts = state.contracts,
                 contractsDone = state.contractsDone,
+                contractsToday = state.contractsToday,
+                contractDay = state.contractDay,
                 contractMarks = state.contractMarks,
                 prestigeUpgrades = state.prestigeUpgrades,
                 investments = state.investments,
@@ -813,6 +829,8 @@ object GameEngine {
                 // The table survives both resets, because half of what it asks for is a reset.
                 contracts = state.contracts,
                 contractsDone = state.contractsDone,
+                contractsToday = state.contractsToday,
+                contractDay = state.contractDay,
                 contractMarks = state.contractMarks,
                 lastRunSeconds = state.lastRunSeconds,
                 lastRunMass = state.lastRunMass,
@@ -918,6 +936,9 @@ object GameEngine {
         val contract = Contract.byId(contractId) ?: return state
         if (contractId !in state.contracts) return state
         if (!contract.isMetBy(state)) return state
+        // Checked here as well as when the table is dealt. The table is a view of the rule; this
+        // is the rule.
+        if (Contract.isSpentToday(state, contract)) return state
 
         return award(
             state.copy(
@@ -928,6 +949,13 @@ object GameEngine {
                 // next press.
                 contracts = state.contracts.filterNot { it == contractId },
                 contractsDone = state.contractsDone + 1,
+                // Counted only where there is something to count against, so the map never grows
+                // an entry for the six contracts that limit themselves.
+                contractsToday = if (contract.dailyLimit == null) {
+                    state.contractsToday
+                } else {
+                    state.contractsToday + (contractId to Contract.doneToday(state, contract) + 1)
+                },
                 // The handed-in contract's mark goes with it. If it is ever dealt again it starts
                 // counting from wherever the player is then, not from where they were the first
                 // time round.
@@ -1256,6 +1284,8 @@ object GameEngine {
         // The table survives both resets, because half of what it asks for is a reset.
         contracts = state.contracts,
         contractsDone = state.contractsDone,
+        contractsToday = state.contractsToday,
+        contractDay = state.contractDay,
         contractMarks = state.contractMarks,
         lastRunSeconds = state.lastRunSeconds,
         lastRunMass = state.lastRunMass,

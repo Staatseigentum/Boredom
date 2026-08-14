@@ -51,6 +51,20 @@ data class Contract(
      * 0 / 3.
      */
     val fromHere: Boolean = false,
+    /**
+     * How often this may be handed in within one day, or `null` for as often as it comes up.
+     *
+     * Most of the deck limits itself: there are five alloys, sixteen challenges and fourteen
+     * research projects ever, and a pile of gold that only grows — those are finished once and
+     * never dealt again. Four are not like that, and one of them was a press. Collapses come every
+     * few minutes to somebody deep in the catalogue ladder, so "fünf Kollapse" paid two Äonen on a
+     * loop, for ever, faster than anything else in the game earns them.
+     *
+     * A limit and not a higher target, because a higher target only moves the loop. What was wrong
+     * was not the price — it was that the thing being asked for had stopped being an achievement
+     * and become a lever.
+     */
+    val dailyLimit: Int? = null,
 ) {
     /** Where this contract stands, with its own zero subtracted where it has one. */
     fun progressOf(state: GameState): Double {
@@ -85,6 +99,7 @@ data class Contract(
                 requiredBigBangs = Multiverse.SLOTS,
                 counter = { (GameEngine.tierOf(it).index - Tiers.last.index).coerceAtLeast(0).toDouble() },
                 target = 50.0,
+                dailyLimit = 8,
             ),
             Contract(
                 id = "ct_alloys",
@@ -103,6 +118,7 @@ data class Contract(
                 counter = { it.collapses.toDouble() },
                 target = 5.0,
                 fromHere = true,
+                dailyLimit = 5,
             ),
             Contract(
                 id = "ct_fleet",
@@ -120,6 +136,7 @@ data class Contract(
                 counter = { it.findsAnswered.toDouble() },
                 target = 3.0,
                 fromHere = true,
+                dailyLimit = 8,
             ),
             Contract(
                 id = "ct_sky",
@@ -130,6 +147,7 @@ data class Contract(
                     Multiverse.parked(it).count { g -> g.job == GalaxyJob.RECHNEN && !g.isRamping }.toDouble()
                 },
                 target = 4.0,
+                dailyLimit = 5,
             ),
             Contract(
                 id = "ct_challenge",
@@ -169,6 +187,26 @@ data class Contract(
 
         fun byId(id: String?): Contract? = all.firstOrNull { it.id == id }
 
+        /**
+         * Which day it is, for the daily limits.
+         *
+         * Whole days since the epoch, so no timezone database and no clock arithmetic. It rolls
+         * over at midnight UTC rather than at the player's midnight, which is a real difference
+         * and the right trade: a fixed, checkable moment beats a correct one that needs a timezone
+         * table shipped into a game about rocks.
+         */
+        fun dayOf(nowMillis: Long): Long = nowMillis / 86_400_000L
+
+        /** How often [contract] has been handed in today. */
+        fun doneToday(state: GameState, contract: Contract): Int =
+            state.contractsToday[contract.id] ?: 0
+
+        /** Whether the day's allowance for [contract] is used up. */
+        fun isSpentToday(state: GameState, contract: Contract): Boolean {
+            val limit = contract.dailyLimit ?: return false
+            return doneToday(state, contract) >= limit
+        }
+
         /** Contracts appear once there is a game deep enough to have directions worth giving. */
         fun isUnlocked(state: GameState): Boolean = state.collapses >= 1 || state.contractsDone > 0
 
@@ -190,7 +228,12 @@ data class Contract(
             val eligible = eligible(state)
             if (eligible.isEmpty()) return emptyList()
 
-            val kept = state.contracts.filter { id -> eligible.any { it.id == id } }.distinct()
+            // Anything whose allowance is gone leaves the table rather than sitting on it
+            // unclaimable. A row that cannot be finished today is not a direction, it is furniture.
+            val kept = state.contracts
+                .filter { id -> eligible.any { it.id == id } }
+                .filterNot { id -> byId(id)?.let { isSpentToday(state, it) } == true }
+                .distinct()
             if (kept.size >= SLOTS) return kept.take(SLOTS)
 
             // Drawn by counting forward from how many have been finished, so the deck advances
@@ -205,7 +248,9 @@ data class Contract(
             var tries = 0
             while (filled.size < SLOTS && tries < eligible.size) {
                 val candidate = eligible[cursor.mod(eligible.size)]
-                if (candidate.id !in filled && !candidate.isMetBy(state)) filled += candidate.id
+                if (candidate.id !in filled && !candidate.isMetBy(state) && !isSpentToday(state, candidate)) {
+                    filled += candidate.id
+                }
                 cursor++
                 tries++
             }

@@ -551,12 +551,26 @@ fun GameScreen(
                 Blast(
                     trigger = trigger,
                     kind = kind,
-                    // From the point the universe was squeezed onto, not from the middle of the
-                    // screen — on a phone those are two very different places.
-                    centre = if (kind == BlastKind.URKNALL && bigBang.running) {
-                        bigBang.centre
-                    } else {
-                        Offset.Unspecified
+                    /*
+                     * From the body, not from the middle of the window.
+                     *
+                     * The big bang had its own point from the start — it is squeezed onto one, so
+                     * there was no way to write it without. The collapse quietly fell through to
+                     * `Unspecified`, which the blast reads as "the middle of whatever you are
+                     * drawn in", and on a phone the body sits near the middle anyway, so nothing
+                     * looked wrong. In the two-column window the body is on the left and the
+                     * explosion went off over the shop.
+                     *
+                     * The collapse has been tracking the body's centre all along — `collapseCentre`
+                     * records it every time the layout settles, because the whole sequence falls
+                     * towards that point. It simply was never handed on.
+                     */
+                    centre = when {
+                        kind == BlastKind.URKNALL && bigBang.running -> bigBang.centre
+                        collapse.centre != Offset.Zero -> collapse.centre
+                        // Before the body has ever been laid out there is nothing to aim at, and
+                        // the middle is a better guess than the top left corner.
+                        else -> Offset.Unspecified
                     },
                     onFinished = { blast = null },
                 )

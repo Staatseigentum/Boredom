@@ -212,6 +212,17 @@ data class GameState(
      */
     val universes: List<ParkedUniverse> = emptyList(),
 
+    /**
+     * How often each contract has been handed in today, and which day that is.
+     *
+     * Only the four contracts with a [Contract.dailyLimit] are ever counted here, and the whole
+     * map is emptied when the day rolls over — so it stays at most four entries long, for ever.
+     */
+    val contractsToday: Map<String, Int> = emptyMap(),
+
+    /** The day [contractsToday] belongs to, as whole days since the epoch. */
+    val contractDay: Long = 0,
+
     /** Ids of the contracts currently on the table. See [Contract]. */
     val contracts: List<String> = emptyList(),
 
