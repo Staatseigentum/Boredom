@@ -43,6 +43,27 @@ sealed interface PrestigeEffect {
 
     /** Divides how long a research project takes on the wall clock. */
     data class ResearchSpeed(val factor: Double) : PrestigeEffect
+
+    /*
+     * The four below speak to the systems the game grew after the lab was written.
+     *
+     * The tree stopped at [ResearchSpeed] and had nothing to say about the sky, the orbits, the
+     * forge or the contract table — so a player who reached the multiverse found the one part of
+     * the game that runs on the wall clock had quietly finished. These are what the second storey
+     * of the tree is built out of.
+     */
+
+    /** Every parked galaxy weighs more, whatever job it is on. */
+    data class SkyYield(val factor: Double) : PrestigeEffect
+
+    /** Bodies on orbits contribute more. */
+    data class OrbitYield(val factor: Double) : PrestigeEffect
+
+    /** A collapse forges more heavy metal out of the same iron. */
+    data class MetalYield(val factor: Double) : PrestigeEffect
+
+    /** Every contract handed in pays this much extra, in Äonen. */
+    data class ContractBonus(val extra: Double) : PrestigeEffect
 }
 
 /**
@@ -100,6 +121,18 @@ val PrestigeEffect.text: String
 
         is PrestigeEffect.ResearchSpeed ->
             "Forschung dauert nur noch ${Numbers.formatPercent(1.0 / factor)} der Zeit"
+
+        is PrestigeEffect.SkyYield ->
+            "Galaxien wiegen ${Numbers.formatMultiplier(factor)} so schwer"
+
+        is PrestigeEffect.OrbitYield ->
+            "Trabanten liefern ${Numbers.formatMultiplier(factor)}"
+
+        is PrestigeEffect.MetalYield ->
+            "Der Kollaps schmiedet ${Numbers.formatMultiplier(factor)} Metall"
+
+        is PrestigeEffect.ContractBonus ->
+            "Jeder Auftrag zahlt ${Numbers.format(extra)} Äonen extra"
     }
 
 /**

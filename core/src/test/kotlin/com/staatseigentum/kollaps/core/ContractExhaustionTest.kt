@@ -68,18 +68,31 @@ class ContractExhaustionTest {
 
     @Test
     fun `the ceiling is measured against the contract's own zero`() {
-        // Twelve of fourteen projects done: three more do not fit, so it must not be dealt.
+        /*
+         * Measured against the tree rather than against a number.
+         *
+         * This used to say "twelve of fourteen", which was true when it was written and stopped
+         * being true the moment the lab grew a second storey — the test then failed for a reason
+         * that had nothing to do with what it is about. The contract's ceiling was always the size
+         * of the catalogue; the test should ask the catalogue too.
+         */
+        val contract = Contract.byId("ct_research")!!
+        val total = ResearchTree.all.size
+        val target = contract.target.toInt()
+
+        // Near the top, with fewer than one target's worth of projects left: it cannot be finished.
+        val leftOver = total - target + 1
         val late = completionist().copy(
-            research = ResearchTree.all.take(12).map { it.id }.toSet(),
-            contractMarks = mapOf("ct_research" to 12.0),
+            research = ResearchTree.all.take(leftOver).map { it.id }.toSet(),
+            contractMarks = mapOf("ct_research" to leftOver.toDouble()),
         )
-        assertFalse(Contract.byId("ct_research")!!.isPossibleFor(late), "Drei weitere Projekte gibt es nicht")
+        assertFalse(contract.isPossibleFor(late), "Es sind weniger als $target Projekte übrig")
 
         val early = late.copy(
-            research = ResearchTree.all.take(6).map { it.id }.toSet(),
-            contractMarks = mapOf("ct_research" to 6.0),
+            research = emptySet(),
+            contractMarks = mapOf("ct_research" to 0.0),
         )
-        assertTrue(Contract.byId("ct_research")!!.isPossibleFor(early))
+        assertTrue(contract.isPossibleFor(early), "Von vorn muss es zu schaffen sein")
     }
 
     @Test

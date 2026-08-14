@@ -777,7 +777,10 @@ object GameEngine {
         val earned = pendingSingularities(state)
         // Neutron capture: the iron in the core soaks up what the collapse throws at it, and
         // what falls out is the only thing in the game that survives every reset there is.
-        val forged = Heavy.forge(state.heavy, Fusion.amountOf(state, Element.EISEN))
+        val forged = Heavy.forge(
+            state.heavy,
+            Fusion.amountOf(state, Element.EISEN) * modifiersOf(state).metalYield,
+        )
         return award(
             GameState(
                 mass = startingMass(state),
@@ -1026,7 +1029,10 @@ object GameEngine {
 
         return award(
             state.copy(
-                aeons = state.aeons + contract.reward,
+                // The written reward plus whatever the lab has bought. Added rather than scaled:
+                // a flat Äon on every contract is legible on the card, where "×1.2 auf zwei
+                // Äonen" is a sum the player has to do to know what they are getting.
+                aeons = state.aeons + contract.reward + modifiersOf(state).contractBonus,
                 // `filterNot` and not `- contractId`: Kotlin's list minus removes the *first*
                 // occurrence only, so a table that somehow held a duplicate would keep one of
                 // them — and it would be a contract that is already met, paying out again on the
@@ -2037,7 +2043,7 @@ object GameEngine {
          */
         if (mods.skyWorks) {
             Multiverse.effects(state).forEach { apply(mods, it) }
-            mods.global *= Multiverse.multiplier(state)
+            mods.global *= 1.0 + (Multiverse.multiplier(state) - 1.0) * mods.skyYield
         }
 
         // What this run has tapped out of its catalogue finds. Part of the run on purpose: it is
@@ -2104,7 +2110,11 @@ object GameEngine {
         // one because crediting more than full production for time not spent playing would make
         // being away the better move.
         // The bodies in orbit, before fusion so that the two read in the order they unlock.
-        if (mods.orbitsWork) mods.global *= Orbits.multiplier(state)
+        if (mods.orbitsWork) {
+            // The bonus scales what the orbits add rather than the whole multiplier: an empty
+            // system multiplies by one, and one times anything is still nothing to improve.
+            mods.global *= 1.0 + (Orbits.multiplier(state) - 1.0) * mods.orbitYield
+        }
 
         // What past collapses forged. Unconditional, unlike the fusion chain below: these are
         // held rather than running, and an empty holding is a factor of one anyway.
@@ -2158,6 +2168,10 @@ object GameEngine {
             is PrestigeEffect.AutoBuy -> mods.autoBuy = true
             is PrestigeEffect.FusionRate -> mods.fusionRate *= effect.factor
             is PrestigeEffect.ResearchSpeed -> mods.researchSpeed *= effect.factor
+            is PrestigeEffect.SkyYield -> mods.skyYield *= effect.factor
+            is PrestigeEffect.OrbitYield -> mods.orbitYield *= effect.factor
+            is PrestigeEffect.MetalYield -> mods.metalYield *= effect.factor
+            is PrestigeEffect.ContractBonus -> mods.contractBonus += effect.extra
 
             is PrestigeEffect.StartingCollectors -> Unit // only read when a run begins
             is PrestigeEffect.StartingMass -> Unit // only read when a run begins
@@ -2180,6 +2194,12 @@ object GameEngine {
         var autoBuy = false
         var fusionRate = 1.0
         var researchSpeed = 1.0
+
+        /** What the lab's second storey buys, one field per younger system. */
+        var skyYield = 1.0
+        var orbitYield = 1.0
+        var metalYield = 1.0
+        var contractBonus = 0.0
 
         /** A challenge can switch off a whole source of mass. */
         var collectorsWork = true

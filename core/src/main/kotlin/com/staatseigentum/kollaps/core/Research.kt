@@ -175,6 +175,76 @@ object ResearchTree {
             requires = listOf("r_horizon", "r_catalysis"),
             effect = PrestigeEffect.GlobalMultiplier(1.6),
         ),
+
+        /*
+         * The second storey.
+         *
+         * Everything above was written when the game ended at the black hole, and it shows: the
+         * tree's last project is a flat multiplier, and a player who reaches the multiverse finds
+         * the one system that runs on the wall clock has quietly nothing left to say. These six
+         * speak to what came after — the sky, the orbits, the forge, the contract table and the
+         * catalogue ladder.
+         *
+         * All of them hang off [r_eternity], so the first storey stays exactly as long as it was
+         * and nothing here appears before the game it talks about does. The costs continue the
+         * curve rather than restarting it; the durations do not, and deliberately: eight hours was
+         * already the outer edge of what anybody will wait for, and doubling it again would make
+         * the lab something you set going and never see finish.
+         */
+        Research(
+            id = "r_cartography",
+            germanName = "Himmelskartierung",
+            germanFlavor = "Acht Galaxien, endlich richtig vermessen. Sie waren die ganze Zeit schwerer.",
+            cost = 4e21,
+            seconds = 6 * 60 * 60.0,
+            requires = listOf("r_eternity"),
+            effect = PrestigeEffect.SkyYield(1.35),
+        ),
+        Research(
+            id = "r_ephemeris",
+            germanName = "Ephemeriden",
+            germanFlavor = "Wo ein Trabant morgen steht, weiß man heute. Das allein bringt schon etwas.",
+            cost = 8e21,
+            seconds = 5 * 60 * 60.0,
+            requires = listOf("r_eternity"),
+            effect = PrestigeEffect.OrbitYield(1.4),
+        ),
+        Research(
+            id = "r_transmutation",
+            germanName = "Transmutation",
+            germanFlavor = "Dasselbe Eisen, mehr Gold. Die Alchemisten lagen nur um ein Sternenleben daneben.",
+            cost = 2e22,
+            seconds = 7 * 60 * 60.0,
+            requires = listOf("r_cartography"),
+            effect = PrestigeEffect.MetalYield(1.6),
+        ),
+        Research(
+            id = "r_bureau",
+            germanName = "Verwaltungsapparat",
+            germanFlavor = "Irgendwer muss die Aufträge gegenzeichnen. Er nimmt einen Äon Bearbeitungsgebühr.",
+            cost = 3e22,
+            seconds = 6 * 60 * 60.0,
+            requires = listOf("r_ephemeris"),
+            effect = PrestigeEffect.ContractBonus(1.0),
+        ),
+        Research(
+            id = "r_survey",
+            germanName = "Durchmusterung",
+            germanFlavor = "Sechzehntausend Einträge, und die Liste fängt erst an.",
+            cost = 1e23,
+            seconds = 8 * 60 * 60.0,
+            requires = listOf("r_transmutation", "r_bureau"),
+            effect = PrestigeEffect.SkyYield(1.5),
+        ),
+        Research(
+            id = "r_recursion",
+            germanName = "Rekursionssatz",
+            germanFlavor = "Ein Universum, das eines baut, das eines baut. Irgendwo hört es auf, nur nicht hier.",
+            cost = 5e23,
+            seconds = 8 * 60 * 60.0,
+            requires = listOf("r_survey"),
+            effect = PrestigeEffect.GlobalMultiplier(2.0),
+        ),
     )
 
     private val index: Map<String, Research> = all.associateBy { it.id }

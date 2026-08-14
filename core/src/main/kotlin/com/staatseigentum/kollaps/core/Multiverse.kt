@@ -506,6 +506,12 @@ object Multiverse {
         is PrestigeEffect.TapMultiplier -> PrestigeEffect.TapMultiplier(taper(effect.factor, share))
         is PrestigeEffect.FusionRate -> PrestigeEffect.FusionRate(taper(effect.factor, share))
         is PrestigeEffect.ResearchSpeed -> PrestigeEffect.ResearchSpeed(taper(effect.factor, share))
+        is PrestigeEffect.SkyYield -> PrestigeEffect.SkyYield(taper(effect.factor, share))
+        is PrestigeEffect.OrbitYield -> PrestigeEffect.OrbitYield(taper(effect.factor, share))
+        is PrestigeEffect.MetalYield -> PrestigeEffect.MetalYield(taper(effect.factor, share))
+        // Flat rather than tapered: it is already a small absolute number, and a share of it
+        // rounds to nothing the moment more than one galaxy carries it.
+        is PrestigeEffect.ContractBonus -> PrestigeEffect.ContractBonus(effect.extra * share)
         is PrestigeEffect.CometFrequency -> PrestigeEffect.CometFrequency(taper(effect.factor, share))
         is PrestigeEffect.SingularityGain -> PrestigeEffect.SingularityGain(taper(effect.factor, share))
         is PrestigeEffect.AutoTap -> PrestigeEffect.AutoTap(effect.perSecond * share)
