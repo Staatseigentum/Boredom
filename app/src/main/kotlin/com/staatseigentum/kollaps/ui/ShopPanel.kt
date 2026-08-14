@@ -700,7 +700,7 @@ private fun sectionsFor(state: GameState, stats: Stats): List<CosmosSection> =
     }
 
 @Composable
-private fun CosmosPanel(
+internal fun CosmosPanel(
     state: GameState,
     stats: Stats,
     actions: GameActions,

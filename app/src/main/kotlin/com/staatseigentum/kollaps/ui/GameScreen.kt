@@ -470,12 +470,40 @@ fun GameScreen(
                 // landscape screen and the shop scrolls a line at a time; the tap area is the
                 // thing that wants height, and in a row it can have all of it.
                 if (maxWidth >= WIDE_THRESHOLD && maxWidth > maxHeight) {
-                    Row(modifier = Modifier.fillMaxSize()) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Header(state = shownState, stats = shownStats, compact = false)
-                            body(Modifier.fillMaxWidth().weight(1f), false)
+                    /*
+                     * Three columns under a band.
+                     *
+                     * The wide layout used to be the phone's column with a shop bolted to the side:
+                     * a centred header stacked over the body on the left, the whole narrow shop on
+                     * the right. It worked, and it spent a wide screen on two things — the header
+                     * filled a fifth of the height to say nine short facts, and the ladder the
+                     * whole game climbs was a progress bar.
+                     *
+                     * So the header lies down into a band, the space it frees becomes a column for
+                     * the ladder, and the shop stops hiding the fleet behind a tab.
+                     */
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        HudBand(state = shownState, stats = shownStats)
+                        Row(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                            LadderColumn(
+                                state = shownState,
+                                stats = shownStats,
+                                modifier = Modifier.width(LADDER_WIDTH).fillMaxHeight(),
+                            )
+                            Box(Modifier.width(2.dp).fillMaxHeight().background(Outline))
+                            // The body keeps the largest share: it is the thing being looked at.
+                            body(Modifier.fillMaxHeight().weight(1.35f), false)
+                            WideShop(
+                                state = shownState,
+                                stats = shownStats,
+                                buyAmount = buyAmount,
+                                actions = actions,
+                                startSection = startSection,
+                                updateSection = updateSection,
+                                saveSlots = saveSlots,
+                                modifier = Modifier.fillMaxHeight().weight(1.15f),
+                            )
                         }
-                        shop(Modifier.fillMaxHeight().weight(1f), null)
                     }
                 } else {
                     /*
@@ -1181,6 +1209,14 @@ private const val TWO_PI = 6.2831855f
  * window two rows tall.
  */
 private val WIDE_THRESHOLD = 600.dp
+
+/**
+ * How wide the ladder column is.
+ *
+ * Wide enough for "Roter Überriese" at bodyMedium plus its square and the padding around it, and
+ * not a pixel more — every dp here comes off the body in the middle.
+ */
+private val LADDER_WIDTH = 172.dp
 
 /**
  * How much larger the tap target is than the body drawn inside it.
