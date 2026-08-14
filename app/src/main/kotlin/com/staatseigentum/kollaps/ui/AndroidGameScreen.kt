@@ -73,6 +73,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun bigBang(pathId: String) = model.bigBang(pathId)
             override fun buyAeonUpgrade(id: String) = model.buyAeonUpgrade(id)
             override fun forgeAlloy(id: String) = model.forgeAlloy(id)
+            override fun assignGalaxy(slot: Int, jobId: String) = model.assignGalaxy(slot, jobId)
             override fun buyPathNode(id: String) = model.buyPathNode(id)
             override fun startChallenges(ids: Set<String>) = model.startChallenges(ids)
             override fun abortChallenge() = model.abortChallenge()

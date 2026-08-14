@@ -683,7 +683,7 @@ private fun CosmosPanel(
                 }
 
                 CosmosSection.SKY -> {
-                    item { GalaxyPanel(state = state) }
+                    item { GalaxyPanel(state = state, actions = actions) }
                     if (Alloy.isUnlocked(state)) {
                         item { AlloyPanel(state = state, actions = actions) }
                     }

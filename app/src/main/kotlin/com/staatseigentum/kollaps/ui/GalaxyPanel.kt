@@ -1,6 +1,7 @@
 package com.staatseigentum.kollaps.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.staatseigentum.kollaps.core.GalaxyJob
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Multiverse
 import com.staatseigentum.kollaps.core.Numbers
@@ -51,7 +53,7 @@ import kotlin.math.sin
  * what is still missing is the thing that makes the next big bang worth pressing.
  */
 @Composable
-fun GalaxyPanel(state: GameState, modifier: Modifier = Modifier) {
+fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Modifier) {
     val parked = Multiverse.parked(state)
     val perSecond = Multiverse.aeonsPerSecond(state)
 
@@ -95,7 +97,7 @@ fun GalaxyPanel(state: GameState, modifier: Modifier = Modifier) {
 
             Spacer(Modifier.height(12.dp))
             parked.forEach { universe ->
-                GalaxyRow(state, universe)
+                GalaxyRow(state, universe, actions)
                 Spacer(Modifier.height(6.dp))
             }
         }
@@ -165,17 +167,20 @@ private fun GalaxyRing(parked: List<ParkedUniverse>, modifier: Modifier = Modifi
     }
 }
 
-/** One galaxy: what it is called, how deep it got, and which way it leans. */
+/** One galaxy: what it is called, how deep it got, which way it leans, and what it is doing. */
 @Composable
-private fun GalaxyRow(state: GameState, universe: ParkedUniverse, modifier: Modifier = Modifier) {
+private fun GalaxyRow(
+    state: GameState,
+    universe: ParkedUniverse,
+    actions: GameActions,
+    modifier: Modifier = Modifier,
+) {
     val path = universe.path
     val body = Tiers.byIndex(universe.bestTier)
 
+    Column(modifier = modifier.fillMaxWidth().background(SpaceElevated).padding(10.dp)) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(SpaceElevated)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -211,6 +216,60 @@ private fun GalaxyRow(state: GameState, universe: ParkedUniverse, modifier: Modi
             maxLines = 1,
         )
     }
+
+        Spacer(Modifier.height(8.dp))
+        if (universe.isRamping) {
+            // While it changes over it does nothing, so the strip is replaced by the reason —
+            // four chips that all look pressable would invite pressing them again.
+            PixelLabel(
+                "Umstellung auf ${universe.job.label} · noch " +
+                    Numbers.formatDuration(universe.rampSeconds.toLong()),
+                color = Muted,
+                size = 11,
+            )
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                GalaxyJob.entries.forEach { job ->
+                    JobChip(
+                        job = job,
+                        selected = universe.job == job,
+                        onClick = { actions.assignGalaxy(universe.slot, job.id) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = universe.job.flavor,
+                style = MaterialTheme.typography.bodySmall,
+                color = Muted,
+            )
+        }
+    }
+}
+
+/** One of the four jobs, as something to press. */
+@Composable
+private fun JobChip(
+    job: GalaxyJob,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = job.label,
+        style = MaterialTheme.typography.bodySmall,
+        color = if (selected) Starlight else Muted,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        modifier = modifier
+            .background(if (selected) Nebula.copy(alpha = 0.30f) else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(vertical = 5.dp),
+    )
 }
 
 /**

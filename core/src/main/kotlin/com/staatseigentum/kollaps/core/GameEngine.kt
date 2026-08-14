@@ -225,6 +225,8 @@ object GameEngine {
         // The sky earns on its own clock, which is the point of it: a parked universe is not a
         // bonus to what the player is doing, it is a second thing that is being done.
         ticked = Multiverse.advance(ticked, seconds)
+        ticked = Multiverse.advanceMetal(ticked, seconds)
+        ticked = Multiverse.advanceRamps(ticked, seconds)
         ticked = automate(ticked)
         ticked = advanceEvents(ticked, seconds)
         ticked = sample(ticked, seconds)
@@ -812,6 +814,10 @@ object GameEngine {
         return award(state.copy(heavy = spent, alloys = state.alloys + alloy.id))
     }
 
+    /** Puts a galaxy on a job. See [GalaxyJob]. */
+    fun assignGalaxy(state: GameState, slot: Int, jobId: String): GameState =
+        award(Multiverse.assign(state, slot, GalaxyJob.byId(jobId)))
+
     /** Buys an Äonen upgrade if it is unbought and affordable. */
     fun buyAeonUpgrade(state: GameState, upgradeId: String): GameState {
         val upgrade = AeonUpgrades.byId(upgradeId) ?: return state
@@ -1304,8 +1310,14 @@ object GameEngine {
         // The galaxies are paid for the whole absence, uncapped and at full rate. Everything that
         // limits offline production is about the player not being there to run the fleet — and
         // nobody was ever running these. A universe left behind does not notice being left behind.
-        val credited = Multiverse.advance(credit(cold, gained), elapsedSeconds.toDouble())
-            .copy(lastSeenAt = nowMillis)
+        // Every one of the three runs on the *whole* absence rather than the capped, discounted
+        // one: the caps are about the player not being there to run the fleet, and nobody was ever
+        // running these.
+        val away = elapsedSeconds.toDouble()
+        val credited = Multiverse.advanceRamps(
+            Multiverse.advanceMetal(Multiverse.advance(credit(cold, gained), away), away),
+            away,
+        ).copy(lastSeenAt = nowMillis)
         return OfflineReport(
             state = credited,
             seconds = capped.toLong(),
@@ -1729,6 +1741,9 @@ object GameEngine {
         mods.fusionRate *= Heavy.factorFor(state, FusionBonus.FUSION)
         mods.researchSpeed *= Heavy.factorFor(state, FusionBonus.RESEARCH)
         mods.cometFrequency *= Heavy.factorFor(state, FusionBonus.COMETS)
+        // And whatever the sky is out looking for, which is the one job that pays into a system
+        // rather than into a number.
+        mods.cometFrequency *= Multiverse.cometFactor(state)
 
         // And what has been welded out of them, which is the only thing the metals are ever spent
         // on. Same fold as everything else permanent: an alloy is a different way to earn a lasting

@@ -242,6 +242,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun assignGalaxy(slot: Int, jobId: String) {
+        _state.value = GameEngine.assignGalaxy(_state.value, slot, jobId)
+        persist()
+    }
+
     fun buyPathNode(nodeId: String) {
         _state.value = GameEngine.buyPathNode(_state.value, nodeId)
         persist()

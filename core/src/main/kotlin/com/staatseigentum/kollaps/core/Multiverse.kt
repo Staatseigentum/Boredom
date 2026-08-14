@@ -5,6 +5,56 @@ import kotlin.math.ln
 import kotlin.math.pow
 
 /**
+ * What a parked universe is doing with itself.
+ *
+ * The sky arrived as eight numbers that went up, which is a strange thing to hand somebody who has
+ * spent a hundred and sixty collapses earning them. Eight things you own and no decision about any
+ * of them is a scoreboard wearing the clothes of a system.
+ *
+ * So each galaxy is put to work at one of four things. None of them is best: production is what the
+ * run in front of you needs, Äonen are what the shelf needs, comets are what an active session
+ * wants and metal is what the forge wants — and which of those you are short of changes across an
+ * evening. That is the decision.
+ */
+enum class GalaxyJob(val id: String, val label: String, val flavor: String) {
+    /** Feeds the universe that is actually being played. What every galaxy does by default. */
+    FOERDERN(
+        id = "job_produce",
+        label = "Fördern",
+        flavor = "Schickt herüber, was sie herstellt. Das aktive Universum merkt es sofort.",
+    ),
+
+    /** Äonen instead of production, and considerably more of them. */
+    RECHNEN(
+        id = "job_aeons",
+        label = "Rechnen",
+        flavor = "Stellt die Produktion ein und rechnet stattdessen. Zahlt in Äonen.",
+    ),
+
+    /** Throws comets at the active universe. */
+    SUCHEN(
+        id = "job_comets",
+        label = "Suchen",
+        flavor = "Durchkämmt sich selbst nach Losem und wirft es herüber.",
+    ),
+
+    /** The first way to heavy elements that does not go through a collapse. */
+    GRABEN(
+        id = "job_metal",
+        label = "Graben",
+        flavor = "Holt schwere Kerne aus dem eigenen Kern. Langsam, aber ohne Kollaps.",
+    ),
+    ;
+
+    companion object {
+        val DEFAULT = FOERDERN
+
+        fun byId(id: String?): GalaxyJob = entries.firstOrNull { it.id == id } ?: DEFAULT
+
+    }
+}
+
+/**
  * A universe that has been through its big bang and did not stop existing.
  *
  * The big bang used to be a delete key with a good story attached: press it, lose everything the
@@ -36,7 +86,26 @@ data class ParkedUniverse(
     val singularities: Double = 0.0,
     /** Wall-clock milliseconds at which it was parked, for the "läuft seit" line. */
     val parkedAt: Long = 0L,
+    /** What it has been put to work at. See [GalaxyJob]; absent means the default. */
+    val jobId: String? = null,
+    /**
+     * Seconds of changeover still to run before the current job takes effect.
+     *
+     * Counted down rather than derived from a wall-clock stamp, and that was a correction. The
+     * first version stored the moment the job was chosen and compared it against `lastSeenAt` —
+     * but `lastSeenAt` is written when the game is *saved*, not while it is played, so the
+     * changeover would have stood still for as long as anybody was watching it and then completed
+     * itself the instant they looked away. This is counted by the same tick that counts everything
+     * else, and by the offline credit for the time in between, so it means the same thing whether
+     * or not the app is open.
+     */
+    val rampSeconds: Double = 0.0,
 ) {
+    val job: GalaxyJob get() = GalaxyJob.byId(jobId)
+
+    /** Whether the changeover is still running, and the galaxy is therefore doing nothing. */
+    val isRamping: Boolean get() = rampSeconds > 0.0
+
     /** The path's lean, or `null` where there was none. */
     val path: Path? get() = Path.byId(pathId)
 
@@ -144,20 +213,91 @@ object Multiverse {
         return yieldOf(universe) * SLOT_FALLOFF.pow(rank)
     }
 
-    /** The multiplier the whole sky is worth to the active universe. One when it is empty. */
+    /**
+     * What a galaxy is contributing right now, which is nothing at all while it is changing over.
+     *
+     * The single gate every job goes through. Put in each of the four separately it would be four
+     * places to forget it, and a galaxy that kept paying through its own changeover would make the
+     * changeover free — which is exactly the cost the ramp exists to charge.
+     */
+    private fun workingYield(state: GameState, universe: ParkedUniverse, job: GalaxyJob): Double =
+        if (universe.job != job || universe.isRamping) {
+            0.0
+        } else {
+            weightedYieldOf(state, universe)
+        }
+
+    /** The multiplier the sky is worth to the active universe. Only the galaxies on [GalaxyJob.FOERDERN]. */
     fun multiplier(state: GameState): Double =
-        1.0 + parked(state).sumOf { weightedYieldOf(state, it) }
+        1.0 + parked(state).sumOf { workingYield(state, it, GalaxyJob.FOERDERN) }
 
     /**
      * Äonen every parked universe together earns per second.
      *
      * Zero before anything is parked, which is what keeps this from being a currency the player
      * has to understand before they have seen a single big bang.
+     *
+     * A galaxy on [GalaxyJob.RECHNEN] earns [AEON_FOCUS] times what one merely standing there does.
+     * That is the trade the whole system is built on: it stops helping the run in front of you
+     * entirely, and pays the deep currency for it.
      */
     fun aeonsPerSecond(state: GameState): Double {
         if (state.universes.isEmpty()) return 0.0
-        val perHour = parked(state).sumOf { weightedYieldOf(state, it) } * AEONS_PER_HOUR
+        val perHour = parked(state).sumOf { universe ->
+            when {
+                universe.isRamping -> 0.0
+                universe.job == GalaxyJob.RECHNEN -> weightedYieldOf(state, universe) * AEON_FOCUS
+                // Everything else still ticks over on the side, because a sky that only paid Äonen
+                // when told to would make the first thirty minutes of every galaxy a dead loss.
+                else -> weightedYieldOf(state, universe) * AEON_IDLE
+            }
+        } * AEONS_PER_HOUR
         return perHour / 3_600.0
+    }
+
+    /** What a galaxy told to think earns, against one that is doing something else. */
+    const val AEON_FOCUS = 4.0
+
+    /** And what the others still bring in on the side. */
+    const val AEON_IDLE = 0.35
+
+    /** What the galaxies on [GalaxyJob.SUCHEN] multiply comet frequency by. */
+    fun cometFactor(state: GameState): Double =
+        1.0 + parked(state).sumOf { workingYield(state, it, GalaxyJob.SUCHEN) } * COMET_PER_YIELD
+
+    /** How hard one point of yield pushes the comets. */
+    const val COMET_PER_YIELD = 0.5
+
+    /**
+     * Heavy elements a digging galaxy turns up per second, keyed by element id.
+     *
+     * The first route to metal that does not go through a collapse, and deliberately a slow one:
+     * the forge is supposed to be the reason to keep collapsing, and a dig that outpaced a collapse
+     * would quietly replace it rather than supplement it. What this buys is the ability to top up
+     * the last few hundred grams of a rare metal without a whole further universe.
+     */
+    fun metalPerSecond(state: GameState): Map<String, Double> {
+        val digging = parked(state).sumOf { workingYield(state, it, GalaxyJob.GRABEN) }
+        if (digging <= 0.0) return emptyMap()
+        return HeavyElement.entries.associate { metal ->
+            metal.id to digging * metal.perRoot * METAL_PER_HOUR / 3_600.0
+        }
+    }
+
+    /** Grams of the commonest metal one point of yield digs up in an hour. */
+    const val METAL_PER_HOUR = 6.0
+
+    /** Credits [seconds] of digging. Nothing at all when no galaxy is on it. */
+    fun advanceMetal(state: GameState, seconds: Double): GameState {
+        if (seconds <= 0.0) return state
+        val rates = metalPerSecond(state)
+        if (rates.isEmpty()) return state
+
+        val dug = state.heavy.toMutableMap()
+        for ((id, perSecond) in rates) {
+            dug[id] = (dug[id] ?: 0.0) + perSecond * seconds
+        }
+        return state.copy(heavy = dug)
     }
 
     /**
@@ -169,8 +309,20 @@ object Multiverse {
      */
     fun effects(state: GameState): List<PrestigeEffect> =
         parked(state).flatMap { universe ->
-            val share = leanShare(weightedYieldOf(state, universe))
-            universe.path?.effects.orEmpty().mapNotNull { softened(it, share) }
+            // Through the same gate as the multiplier: a galaxy that has been told to think, look
+            // or dig is not also still leaning on the run it left behind.
+            val strength = workingYield(state, universe, GalaxyJob.FOERDERN)
+            // Nothing rather than a list of neutral multipliers. At zero share every `taper` lands
+            // on exactly one, so the old version handed the modifier pass a handful of
+            // multiply-by-one entries per idle galaxy — harmless arithmetic, but it made "this
+            // galaxy contributes nothing" indistinguishable from "this galaxy contributes" to
+            // anything looking at the list.
+            if (strength <= 0.0) {
+                emptyList()
+            } else {
+                val share = leanShare(strength)
+                universe.path?.effects.orEmpty().mapNotNull { softened(it, share) }
+            }
         }
 
     /**
@@ -221,6 +373,42 @@ object Multiverse {
 
     /** A multiplier at [share] strength: 1 at nothing, the full factor at everything. */
     private fun taper(factor: Double, share: Double): Double = 1.0 + (factor - 1.0) * share
+
+    /**
+     * Puts a galaxy on a job, starting its changeover.
+     *
+     * Setting the job it is already on does nothing at all, rather than restarting the ramp — a
+     * mis-tap must never cost half an hour.
+     */
+    fun assign(state: GameState, slot: Int, job: GalaxyJob): GameState {
+        val universe = state.universes.firstOrNull { it.slot == slot } ?: return state
+        if (universe.job == job) return state
+        return state.copy(
+            universes = state.universes.map {
+                if (it.slot == slot) it.copy(jobId = job.id, rampSeconds = RAMP_SECONDS) else it
+            },
+        )
+    }
+
+    /**
+     * How long a galaxy is idle after being put on something else, in seconds.
+     *
+     * Half an hour, and it contributes *nothing* while it runs. Without a cost the right play is
+     * to switch to whichever job pays for the next purchase and switch straight back, which is not
+     * a decision, it is an errand. With one, choosing is choosing.
+     */
+    const val RAMP_SECONDS = 30.0 * 60.0
+
+    /** Counts every running changeover down by [seconds]. */
+    fun advanceRamps(state: GameState, seconds: Double): GameState {
+        if (seconds <= 0.0) return state
+        if (state.universes.none { it.isRamping }) return state
+        return state.copy(
+            universes = state.universes.map {
+                if (it.isRamping) it.copy(rampSeconds = (it.rampSeconds - seconds).coerceAtLeast(0.0)) else it
+            },
+        )
+    }
 
     /**
      * Turns the universe about to end into the record that outlives it.

@@ -185,6 +185,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.forgeAlloy(state, id)
     }
 
+    override fun assignGalaxy(slot: Int, jobId: String) {
+        state = GameEngine.assignGalaxy(state, slot, jobId)
+    }
+
     override fun buyPathNode(id: String) {
         state = GameEngine.buyPathNode(state, id)
     }
