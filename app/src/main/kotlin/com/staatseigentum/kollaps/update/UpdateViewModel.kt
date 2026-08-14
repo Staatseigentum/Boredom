@@ -118,6 +118,23 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
                     } else {
                         _state.value = UpdateState.Available(update)
                         if (announce) _prompt.value = true
+
+                        /*
+                         * A big step starts fetching itself.
+                         *
+                         * Android will not install anything without a tap — the package installer
+                         * is the system's, and asking is the whole point of it — so "automatic"
+                         * can only ever mean the half that is allowed: by the time the player has
+                         * read the dialog, the download is already running or done, and the only
+                         * thing left is the confirmation the system insists on.
+                         *
+                         * Only for a big step. Fetching sixty megabytes over mobile data for a
+                         * patch nobody has to install would be spending somebody else's money on
+                         * their behalf.
+                         */
+                        if (installedVersion?.let(update.version::isBigStepFrom) == true) {
+                            download()
+                        }
                     }
                 }
                 .onFailure { failure ->

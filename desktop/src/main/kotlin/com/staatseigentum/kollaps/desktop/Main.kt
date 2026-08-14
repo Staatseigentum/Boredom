@@ -34,14 +34,17 @@ import com.staatseigentum.kollaps.ui.SlotSummary
  * the start. It looks after its own updates too, for the same reason the phone does: this is not
  * shipped through a store, so nothing else is going to say that a new version exists.
  *
- * Arguments: `--tier 17` starts on a given rung, which is otherwise hours away, and `--frisch`
- * ignores whatever is in the save file.
+ * Arguments: `--tier 17` starts on a given rung, which is otherwise hours away, `--frisch`
+ * ignores whatever is in the save file, and `--kein-update` skips the launch check.
  */
 fun main(args: Array<String>) = application {
     val startTier = args.indexOf("--tier").takeIf { it >= 0 }
         ?.let { args.getOrNull(it + 1)?.toIntOrNull() }
         ?.minus(1)
     val ignoreSave = "--frisch" in args
+    // Developing against a released build means running a version the feed is happy to replace.
+    // Without a way off, the launcher would upgrade the thing being worked on out from under it.
+    val skipUpdate = "--kein-update" in args
 
     val game = remember {
         val loaded = if (ignoreSave) null else DesktopSave.load()
@@ -67,9 +70,12 @@ fun main(args: Array<String>) = application {
         state = rememberWindowState(size = DpSize(1_100.dp, 760.dp)),
     ) {
         DesktopPlatform {
-            // A big update stands in front of the whole window; a patch stays on the card in the
-            // Kosmos tab where it always was.
-            DesktopUpdateGate(onBeforeExit = { DesktopSave.save(game.state) }) {
+            // Before the game: look for a newer version and, if there is one, install it. The
+            // card in the Kosmos tab stays for anyone who wants to check by hand.
+            DesktopBootstrap(
+                skip = skipUpdate,
+                onBeforeExit = { DesktopSave.save(game.state) },
+            ) {
                 RunningGame(game)
             }
         }
