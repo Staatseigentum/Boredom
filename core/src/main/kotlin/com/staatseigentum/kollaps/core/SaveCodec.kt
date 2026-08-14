@@ -172,7 +172,53 @@ object SaveCodec {
         if (migrated.buffSecondsLeft > 0.0) {
             migrated = migrated.copy(buffId = null, buffSecondsLeft = 0.0)
         }
+        migrated = withBackfilledSky(migrated)
+        // A galaxy on a slot that does not exist would count towards production while being
+        // undrawable, and two on the same slot would each claim to be the one standing there.
+        val sky = migrated.universes
+            .filter { it.slot in 0 until Multiverse.SLOTS }
+            .distinctBy { it.slot }
+        if (sky.size != migrated.universes.size) {
+            migrated = migrated.copy(universes = sky)
+        }
         return migrated
+    }
+
+    /**
+     * Gives a save from before the multiverse the galaxies it already earned.
+     *
+     * Every big bang in the old game destroyed a universe and left nothing behind but a counter.
+     * Those universes were played, and the player who played them should not have to press the
+     * button eight more times to have a sky — so the counter is read back as history: one galaxy
+     * per big bang, up to the eight there is room for.
+     *
+     * What they were is genuinely unknown; the old save recorded a number and nothing else. So
+     * each one is reconstructed conservatively from what the save *does* prove — the deepest rung
+     * ever reached and the collapses behind it — and shared out so the earliest universe is the
+     * shallowest. That is a guess, and it is deliberately a modest one: a player who is handed a
+     * slightly weaker sky than they earned will never notice, and one handed a stronger one has
+     * had the next few hours taken away from them.
+     */
+    private fun withBackfilledSky(state: GameState): GameState {
+        if (state.bigBangs <= 0 || state.universes.isNotEmpty()) return state
+
+        val count = state.bigBangs.coerceAtMost(Multiverse.SLOTS)
+        val rebuilt = (0 until count).map { slot ->
+            // The oldest universe was the shallowest: progress only ever went one way.
+            val share = (slot + 1).toDouble() / count
+            ParkedUniverse(
+                slot = slot,
+                // The only alignment anybody can prove is the one still on the save, and it
+                // belongs to the universe that is running — so these stay unaligned rather than
+                // being credited with a lean they may never have had.
+                pathId = null,
+                bestTier = (state.bestTier * share).toInt().coerceIn(0, Tiers.all.lastIndex),
+                collapses = (BigBang.REQUIRED_COLLAPSES * share).toInt(),
+                singularities = 0.0,
+                parkedAt = state.lastSeenAt,
+            )
+        }
+        return state.copy(universes = rebuilt)
     }
 
     private fun remapTier(old: Int): Int =

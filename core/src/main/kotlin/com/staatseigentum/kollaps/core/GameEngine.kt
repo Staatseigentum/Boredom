@@ -221,6 +221,9 @@ object GameEngine {
         // Fed and eroded by what the body itself makes, so the system scales with the run rather
         // than mattering enormously the hour it unlocks and never again.
         ticked = Orbits.advance(ticked, seconds, gained / seconds)
+        // The sky earns on its own clock, which is the point of it: a parked universe is not a
+        // bonus to what the player is doing, it is a second thing that is being done.
+        ticked = Multiverse.advance(ticked, seconds)
         ticked = automate(ticked)
         ticked = advanceEvents(ticked, seconds)
         ticked = sample(ticked, seconds)
@@ -657,7 +660,11 @@ object GameEngine {
                 challengesDone = state.challengesDone,
                 challengeDuos = state.challengeDuos,
                 aeons = state.aeons,
+                aeonFraction = state.aeonFraction,
                 aeonUpgrades = state.aeonUpgrades,
+                // A collapse never touches the sky. Only a big bang puts anything in it, and
+                // nothing ever takes one out.
+                universes = state.universes,
                 pathNodes = state.pathNodes,
                 bigBangs = state.bigBangs,
                 path = state.path,
@@ -687,6 +694,11 @@ object GameEngine {
 
         return award(
             GameState(
+                // The universe that is ending does not stop existing; it moves into a galaxy and
+                // keeps working. See [Multiverse] for why this is a record rather than a second
+                // simulation running in the background.
+                universes = parkedAfter(state, nowMillis),
+                aeonFraction = state.aeonFraction,
                 lastSeenAt = nowMillis,
                 startedAt = if (state.startedAt == 0L) nowMillis else state.startedAt,
                 // Kept: everything that is a record rather than a possession.
@@ -726,6 +738,24 @@ object GameEngine {
                 researchDoneAt = state.researchDoneAt,
             ),
         )
+    }
+
+    /**
+     * The sky after the universe about to end has taken its place in it.
+     *
+     * Eight galaxies and no more, so the ninth big bang has to displace something. It displaces the
+     * weakest, and only if the new universe is actually stronger — a player who presses the button
+     * early out of curiosity must not lose the best galaxy they have to a worse one. Where nothing
+     * is displaced the run still counts everywhere else it counts; it simply does not get a galaxy.
+     */
+    private fun parkedAfter(state: GameState, nowMillis: Long): List<ParkedUniverse> {
+        val free = Multiverse.nextSlot(state)
+        if (free != null) return state.universes + Multiverse.park(state, free, nowMillis)
+
+        val weakest = state.universes.minByOrNull { Multiverse.yieldOf(it) } ?: return state.universes
+        val incoming = Multiverse.park(state, weakest.slot, nowMillis)
+        if (Multiverse.yieldOf(incoming) <= Multiverse.yieldOf(weakest)) return state.universes
+        return state.universes.filterNot { it.slot == weakest.slot } + incoming
     }
 
     /** Buys an Äonen upgrade if it is unbought and affordable. */
@@ -1016,7 +1046,9 @@ object GameEngine {
         challengesDone = state.challengesDone,
         challengeDuos = state.challengeDuos,
         aeons = state.aeons,
+        aeonFraction = state.aeonFraction,
         aeonUpgrades = state.aeonUpgrades,
+        universes = state.universes,
         pathNodes = state.pathNodes,
         bigBangs = state.bigBangs,
         path = state.path,
@@ -1214,7 +1246,11 @@ object GameEngine {
         // turn a reason to stay into a trick — tap it hot, close the app, come back richer.
         val cold = state.copy(heat = 0.0)
         val gained = massPerSecond(cold) * capped * mods.offlineEfficiency
-        val credited = credit(cold, gained).copy(lastSeenAt = nowMillis)
+        // The galaxies are paid for the whole absence, uncapped and at full rate. Everything that
+        // limits offline production is about the player not being there to run the fleet — and
+        // nobody was ever running these. A universe left behind does not notice being left behind.
+        val credited = Multiverse.advance(credit(cold, gained), elapsedSeconds.toDouble())
+            .copy(lastSeenAt = nowMillis)
         return OfflineReport(
             state = credited,
             seconds = capped.toLong(),
@@ -1511,6 +1547,13 @@ object GameEngine {
         // are in the save too and say nothing here, which is what makes the choice matter.
         Path.of(state)?.effects?.forEach { apply(mods, it) }
         PathTrees.effects(state).forEach { apply(mods, it) }
+
+        // And the universes that came before this one, which did not end — they are still out
+        // there, each leaning the way it leaned, at a fraction of the strength. Eight big bangs
+        // down four different paths is a sky that does four things at once, which is the whole
+        // reason to pick a different one each time.
+        Multiverse.effects(state).forEach { apply(mods, it) }
+        mods.global *= Multiverse.multiplier(state)
 
         // Finished research, likewise. It is the fourth kind of permanent thing and the fourth
         // list to walk, and all four say what they do in the same vocabulary — which is the whole

@@ -182,10 +182,29 @@ data class GameState(
     /** Äonen from big bangs. The currency below the singularity. */
     val aeons: Double = 0.0,
 
+    /**
+     * Äonen earned but not yet whole, carried between ticks. See [Multiverse.advance].
+     *
+     * Below one and therefore invisible, which is exactly why it has to be in the save: a parked
+     * galaxy earns an Äon every couple of days, and rounding this away every tick would pay out
+     * nothing, for ever, while looking like it worked.
+     */
+    val aeonFraction: Double = 0.0,
+
     /** Äonen upgrades bought. These survive even a big bang. */
     val aeonUpgrades: Set<String> = emptySet(),
 
-    /** How often the player has thrown a whole universe away. */
+    /**
+     * The universes that have been through their big bang and kept going. See [Multiverse].
+     *
+     * The big bang no longer ends a universe, it parks one — so this is the record of every one
+     * the player has finished, each in a galaxy of its own, each still earning. Nothing in here is
+     * ever removed: a save that has been through more than [Multiverse.SLOTS] big bangs keeps the
+     * best of them and the rest sit as history.
+     */
+    val universes: List<ParkedUniverse> = emptyList(),
+
+    /** How often the player has finished a universe and started the next one. */
     val bigBangs: Int = 0,
 
     /** Which kind of universe this one is, chosen at the big bang. See [Path]. */

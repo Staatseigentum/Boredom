@@ -34,6 +34,16 @@ class RegressionSweepTest {
         aeons = 9.0,
         aeonUpgrades = setOf("ae_global_1"),
         bigBangs = 3,
+        // Three big bangs and three galaxies, because that is now what a save with three big
+        // bangs looks like. Left empty this would not round-trip, and rightly so: the codec would
+        // read it as a save from before the sky existed and hand it the galaxies it earned.
+        // That path has its own tests; this one is about nothing being lost in the writing.
+        universes = listOf(
+            ParkedUniverse(slot = 0, pathId = Path.HAND.id, bestTier = 8, collapses = 4, singularities = 12.0),
+            ParkedUniverse(slot = 1, pathId = null, bestTier = 14, collapses = 7, singularities = 40.0),
+            ParkedUniverse(slot = 2, pathId = Path.LABOR.id, bestTier = 20, collapses = 11, parkedAt = 99L),
+        ),
+        aeonFraction = 0.37,
         path = Path.KERN.id,
         pathNodes = setOf("path_core_root"),
         challengesDone = setOf(Challenge.entries.first().id),
