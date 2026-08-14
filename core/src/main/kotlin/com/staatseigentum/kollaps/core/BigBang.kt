@@ -132,6 +132,52 @@ object AeonUpgrades {
             cost = 12.0,
             effect = PrestigeEffect.GlobalMultiplier(50.0),
         ),
+        // The shelf used to end here, at twelve Äonen — which the sky now earns on its own in
+        // under a fortnight. A currency that keeps coming in and has nothing left to buy is a
+        // number going up, and the whole point of parking universes was that they pay for
+        // something.
+        AeonUpgrade(
+            id = "ae_fusion",
+            name = "Ewiges Feuer",
+            flavor = "Es brannte im letzten Universum und hat den Übergang nicht bemerkt.",
+            cost = 16.0,
+            effect = PrestigeEffect.FusionRate(5.0),
+        ),
+        AeonUpgrade(
+            id = "ae_research",
+            name = "Übertragene Bibliothek",
+            flavor = "Ein Labor, das schon weiß, was es diesmal herausfinden wird.",
+            cost = 22.0,
+            effect = PrestigeEffect.ResearchSpeed(4.0),
+        ),
+        AeonUpgrade(
+            id = "ae_offline",
+            name = "Langer Atem",
+            flavor = "Vier Tage Abwesenheit sind für eine Galaxie keine Erwähnung wert.",
+            cost = 30.0,
+            effect = PrestigeEffect.OfflineCapHours(96.0),
+        ),
+        AeonUpgrade(
+            id = "ae_global_3",
+            name = "Dritte Ausdehnung",
+            flavor = "Der Raum dehnt sich inzwischen, ohne dass jemand es anstößt.",
+            cost = 40.0,
+            effect = PrestigeEffect.GlobalMultiplier(250.0),
+        ),
+        AeonUpgrade(
+            id = "ae_collectors_2",
+            name = "Vollständige Werft",
+            flavor = "Fünfhundert Stück von allem, und die Baupläne für den Rest.",
+            cost = 55.0,
+            effect = PrestigeEffect.StartingCollectors(500),
+        ),
+        AeonUpgrade(
+            id = "ae_global_4",
+            name = "Letzte Ausdehnung",
+            flavor = "Danach kommt nichts mehr. Es sei denn, du machst weiter.",
+            cost = 75.0,
+            effect = PrestigeEffect.GlobalMultiplier(1_500.0),
+        ),
     )
 
     private val index: Map<String, AeonUpgrade> = all.associateBy { it.id }

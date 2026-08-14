@@ -77,6 +77,26 @@ object Achievements {
         add(collector("a_entropie_10", "Rückwärts gemahlen", "Zehn Mühlen, die die Unordnung zurückdrehen.", "entropie", 10))
         add(collector("a_nullpunkt_5", "Aus dem Nichts gepresst", "Fünf Pressen am leersten Vakuum, das es gibt.", "nullpunkt", 5))
         add(collector("a_alpha_1", "Vor dem Anfang", "Einmal zurückgegriffen bis vor den ersten Augenblick.", "alpha", 1))
+
+        // ---- the shelves, emptied
+
+        add(
+            Achievement(
+                "a_alle_singularitaeten",
+                "Ausverkauft",
+                "Jedes Prestige-Upgrade gekauft und jedes Konto voll. Der Laden hat nichts mehr.",
+            ) { state ->
+                PrestigeUpgrades.all.all { it.id in state.prestigeUpgrades } &&
+                    Investments.all.all { (state.investments[it.id] ?: 0) >= it.maxLevel }
+            },
+        )
+        add(
+            Achievement(
+                "a_alle_aeonen",
+                "Jenseits der Währung",
+                "Jedes Äonen-Upgrade gekauft. Die Galaxien zahlen jetzt auf ein volles Konto ein.",
+            ) { state -> AeonUpgrades.all.all { it.id in state.aeonUpgrades } },
+        )
         add(
             Achievement(
                 "a_all_collectors",

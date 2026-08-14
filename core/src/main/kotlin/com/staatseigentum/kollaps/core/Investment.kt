@@ -70,7 +70,7 @@ object Investments {
             perLevel = "je Stufe ×4 Startmasse",
             baseCost = 4.0,
             growth = 1.26,
-            maxLevel = 40,
+            maxLevel = 120,
             // Starting mass may be exponential: it is a head start on a run whose numbers grow
             // exponentially anyway, so a linear one would be worthless by the third collapse.
             // Minus one, so the first level adds to the flat upgrade rather than repeating it.
@@ -143,7 +143,7 @@ object Investments {
             perLevel = "je Stufe +3 Kollektoren zum Start",
             baseCost = 16.0,
             growth = 1.34,
-            maxLevel = 60,
+            maxLevel = 200,
             requiredCollapses = 2,
             effectAt = { level -> PrestigeEffect.StartingCollectors(25 + 3 * level) },
         ),
@@ -154,7 +154,7 @@ object Investments {
             perLevel = "je Stufe +1 Punkt je Meilenstein",
             baseCost = 22.0,
             growth = 1.36,
-            maxLevel = 25,
+            maxLevel = 60,
             requiredCollapses = 2,
             effectAt = { level -> PrestigeEffect.MilestoneBonus(0.01 * level) },
         ),
@@ -165,7 +165,7 @@ object Investments {
             perLevel = "je Stufe +20 % Fusionstempo",
             baseCost = 26.0,
             growth = 1.32,
-            maxLevel = 40,
+            maxLevel = 100,
             requiredCollapses = 2,
             effectAt = { level -> PrestigeEffect.FusionRate(1.0 + 0.20 * level) },
         ),
@@ -176,7 +176,7 @@ object Investments {
             perLevel = "je Stufe +15 % Forschungstempo",
             baseCost = 30.0,
             growth = 1.34,
-            maxLevel = 30,
+            maxLevel = 80,
             requiredCollapses = 2,
             effectAt = { level -> PrestigeEffect.ResearchSpeed(1.0 + 0.15 * level) },
         ),
@@ -187,7 +187,7 @@ object Investments {
             perLevel = "je Stufe +2 Punkte je Singularität",
             baseCost = 35.0,
             growth = 1.38,
-            maxLevel = 40,
+            maxLevel = 100,
             requiredCollapses = 3,
             effectAt = { level ->
                 PrestigeEffect.SingularityBonus(GameEngine.SINGULARITY_BONUS + 0.02 * level)
@@ -201,9 +201,26 @@ object Investments {
             perLevel = "je Stufe +8 % Singularitäten je Kollaps",
             baseCost = 45.0,
             growth = 1.45,
+            // Left at twenty-five while every other ceiling was raised, and deliberately so. This
+            // is the one account that pays in the currency it is bought with, so its levels
+            // compound into each other; every other posting on this list only makes a run faster.
+            // Raising it with the rest was an oversight the guard in `InvestmentTest` caught.
             maxLevel = 25,
             requiredCollapses = 3,
             effectAt = { level -> PrestigeEffect.SingularityGain(1.0 + 0.08 * level) },
+        ),
+        Investment(
+            id = "i_autotap",
+            germanName = "Fremde Finger",
+            germanFlavor = "Irgendwo tippt etwas weiter, das du nie eingestellt hast.",
+            perLevel = "je Stufe +2 Tipps je Sekunde",
+            baseCost = 28.0,
+            growth = 1.33,
+            maxLevel = 80,
+            requiredCollapses = 2,
+            // The last effect that had a one-off upgrade and no account to keep paying into, which
+            // made the automatic tapper a thing that arrived twice and then stopped mattering.
+            effectAt = { level -> PrestigeEffect.AutoTap(2.0 * level) },
         ),
     )
 
