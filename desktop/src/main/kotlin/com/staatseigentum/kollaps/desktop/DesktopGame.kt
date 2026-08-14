@@ -181,6 +181,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.buyAeonUpgrade(state, id)
     }
 
+    override fun forgeAlloy(id: String) {
+        state = GameEngine.forgeAlloy(state, id)
+    }
+
     override fun buyPathNode(id: String) {
         state = GameEngine.buyPathNode(state, id)
     }

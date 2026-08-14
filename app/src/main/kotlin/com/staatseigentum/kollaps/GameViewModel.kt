@@ -237,6 +237,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun forgeAlloy(alloyId: String) {
+        _state.value = GameEngine.forgeAlloy(_state.value, alloyId)
+        persist()
+    }
+
     fun buyPathNode(nodeId: String) {
         _state.value = GameEngine.buyPathNode(_state.value, nodeId)
         persist()

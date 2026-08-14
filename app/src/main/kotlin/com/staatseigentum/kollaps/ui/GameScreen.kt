@@ -130,6 +130,9 @@ interface GameActions {
     fun bigBang(pathId: String)
     fun buyAeonUpgrade(id: String)
 
+    /** Welds two heavy elements into an alloy. See [com.staatseigentum.kollaps.core.Alloy]. */
+    fun forgeAlloy(id: String)
+
     /** Buys one node of the running universe's path tree. */
     fun buyPathNode(id: String)
 

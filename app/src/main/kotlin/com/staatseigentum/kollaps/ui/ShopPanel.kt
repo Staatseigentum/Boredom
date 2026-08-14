@@ -45,6 +45,8 @@ import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Heavy
 import com.staatseigentum.kollaps.core.HeavyElement
 import com.staatseigentum.kollaps.core.Milestones
+import com.staatseigentum.kollaps.core.Alloy
+import com.staatseigentum.kollaps.core.Multiverse
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.Orbits
 import com.staatseigentum.kollaps.core.ResearchTree
@@ -587,6 +589,7 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
  */
 private enum class CosmosSection(val title: String) {
     COLLAPSE("Kollaps"),
+    SKY("Himmel"),
     LAB("Labor"),
     RULES("Regeln"),
     SYSTEM("System"),
@@ -597,6 +600,9 @@ private fun sectionsFor(state: GameState, stats: Stats): List<CosmosSection> =
     CosmosSection.entries.filter {
         when (it) {
             CosmosSection.COLLAPSE, CosmosSection.SYSTEM -> true
+            // Only once there is a sky at all. Before the first big bang this would be a tab onto
+            // an empty ring, which promises nothing and explains less.
+            CosmosSection.SKY -> Multiverse.isUnlocked(state)
             CosmosSection.LAB -> ResearchTree.isUnlocked(state)
             CosmosSection.RULES ->
                 Automation.isUnlocked(state) || state.collapses > 0 || stats.challenge != null
@@ -673,6 +679,13 @@ private fun CosmosPanel(
                                 onBuyPathNode = actions::buyPathNode,
                             )
                         }
+                    }
+                }
+
+                CosmosSection.SKY -> {
+                    item { GalaxyPanel(state = state) }
+                    if (Alloy.isUnlocked(state)) {
+                        item { AlloyPanel(state = state, actions = actions) }
                     }
                 }
 
