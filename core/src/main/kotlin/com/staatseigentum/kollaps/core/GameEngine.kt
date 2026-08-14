@@ -229,6 +229,7 @@ object GameEngine {
         ticked = Multiverse.advanceRamps(ticked, seconds)
         ticked = automate(ticked)
         ticked = advanceEvents(ticked, seconds)
+        ticked = raiseFind(ticked)
         ticked = sample(ticked, seconds)
         if (ticked.runningChallengeIds.isNotEmpty()) {
             ticked = ticked.copy(challengeSeconds = ticked.challengeSeconds + seconds)
@@ -673,6 +674,11 @@ object GameEngine {
                 // Everything below is the point of collapsing: it is what carries over.
                 heavy = forged,
                 alloys = state.alloys,
+                // The catalogue's own record: which finds have been answered, and what was written down
+                // about the ones left alone. `findsTapped` is deliberately not here — that one is the run's,
+                // and giving it up is the price of the answer that pays best while it lasts.
+                findsAnswered = state.findsAnswered,
+                findFragments = state.findFragments,
                 prestigeUpgrades = state.prestigeUpgrades,
                 investments = state.investments,
                 achievements = state.achievements,
@@ -749,6 +755,11 @@ object GameEngine {
                 challengeDuos = state.challengeDuos,
                 heavy = state.heavy,
                 alloys = state.alloys,
+                // The catalogue's own record: which finds have been answered, and what was written down
+                // about the ones left alone. `findsTapped` is deliberately not here — that one is the run's,
+                // and giving it up is the price of the answer that pays best while it lasts.
+                findsAnswered = state.findsAnswered,
+                findFragments = state.findFragments,
                 lastRunSeconds = state.lastRunSeconds,
                 lastRunMass = state.lastRunMass,
                 bestRunSeconds = state.bestRunSeconds,
@@ -818,6 +829,36 @@ object GameEngine {
     fun mergeGalaxies(state: GameState, keepSlot: Int, absorbSlot: Int): GameState {
         if (!Multiverse.canMerge(state, keepSlot, absorbSlot)) return state
         return award(Multiverse.merge(state, keepSlot, absorbSlot))
+    }
+
+    /**
+     * Puts the next catalogue find on the table, if the climb has earned one.
+     *
+     * Checked on the tick rather than scheduled, because a find is earned by reaching a rung and
+     * the tick is where rungs are reached. Nothing is raised while one is already waiting: two
+     * questions at once is a dialog on top of a dialog.
+     */
+    private fun raiseFind(state: GameState): GameState =
+        if (CatalogueFind.isDue(state)) state.copy(pendingFind = CatalogueFind.next(state).id) else state
+
+    /**
+     * Answers the find on the table.
+     *
+     * Every answer counts as answered, including leaving it alone — otherwise the same find would
+     * come straight back, and "in Ruhe lassen" would be a button that does nothing twice.
+     */
+    fun answerFind(state: GameState, answerId: String): GameState {
+        val find = CatalogueFind.byId(state.pendingFind) ?: return state
+        val answer = FindAnswer.byId(answerId) ?: return state
+
+        val settled = state.copy(pendingFind = null, findsAnswered = state.findsAnswered + 1)
+        return award(
+            when (answer) {
+                FindAnswer.AUSWERTEN -> settled.copy(aeons = settled.aeons + CatalogueFind.AEON_REWARD)
+                FindAnswer.ANZAPFEN -> settled.copy(findsTapped = settled.findsTapped + 1)
+                FindAnswer.RUHEN -> settled.copy(findFragments = settled.findFragments + find.id)
+            },
+        )
     }
 
     /** Puts a galaxy on a job. See [GalaxyJob]. */
@@ -1093,6 +1134,11 @@ object GameEngine {
         investments = state.investments,
         heavy = state.heavy,
         alloys = state.alloys,
+        // The catalogue's own record: which finds have been answered, and what was written down
+        // about the ones left alone. `findsTapped` is deliberately not here — that one is the run's,
+        // and giving it up is the price of the answer that pays best while it lasts.
+        findsAnswered = state.findsAnswered,
+        findFragments = state.findFragments,
         lastRunSeconds = state.lastRunSeconds,
         lastRunMass = state.lastRunMass,
         bestRunSeconds = state.bestRunSeconds,
@@ -1676,6 +1722,10 @@ object GameEngine {
             Multiverse.effects(state).forEach { apply(mods, it) }
             mods.global *= Multiverse.multiplier(state)
         }
+
+        // What this run has tapped out of its catalogue finds. Part of the run on purpose: it is
+        // the largest single multiplier a player can be holding, and it goes away at the collapse.
+        mods.global *= CatalogueFind.tapMultiplier(state)
 
         // Every achievement is worth a little, which is what stops them being decoration.
         mods.global *= Achievements.multiplier(state)

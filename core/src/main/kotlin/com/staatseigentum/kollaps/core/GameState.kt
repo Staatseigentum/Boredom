@@ -204,6 +204,23 @@ data class GameState(
      */
     val universes: List<ParkedUniverse> = emptyList(),
 
+    /** Id of the catalogue find waiting to be answered, if any. See [CatalogueFind]. */
+    val pendingFind: String? = null,
+
+    /** How many finds have been answered, across all runs. Decides which one turns up next. */
+    val findsAnswered: Int = 0,
+
+    /**
+     * Finds tapped during *this* run. Reset by anything that resets the run.
+     *
+     * Part of the run and not permanent, which is the whole trade the answer offers: tapping is
+     * worth a great deal right now and nothing at all after the next collapse.
+     */
+    val findsTapped: Int = 0,
+
+    /** Fragments recorded by leaving finds alone. Permanent, like everything else read-only. */
+    val findFragments: Set<String> = emptySet(),
+
     /**
      * Alloys forged in the workshop above the heavy elements. See [Alloy].
      *

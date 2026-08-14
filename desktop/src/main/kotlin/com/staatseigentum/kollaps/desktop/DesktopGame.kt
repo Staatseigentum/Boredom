@@ -193,6 +193,10 @@ class DesktopGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.mergeGalaxies(state, keepSlot, absorbSlot)
     }
 
+    override fun answerFind(answerId: String) {
+        state = GameEngine.answerFind(state, answerId)
+    }
+
     override fun buyPathNode(id: String) {
         state = GameEngine.buyPathNode(state, id)
     }

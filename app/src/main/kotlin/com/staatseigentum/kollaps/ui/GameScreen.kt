@@ -139,6 +139,9 @@ interface GameActions {
     /** Welds two galaxies into one, freeing a slot. */
     fun mergeGalaxies(keepSlot: Int, absorbSlot: Int)
 
+    /** Answers the catalogue find on the table. See [com.staatseigentum.kollaps.core.FindAnswer]. */
+    fun answerFind(answerId: String)
+
     /** Buys one node of the running universe's path tree. */
     fun buyPathNode(id: String)
 
@@ -525,6 +528,12 @@ fun GameScreen(
                         onChoose = actions::chooseEvent,
                         onDismiss = actions::dismissEvent,
                     )
+                }
+
+                // After the event, so the two never stack: a find waits on the table until it is
+                // answered and can afford to wait one more question.
+                if (state.prompt == null && state.pendingFind != null) {
+                    FindDialog(state = state, onAnswer = actions::answerFind)
                 }
             }
 

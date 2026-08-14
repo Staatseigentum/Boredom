@@ -252,6 +252,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         persist()
     }
 
+    fun answerFind(answerId: String) {
+        _state.value = GameEngine.answerFind(_state.value, answerId)
+        persist()
+    }
+
     fun buyPathNode(nodeId: String) {
         _state.value = GameEngine.buyPathNode(_state.value, nodeId)
         persist()
