@@ -244,6 +244,7 @@ object GameEngine {
         ticked = automate(ticked)
         ticked = advanceEvents(ticked, seconds)
         ticked = raiseFind(ticked)
+        ticked = healContractMarks(ticked)
         ticked = dealContracts(ticked)
         ticked = seedIntros(ticked)
         ticked = sample(ticked, seconds)
@@ -999,6 +1000,44 @@ object GameEngine {
      * has three waiting — and so the mark that several of them count against is set at a moment
      * the rules chose rather than one the interface did.
      */
+    /**
+     * Brings a contract's zero back down when the world has moved under it.
+     *
+     * ## The bug this fixes
+     *
+     * A `fromHere` contract remembers where its counter stood when the row was dealt, and shows
+     * the difference. The big bang keeps the table on purpose — "because half of what it asks for
+     * is a reset" — and it keeps those marks with it. What it does *not* keep is `collapses`,
+     * which starts again at nought.
+     *
+     * So after a big bang the row asking for five collapses had its zero at forty-two and its
+     * counter at nothing, and `progressOf` floors the difference: the bar read 0 / 5 and stayed
+     * there for ever, however many times you collapsed. Nothing threw and nothing looked broken —
+     * the row was simply dead, and it was precisely the row that asks you to do the thing the big
+     * bang undoes. Two other counters the resets take backwards had the same hole.
+     *
+     * ## Why here
+     *
+     * A mark above its counter cannot mean anything else: the only way to be *behind* where you
+     * started is for the start to have been taken away. So it is not repaired at the big bang but
+     * wherever it is found, once a tick, which also covers every save that has been carrying a
+     * dead row around since before this existed — and any reset added later without anybody
+     * remembering this note.
+     */
+    private fun healContractMarks(state: GameState): GameState {
+        if (state.contractMarks.isEmpty()) return state
+
+        var healed: MutableMap<String, Double>? = null
+        for ((id, mark) in state.contractMarks) {
+            val contract = Contract.byId(id) ?: continue
+            val now = contract.counter(state)
+            if (now >= mark) continue
+            val target = healed ?: state.contractMarks.toMutableMap().also { healed = it }
+            target[id] = now
+        }
+        return healed?.let { state.copy(contractMarks = it) } ?: state
+    }
+
     private fun dealContracts(state: GameState): GameState {
         if (!Contract.isUnlocked(state)) return state
         val wanted = Contract.refilled(state)

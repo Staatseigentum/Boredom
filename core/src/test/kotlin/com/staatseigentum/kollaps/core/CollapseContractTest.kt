@@ -114,6 +114,76 @@ class CollapseContractTest {
         assertEquals(1.0, state.contractMarks[contract.id], "Die Marke wurde verschoben")
     }
 
+    /**
+     * The reported bug, written down.
+     *
+     * The big bang keeps the contract table — deliberately, "because half of what it asks for is a
+     * reset" — and it keeps the marks with it. What it does *not* keep is `collapses`, which goes
+     * back to nought. So the row's zero stays at forty-two while the thing it counts starts again
+     * from nothing, and `progressOf` floors the difference at zero: the bar reads 0 / 5 and stays
+     * there for ever, however many times you collapse.
+     *
+     * It is the worst shape a bug can have — nothing throws, nothing looks broken, the row is
+     * simply dead — and it hits precisely the contract that asks you to do the thing the big bang
+     * undoes.
+     */
+    @Test
+    fun `the collapse contract still counts after a big bang`() {
+        val contract = Contract.byId("ct_collapses")!!
+        var state = GameState(
+            collapses = 42,
+            singularities = 1e12,
+            runMass = Tiers.last.threshold,
+            mass = Tiers.last.threshold,
+            bestTier = Tiers.last.index,
+            contracts = listOf(contract.id),
+            contractMarks = mapOf(contract.id to 42.0),
+        )
+
+        state = GameEngine.bigBang(state, NOW)
+        assertEquals(0, state.collapses, "Der Urknall setzt die Kollapse doch nicht zurück")
+        assertTrue(contract.id in state.contracts, "Der Tisch hat den Auftrag verloren")
+
+        // One tick, which is where the table is looked after.
+        state = GameEngine.tick(state, 0.1)
+
+        repeat(5) {
+            state = state.copy(
+                runMass = Tiers.last.threshold,
+                mass = Tiers.last.threshold,
+                bestTier = Tiers.last.index,
+            )
+            state = GameEngine.collapse(state, NOW)
+            state = GameEngine.tick(state, 0.1)
+        }
+
+        assertEquals(5, state.collapses)
+        assertEquals(
+            5.0,
+            contract.progressOf(state),
+            "Der Balken klebt bei ${contract.statusOf(state)} — die Marke steht über dem Zähler",
+        )
+        assertTrue(contract.isMetBy(state))
+    }
+
+    /** The same shape, for any counter a reset can take backwards. */
+    @Test
+    fun `a mark above its counter is brought back down`() {
+        val contract = Contract.byId("ct_collapses")!!
+        val stale = GameState(
+            collapses = 2,
+            contracts = listOf(contract.id),
+            contractMarks = mapOf(contract.id to 99.0),
+            contractsDone = 1,
+        )
+        val settled = GameEngine.tick(stale, 0.1)
+        assertEquals(
+            2.0,
+            settled.contractMarks[contract.id],
+            "Eine Marke über dem Zähler wurde nicht nachgezogen",
+        )
+    }
+
     private companion object {
         const val NOW = 1_700_000_000_000L
     }
