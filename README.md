@@ -10,6 +10,18 @@ alles zurück auf Anfang, dafür Singularitäten, die jeden weiteren Durchlauf s
 
 ## Was drin ist
 
+- **Einschläge** in der ersten Stunde: Du bist ein Brocken, und du wächst, weil andere Brocken auf
+  dich fallen. Alle paar Sekunden fällt einer herein und braucht vier Sekunden bis zum Aufschlag —
+  antippen bringt sofort Masse *und* Material, das liegen bleibt. Wie oft etwas kommt, hängt an
+  deiner Größe: je schwerer der Körper, desto mehr fegt er ein. Ab Mars ist Schluss, ab da
+  übernehmen die Kometen
+- **Aufbau** aus dem, was liegen geblieben ist: **Kern**, **Mantel** und **Kruste**, je zwanzig
+  Stufen, jede aus zwei der vier Materialien. Der Kern erhöht die Produktion, der Mantel Tippwert
+  und Anziehung, die Kruste Offline-Anteil und Ausbeute. Kein einzelner Brocken baut alles, also
+  entscheidet mit, was der Himmel dir gerade zuwirft. Die Mischung färbt außerdem den Körper
+- **Zwölf Weltentypen** — vier Bahnen (Metall, Gestein, Eis, Geschichtet) mal drei Tiefen. Der
+  Kollaps nimmt Schichten und Material mit, den Eintrag nicht. Das ist zum ersten Mal eine
+  Entscheidung darüber, *was* du wirst, und nicht nur wie groß
 - **25 Stufen** vom Meteoriten bis zum Schwarzen Loch, jede mit eigenem Aussehen und eigenem
   Produktionsmultiplikator. Die letzten vier sind der Zusammenbruch: Hyperriese, Weißer Zwerg,
   Neutronenstern, Magnetar

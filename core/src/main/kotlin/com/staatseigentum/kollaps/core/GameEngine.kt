@@ -1617,7 +1617,7 @@ object GameEngine {
      * over. The material is what the whole update is actually for.
      */
     fun absorbImpact(state: GameState, impact: Impact): GameState {
-        if (!Dev.enabled) return state
+        if (!Rollout.accretion) return state
         val gained = Accretion.massOf(state, impact)
         val won = impact.yield_ * Shells.yieldFactor(state)
         val stock = state.materials.toMutableMap()
@@ -1638,7 +1638,7 @@ object GameEngine {
      * punished putting the phone down would have stopped being an idle game; see [Impact.heavy].
      */
     fun missImpact(state: GameState, impact: Impact): GameState {
-        if (!Dev.enabled) return state
+        if (!Rollout.accretion) return state
         val lost = Accretion.lossOf(state, impact)
         if (lost <= 0.0) return state
         // Only what is actually in hand. Debt is not a thing this game has anywhere else, and a
@@ -2115,7 +2115,7 @@ object GameEngine {
     private var folded: Modifiers? = null
 
     /**
-     * Which side of the [Dev] flag the cached fold was taken on.
+     * Which side of the [Rollout] flag the cached fold was taken on.
      *
      * The state is not the only input any more: the same save folds differently depending on
      * whether the unfinished systems are live. A running game sets the flag once at startup and
@@ -2128,10 +2128,10 @@ object GameEngine {
 
     private fun modifiersOf(state: GameState): Modifiers {
         val cached = folded
-        if (cached != null && foldedFor === state && foldedInDev == Dev.enabled) return cached
+        if (cached != null && foldedFor === state && foldedInDev == Rollout.accretion) return cached
         return foldModifiers(state).also {
             folded = it
-            foldedInDev = Dev.enabled
+            foldedInDev = Rollout.accretion
             foldedFor = state
         }
     }
@@ -2322,7 +2322,7 @@ object GameEngine {
          * from the dev build into the shipped one has shells in it, and must play exactly as the
          * shipped game plays.
          */
-        if (Dev.enabled) {
+        if (Rollout.accretion) {
             mods.global *= Shells.productionFactor(state)
             mods.tapMultiplier *= Shells.tapFactor(state)
             // Added to the share rather than multiplying it, and capped: the crust is worth a few

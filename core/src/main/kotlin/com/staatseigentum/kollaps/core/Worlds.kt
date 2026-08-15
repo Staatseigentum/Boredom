@@ -107,9 +107,15 @@ object Worlds {
     fun of(lane: Lane, depth: Depth): WorldType =
         all.first { it.lane == lane && it.depth == depth }
 
-    /** Whether the record is worth showing at all. Never in the shipped game; see [Dev]. */
-    fun isUnlocked(state: GameState): Boolean =
-        Dev.enabled && (state.worldTypes.isNotEmpty() || Accretion.isUnlocked(state))
+    /**
+     * Whether the record is worth showing at all.
+     *
+     * Tied to the update as a whole rather than to having collected anything: an empty grid of
+     * twelve blanks is the clearest statement this game can make about what there is to do next,
+     * and hiding it until the first one is filled would hide it from precisely the player it is
+     * meant to give a reason to.
+     */
+    fun isUnlocked(state: GameState): Boolean = Accretion.isUnlocked(state)
 
     /**
      * Which lane the body is currently in.
@@ -135,7 +141,7 @@ object Worlds {
      * "grown metal world" records both. Nothing is missed by building past a band.
      */
     fun current(state: GameState): WorldType? {
-        if (!Dev.enabled) return null
+        if (!Rollout.accretion) return null
         val depth = Depth.of(Shells.total(state)) ?: return null
         return of(laneOf(state), depth)
     }
@@ -146,7 +152,7 @@ object Worlds {
 
     /** What the whole record is worth to production. */
     fun multiplier(state: GameState): Double {
-        if (!Dev.enabled) return 1.0
+        if (!Rollout.accretion) return 1.0
         return 1.0 + BONUS_EACH * state.worldTypes.count { byId(it) != null }
     }
 

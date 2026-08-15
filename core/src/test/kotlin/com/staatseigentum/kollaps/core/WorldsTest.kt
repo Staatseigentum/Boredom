@@ -20,11 +20,11 @@ import kotlin.test.assertTrue
 class WorldsTest {
 
     @AfterTest
-    fun off() = Dev.disable()
+    fun restore() = assertTrue(Rollout.accretion, "Der Schalter wurde nicht zurückgestellt")
 
     /** A body built out of one thing is named after it. */
     @Test
-    fun `the leading shell names the world`() = Dev.on {
+    fun `the leading shell names the world`() {
         val metal = GameState(shells = mapOf(Shell.KERN.id to 8))
         assertEquals(Lane.METALL, Worlds.laneOf(metal))
 
@@ -43,7 +43,7 @@ class WorldsTest {
      * three happened to be checked first. It has to fall through to layered instead.
      */
     @Test
-    fun `an evenly built body is layered`() = Dev.on {
+    fun `an evenly built body is layered`() {
         val even = GameState(
             shells = mapOf(Shell.KERN.id to 3, Shell.MANTEL.id to 3, Shell.KRUSTE.id to 3),
         )
@@ -52,7 +52,7 @@ class WorldsTest {
     }
 
     @Test
-    fun `a body too shallow to be anything is nothing`() = Dev.on {
+    fun `a body too shallow to be anything is nothing`() {
         assertNull(Worlds.current(GameState()), "Ein leerer Körper hat schon einen Typ")
         val thin = GameState(shells = mapOf(Shell.KERN.id to Depth.JUNG.atLeast - 1))
         assertNull(Worlds.current(thin), "Ein zu flacher Körper hat einen Typ")
@@ -62,7 +62,7 @@ class WorldsTest {
     }
 
     @Test
-    fun `depth is read as the deepest band reached`() = Dev.on {
+    fun `depth is read as the deepest band reached`() {
         assertNull(Depth.of(0))
         assertEquals(Depth.JUNG, Depth.of(Depth.JUNG.atLeast))
         assertEquals(Depth.GEREIFT, Depth.of(Depth.GEREIFT.atLeast))
@@ -84,7 +84,7 @@ class WorldsTest {
 
     /** Building is what writes the record, on the press rather than a tick later. */
     @Test
-    fun `the record is written the moment the body qualifies`() = Dev.on {
+    fun `the record is written the moment the body qualifies`() {
         var state = GameState(materials = Material.entries.associate { it.id to 1e6 })
         repeat(Depth.JUNG.atLeast - 1) { state = GameEngine.buildShell(state, Shell.KRUSTE.id) }
         assertTrue(state.worldTypes.isEmpty(), "Zu früh eingetragen")
@@ -95,7 +95,7 @@ class WorldsTest {
 
     /** Passing through a band still records it — nothing is skipped by building on. */
     @Test
-    fun `every band on the way is kept`() = Dev.on {
+    fun `every band on the way is kept`() {
         var state = GameState(materials = Material.entries.associate { it.id to 1e9 })
         repeat(Depth.GEREIFT.atLeast) { state = GameEngine.buildShell(state, Shell.KERN.id) }
 
@@ -106,7 +106,7 @@ class WorldsTest {
 
     /** The tick is the second way in, for a save that was already deep before the record existed. */
     @Test
-    fun `a save that is already a world records itself on the next tick`() = Dev.on {
+    fun `a save that is already a world records itself on the next tick`() {
         val deep = GameState(shells = mapOf(Shell.MANTEL.id to Depth.GEREIFT.atLeast))
         assertTrue(deep.worldTypes.isEmpty())
         val ticked = GameEngine.tick(deep, 0.1)
@@ -124,7 +124,7 @@ class WorldsTest {
      * mean anything.
      */
     @Test
-    fun `a collapse takes the body and leaves the record`() = Dev.on {
+    fun `a collapse takes the body and leaves the record`() {
         val built = GameState(
             runMass = Tiers.last.threshold,
             mass = Tiers.last.threshold,
@@ -147,7 +147,7 @@ class WorldsTest {
 
     /** And the big bang, which takes strictly more, leaves it too. */
     @Test
-    fun `a big bang leaves the record`() = Dev.on {
+    fun `a big bang leaves the record`() {
         val world = Worlds.of(Lane.METALL, Depth.VOLLENDET).id
         val ready = GameState(
             // The button reads the collapse counter, not the singularities; see [BigBang.pending].
@@ -166,7 +166,7 @@ class WorldsTest {
     }
 
     @Test
-    fun `the record pays, a little, and only for real types`() = Dev.on {
+    fun `the record pays, a little, and only for real types`() {
         val none = GameState()
         assertEquals(1.0, Worlds.multiplier(none))
 
@@ -179,7 +179,7 @@ class WorldsTest {
     }
 
     @Test
-    fun `the whole record is worth having and no more`() = Dev.on {
+    fun `the whole record is worth having and no more`() {
         val everything = GameState(worldTypes = Worlds.all.map { it.id }.toSet())
         assertEquals(1.0 + Worlds.all.size * Worlds.BONUS_EACH, Worlds.multiplier(everything))
         // A quarter more production for a collection that takes a dozen runs is a nice thing to
@@ -190,7 +190,7 @@ class WorldsTest {
     // ------------------------------------------------------------------ the picture
 
     @Test
-    fun `a fresh body wears the palette it was given`() = Dev.on {
+    fun `a fresh body wears the palette it was given`() {
         val plain = Skins.ORIGINAL
         assertEquals(plain, Shells.tintOver(plain, GameState()), "Ein leerer Körper wird eingefärbt")
 
@@ -201,7 +201,7 @@ class WorldsTest {
     }
 
     @Test
-    fun `a one-sided body bends the palette towards what it is made of`() = Dev.on {
+    fun `a one-sided body bends the palette towards what it is made of`() {
         val icy = GameState(shells = mapOf(Shell.KRUSTE.id to 15))
         val tinted = Shells.tintOver(Skins.ORIGINAL, icy)
         assertTrue(tinted.tintStrength > 0f, "Die Zusammensetzung ist nicht zu sehen")
@@ -217,7 +217,7 @@ class WorldsTest {
 
     /** And a palette the player chose is bent, never replaced. */
     @Test
-    fun `a chosen scheme survives the composition`() = Dev.on {
+    fun `a chosen scheme survives the composition`() {
         val chosen = Skins.all.first { it.desaturation > 0f }
         val over = Shells.tintOver(chosen, GameState(shells = mapOf(Shell.KERN.id to 15)))
         assertEquals(chosen.id, over.id, "Das Schema wurde ausgetauscht")
@@ -226,13 +226,14 @@ class WorldsTest {
         assertTrue(over.tintStrength <= 1f)
     }
 
+    /** And with the update switched back off, the body is drawn exactly as it was before it. */
     @Test
-    fun `the picture does not change in the shipped game`() {
-        Dev.disable()
-        val built = GameState(shells = mapOf(Shell.KRUSTE.id to 15))
-        assertEquals(Skins.ORIGINAL, Shells.tintOver(Skins.ORIGINAL, built))
-        assertFalse(Worlds.isUnlocked(built))
-    }
+    fun `the picture goes back to normal if the update is withdrawn`() =
+        Rollout.accretion(live = false) {
+            val built = GameState(shells = mapOf(Shell.KRUSTE.id to 15))
+            assertEquals(Skins.ORIGINAL, Shells.tintOver(Skins.ORIGINAL, built))
+            assertFalse(Worlds.isUnlocked(built))
+        }
 
     private companion object {
         const val NOW = 1_700_000_000_000L

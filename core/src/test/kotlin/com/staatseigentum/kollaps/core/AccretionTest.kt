@@ -10,22 +10,21 @@ import kotlin.random.Random
 /**
  * The two halves of the accretion update: what falls in, and what it is built into.
  *
- * Every test here runs inside [Dev.on], because that is the only state in which any of this does
- * anything — and the first block below is the one that says so. If the flag ever stopped working,
- * the shipped game would quietly grow a system nobody finished, and these are the tests that would
- * notice before a player did.
+ * Live in the shipped game, so most of these simply call the rules. The two at the top are the
+ * exception: they hold [Rollout.accretion] to the claim it makes — that switching the update off
+ * gives back exactly the game that came before it, in one line and with nobody's save harmed.
+ * If that ever stopped being true, taking the update back out would stop being a line.
  */
 class AccretionTest {
 
-    /** Whatever a test did to the flag, the next one starts from the shipped game. */
+    /** Nothing here may leave the switch where the next test does not expect it. */
     @AfterTest
-    fun off() = Dev.disable()
+    fun restore() = assertTrue(Rollout.accretion, "Der Schalter wurde nicht zurückgestellt")
 
-    // ------------------------------------------------------------------ the flag
+    // ------------------------------------------------------------------ the switch
 
     @Test
-    fun `none of it happens in the shipped game`() {
-        Dev.disable()
+    fun `switching it off gives back the game that came before`() = Rollout.accretion(live = false) {
         val stocked = GameState(
             materials = mapOf(Material.METALL.id to 999.0, Material.SILIKAT.id to 999.0),
             shells = mapOf(Shell.KERN.id to 10),
@@ -45,40 +44,43 @@ class AccretionTest {
     }
 
     /**
-     * And a save carried back from the dev build plays exactly as the shipped game plays.
+     * And a save written while it was live still plays, it simply stops being paid for the body.
      *
-     * The stronger half of the claim above: it is not enough that nothing new *happens*, the
-     * shells already in such a save must also not quietly multiply anything.
+     * The stronger half of the claim: it is not enough that nothing new *happens*. A player who
+     * had built fifteen layers before the update was withdrawn must land in the ordinary game
+     * rather than in one that is still quietly multiplying their production by something the
+     * interface no longer shows — and their save has to decode either way round.
      */
     @Test
-    fun `shells in a save do nothing while the flag is off`() {
+    fun `a save built while it was live still plays with it off`() {
         val bare = GameState(collectors = mapOf(Collectors.all.first().id to 20))
         val built = bare.copy(
             shells = mapOf(Shell.KERN.id to 15, Shell.MANTEL.id to 15),
             worldTypes = Worlds.all.map { it.id }.toSet(),
         )
 
-        Dev.disable()
-        assertEquals(
-            GameEngine.stats(bare).massPerSecond,
-            GameEngine.stats(built).massPerSecond,
-            "Ein Kern im Spielstand hat die Produktion verändert",
-        )
-
-        // And with it on, the same save is worth visibly more — otherwise the test above would
-        // pass just as well for a system that does nothing at all.
-        Dev.on {
-            assertTrue(
-                GameEngine.stats(built).massPerSecond > GameEngine.stats(bare).massPerSecond,
-                "Mit Schalter an bringt der Kern trotzdem nichts",
+        Rollout.accretion(live = false) {
+            assertEquals(
+                GameEngine.stats(bare).massPerSecond,
+                GameEngine.stats(built).massPerSecond,
+                "Ein Kern im Spielstand hat die Produktion verändert",
             )
+            // Still readable and still writable — the fields are simply not read any more.
+            assertEquals(built, SaveCodec.decode(SaveCodec.encode(built)))
         }
+
+        // And live, the same save is worth visibly more — otherwise the check above would pass
+        // just as well for a system that does nothing at all.
+        assertTrue(
+            GameEngine.stats(built).massPerSecond > GameEngine.stats(bare).massPerSecond,
+            "Der Kern bringt gar nichts",
+        )
     }
 
     // ------------------------------------------------------------------ impacts
 
     @Test
-    fun `absorbing one pays mass and leaves material`() = Dev.on {
+    fun `absorbing one pays mass and leaves material`() {
         val impact = Accretion.byId("im_nugget")!!
         val before = GameState()
         val after = GameEngine.absorbImpact(before, impact)
@@ -100,7 +102,7 @@ class AccretionTest {
      * two minutes the system exists for.
      */
     @Test
-    fun `the very first one is still worth taking`() = Dev.on {
+    fun `the very first one is still worth taking`() {
         val fresh = GameState()
         assertEquals(0.0, GameEngine.stats(fresh).massPerSecond, "Der Test misst nicht, was er meint")
         for (impact in Accretion.all) {
@@ -113,7 +115,7 @@ class AccretionTest {
 
     /** And it grows with the body rather than staying a rounding error. */
     @Test
-    fun `it is worth more once there is production`() = Dev.on {
+    fun `it is worth more once there is production`() {
         val impact = Accretion.all.first()
         val busy = GameState(collectors = mapOf(Collectors.all.first().id to 500))
         assertTrue(
@@ -123,7 +125,7 @@ class AccretionTest {
     }
 
     @Test
-    fun `only the heavy ones cost anything to ignore`() = Dev.on {
+    fun `only the heavy ones cost anything to ignore`() {
         val busy = GameState(
             mass = 1_000_000.0,
             collectors = mapOf(Collectors.all.first().id to 200),
@@ -144,28 +146,27 @@ class AccretionTest {
 
     /** Missing something while broke must not put the player into debt. */
     @Test
-    fun `a miss cannot push the mass below nothing`() = Dev.on {
+    fun `a miss cannot push the mass below nothing`() {
         val heavy = Accretion.all.first { it.heavy }
         val broke = GameState(mass = 0.0)
         assertEquals(0.0, GameEngine.missImpact(broke, heavy).mass)
     }
 
     @Test
-    fun `they stop where the comets take over`() = Dev.on {
+    fun `they stop where the comets take over`() {
         val early = GameState(runMass = 0.0)
         assertTrue(Accretion.isActive(early), "Am Anfang fällt nichts ein")
 
         val late = GameState(runMass = Tiers.all[Accretion.LAST_TIER + 1].threshold)
         assertFalse(Accretion.isActive(late), "Es fällt immer noch etwas ein")
-        // The panel stays, because the material and what was built out of it are still there.
-        assertTrue(
-            Accretion.isUnlocked(late.copy(materials = mapOf(Material.EIS.id to 3.0))),
-            "Die Anzeige verschwindet mit dem Material darin",
-        )
+        // But the panel stays — including for a save that was already far past Mars when the
+        // update arrived, which is every save that was being played when it did.
+        assertTrue(Accretion.isUnlocked(late), "Ein alter Spielstand sieht vom Update nichts")
+        assertTrue(Worlds.isUnlocked(late), "Und von den Weltentypen auch nichts")
     }
 
     @Test
-    fun `arrivals come sooner as the body grows, down to a floor`() = Dev.on {
+    fun `arrivals come sooner as the body grows, down to a floor`() {
         val early = Accretion.interval(GameState())
         val later = Accretion.interval(GameState(runMass = Tiers.all[Accretion.LAST_TIER].threshold))
         assertTrue(later < early, "Die Schwerkraft holt nichts schneller herein")
@@ -189,7 +190,7 @@ class AccretionTest {
     // ------------------------------------------------------------------ shells
 
     @Test
-    fun `building spends both materials and raises the level`() = Dev.on {
+    fun `building spends both materials and raises the level`() {
         val shell = Shell.KERN
         val stocked = GameState(
             materials = mapOf(shell.wants.id to 50.0, shell.second.id to 50.0),
@@ -209,7 +210,7 @@ class AccretionTest {
     }
 
     @Test
-    fun `a shell without material is refused`() = Dev.on {
+    fun `a shell without material is refused`() {
         val shell = Shell.KRUSTE
         // Enough of the main material and none of the binder: the case the two-material cost
         // exists for, and the one a single-cost check would have let through.
@@ -219,7 +220,7 @@ class AccretionTest {
     }
 
     @Test
-    fun `costs grow and the top is reachable`() = Dev.on {
+    fun `costs grow and the top is reachable`() {
         var state = GameState(
             materials = Material.entries.associate { it.id to 1e9 },
         )
@@ -236,7 +237,7 @@ class AccretionTest {
     }
 
     @Test
-    fun `an empty body is an even third of each`() = Dev.on {
+    fun `an empty body is an even third of each`() {
         val fresh = GameState()
         for (shell in Shell.entries) {
             assertEquals(
@@ -248,7 +249,7 @@ class AccretionTest {
     }
 
     @Test
-    fun `each shell moves the thing it says it moves`() = Dev.on {
+    fun `each shell moves the thing it says it moves`() {
         val fleet = mapOf(Collectors.all.first().id to 30)
         val bare = GameState(collectors = fleet)
 
@@ -289,7 +290,7 @@ class AccretionTest {
      * Deterministic: the impacts are picked from a seeded stream and the clock is a number.
      */
     @Test
-    fun `ten minutes of a dev game closes the loop`() = Dev.on {
+    fun `ten minutes of a new game closes the loop`() {
         val random = Random(11)
         var state = GameState(collectors = mapOf(Collectors.all.first().id to 5))
         var caught = 0
@@ -331,7 +332,7 @@ class AccretionTest {
      * marked read before the window finished opening — on a new game, for ever.
      */
     @Test
-    fun `the accretion cards survive a fresh save`() = Dev.on {
+    fun `the accretion cards survive a fresh save`() {
         val fresh = GameEngine.tick(GameState.new(0L), 0.1)
         assertTrue(fresh.introsSeeded, "Der Spielstand wurde gar nicht abgeglichen")
         assertFalse("un_impacts" in fresh.seenIntros, "Die Einschlag-Karte wurde weggeräumt")
@@ -343,7 +344,7 @@ class AccretionTest {
 
     /** The crust's yield has to actually reach the material that is handed over. */
     @Test
-    fun `the crust brings more material in`() = Dev.on {
+    fun `the crust brings more material in`() {
         val impact = Accretion.all.first()
         val plain = GameEngine.absorbImpact(GameState(), impact)
         val crusted = GameEngine.absorbImpact(

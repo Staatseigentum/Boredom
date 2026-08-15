@@ -152,17 +152,21 @@ object Accretion {
 
     /** Whether anything still drifts in at this point on the ladder. */
     fun isActive(state: GameState): Boolean =
-        Dev.enabled && GameEngine.tierOf(state).index <= LAST_TIER
+        Rollout.accretion && GameEngine.tierOf(state).index <= LAST_TIER
 
     /**
-     * Whether the panel is worth showing at all.
+     * Whether the panel is worth showing at all — which, once the update is live, is always.
      *
-     * Stays true after the impacts stop, because the material and what was built out of it are
-     * still there and still doing something. A panel that vanished at Mars would take the
-     * explanation of half the player's production with it.
+     * It was gated on having material or still being in range, and that was wrong in exactly one
+     * case, which happens to be everybody who was already playing: a save halfway up the ladder
+     * has no material, is long past Mars, and would have been shown nothing at all until its next
+     * collapse. A player who installs an update and cannot find it has not been given it.
+     *
+     * There is no case left where the panel says nothing useful. Below Mars it is where the
+     * material goes; above it, it says why nothing is arriving any more, what the layers already
+     * built are still doing, and which of the twelve worlds are still missing.
      */
-    fun isUnlocked(state: GameState): Boolean =
-        Dev.enabled && (state.materials.isNotEmpty() || isActive(state))
+    fun isUnlocked(state: GameState): Boolean = Rollout.accretion
 
     /**
      * Seconds until the next arrival, at this point on the ladder.
@@ -289,7 +293,7 @@ object Shells {
     }
 
     fun canBuild(state: GameState, shell: Shell): Boolean {
-        if (!Dev.enabled) return false
+        if (!Rollout.accretion) return false
         if (levelOf(state, shell) >= MAX_LEVEL) return false
         return costOf(state, shell).all { (material, cost) -> amountOf(state, material) >= cost }
     }
@@ -345,7 +349,7 @@ object Shells {
      * shell is a visible change rather than the twentieth.
      */
     fun tintOver(base: Skin, state: GameState): Skin {
-        if (!Dev.enabled) return base
+        if (!Rollout.accretion) return base
         val leader = Shell.entries.maxByOrNull { levelOf(state, it) } ?: return base
         if (levelOf(state, leader) <= 0) return base
 
