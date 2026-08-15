@@ -118,11 +118,23 @@ fun PhoneNav(
     current: PhoneView,
     onSelect: (PhoneView) -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * The one the tutorial is pointing at, if any.
+     *
+     * Marked rather than merely named, because a sentence saying "Flotte" only helps somebody who
+     * has already worked out that the five pictures along the bottom have names. The mark is what
+     * connects the word to the button.
+     */
+    marked: PhoneView? = null,
 ) {
     val sfx = LocalSfx.current
+    val pulse = tutorialPulse()
     Row(modifier = modifier.fillMaxWidth().background(SpaceElevated)) {
         for (entry in PhoneView.availableIn(state)) {
             val selected = entry == current
+            // Never both at once: reaching the marked screen is what stops it being marked, so
+            // the two states can never fight over the same cell.
+            val pointed = entry == marked && !selected
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -140,19 +152,34 @@ fun PhoneNav(
                     Modifier
                         .fillMaxWidth()
                         .height(3.dp)
-                        .background(if (selected) Nebula else SpaceElevated),
+                        .background(
+                            when {
+                                selected -> Nebula
+                                pointed -> Ember.copy(alpha = pulse)
+                                else -> SpaceElevated
+                            },
+                        ),
                 )
                 Spacer(Modifier.height(7.dp))
                 NavIcon(
                     view = entry,
-                    tint = if (selected) Starlight else Muted,
+                    tint = when {
+                        selected -> Starlight
+                        pointed -> Ember
+                        else -> Muted
+                    },
                     glow = Color(stats.tier.glowColor),
                 )
                 Spacer(Modifier.height(6.dp))
                 PixelLabel(
                     text = entry.label,
-                    color = if (selected) Starlight else Muted,
+                    color = when {
+                        selected -> Starlight
+                        pointed -> Ember
+                        else -> Muted
+                    },
                     size = 9,
+                    maxLines = 1,
                 )
             }
         }

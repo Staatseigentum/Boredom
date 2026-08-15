@@ -275,11 +275,14 @@ Entwicklerkonto sind es zwölf Monate. Drei Apps gleichzeitig sind das Limit ein
 in der App-Signatur; ein Erneuern rührt ihn nicht an. Wer trotzdem sichergehen will, benutzt den
 Kopieren-Knopf im Kosmos-Reiter: derselbe Textblock lässt sich auf Handy, PC und iPhone einlesen.
 
-**Zwei Unterschiede zur Android-Fassung.** Es gibt keinen Ton — Klänge und Musik werden auf den
-anderen beiden Plattformen erzeugt, nicht abgespielt, und der Tongenerator dafür ist an
-`javax.sound` beziehungsweise Androids `AudioTrack` gebunden; auf iOS gibt es beides nicht, und
-eine Portierung ist ein eigenes Stück Arbeit. Die Schnittstelle war von Anfang an darauf
-ausgelegt, dass eine Plattform schweigt. Und es gibt keinen Updater: eine App, die sich selbst
+**Ton gibt es**, und zwar denselben. Beide Generatoren liegen in `core` und geben fertige
+WAV-Bytes zurück — die Synthese ist gewöhnliches Kotlin, keine Plattform-API. Jede Fassung muss
+daraus nur noch Töne machen: der PC über `javax.sound`, Android über `SoundPool`, das iPhone über
+`AVAudioPlayer`. Die Sitzung läuft als *Ambient*, das heißt: es mischt sich unter das, was
+ohnehin läuft, statt die Musik des Spielers zu stoppen, und ein Telefon auf lautlos bleibt
+lautlos.
+
+**Ein Unterschied zur Android-Fassung bleibt:** es gibt keinen Updater. Eine App, die sich selbst
 ersetzt, müsste sich selbst signieren können.
 
 ### Wie die IPA gebaut wird

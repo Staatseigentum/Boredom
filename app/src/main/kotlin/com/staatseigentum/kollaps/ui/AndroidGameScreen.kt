@@ -96,6 +96,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun setReminders(on: Boolean) = model.setReminders(on)
             override fun setStatus(on: Boolean) = model.setStatus(on)
             override fun dismissTutorial() = model.dismissTutorial()
+            override fun dismissIntro() = model.dismissIntro()
             override fun setPaused(on: Boolean) = model.setPaused(on)
             override fun setNumberFormat(format: NumberFormat) = model.setNumberFormat(format)
             override fun importSave(block: String): Boolean = model.importSave(block)

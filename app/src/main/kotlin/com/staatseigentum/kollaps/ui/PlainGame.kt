@@ -278,6 +278,10 @@ open class PlainGame(start: GameState = GameState.new(NOW)) : GameActions {
         state = GameEngine.setStatus(state, on)
     }
 
+    override fun dismissIntro() {
+        state = GameEngine.acknowledgeIntro(state)
+    }
+
     override fun dismissTutorial() {
         state = GameEngine.dismissTutorial(state)
     }

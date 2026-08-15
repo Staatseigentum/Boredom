@@ -367,6 +367,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
+     * Persisted straight away, like the tutorial above it.
+     *
+     * A card read and then lost to a process death would be shown again, which is the one thing
+     * these must never do — an explanation you have already dismissed reappearing reads as a bug
+     * in the game rather than as a helpful reminder.
+     */
+    fun dismissIntro() {
+        _state.value = GameEngine.acknowledgeIntro(_state.value)
+        persist()
+    }
+
+    /**
      * Holds production still while the collapse plays out.
      *
      * Not persisted, and deliberately so: it describes what is on screen, not what the save is.

@@ -245,6 +245,7 @@ object GameEngine {
         ticked = advanceEvents(ticked, seconds)
         ticked = raiseFind(ticked)
         ticked = dealContracts(ticked)
+        ticked = seedIntros(ticked)
         ticked = sample(ticked, seconds)
         if (ticked.runningChallengeIds.isNotEmpty()) {
             ticked = ticked.copy(challengeSeconds = ticked.challengeSeconds + seconds)
@@ -845,6 +846,8 @@ object GameEngine {
                 statusOn = state.statusOn,
                 numberFormat = state.numberFormat,
                 tutorialDone = state.tutorialDone,
+                seenIntros = state.seenIntros,
+                introsSeeded = state.introsSeeded,
                 eventsAnswered = state.eventsAnswered,
                 // A story does not un-happen because the body did. The chain keeps the station it
                 // reached, so a collapse three answers in picks the fourth question back up.
@@ -937,6 +940,8 @@ object GameEngine {
                 statusOn = state.statusOn,
                 numberFormat = state.numberFormat,
                 tutorialDone = state.tutorialDone,
+                seenIntros = state.seenIntros,
+                introsSeeded = state.introsSeeded,
                 eventsAnswered = state.eventsAnswered,
                 // The point of pressing it.
                 aeons = state.aeons + earned,
@@ -1408,6 +1413,8 @@ object GameEngine {
         statusOn = state.statusOn,
         numberFormat = state.numberFormat,
         tutorialDone = state.tutorialDone,
+        seenIntros = state.seenIntros,
+        introsSeeded = state.introsSeeded,
         eventsAnswered = state.eventsAnswered,
         challengesDone = state.challengesDone,
         challengeDuos = state.challengeDuos,
@@ -1587,6 +1594,34 @@ object GameEngine {
 
     /** Sends the first-steps nudge away. There is deliberately no way to bring it back. */
     fun dismissTutorial(state: GameState): GameState = state.copy(tutorialDone = true)
+
+    /**
+     * Marks the introduction currently on screen as read.
+     *
+     * Reads the pending one itself rather than being handed an id: the card the player is looking
+     * at is by definition [Unlocks.pending], and passing the id through the interface would open
+     * the door to dismissing one that was never shown.
+     */
+    fun acknowledgeIntro(state: GameState): GameState {
+        val pending = Unlocks.pending(state) ?: return state
+        return state.copy(seenIntros = state.seenIntros + pending.id)
+    }
+
+    /**
+     * Squares a freshly loaded save with the introductions, once.
+     *
+     * Everything it has already reached counts as read. For a new game that is nothing — every
+     * introduction is gated behind a system a new game has not unlocked — so this costs the player
+     * who needs them exactly nothing, and spares the one who does not a stack of eleven cards
+     * about things they built hours ago.
+     */
+    private fun seedIntros(state: GameState): GameState {
+        if (state.introsSeeded) return state
+        return state.copy(
+            introsSeeded = true,
+            seenIntros = state.seenIntros + Unlocks.applicable(state).map { it.id },
+        )
+    }
 
     /**
      * Picks how numbers are written.

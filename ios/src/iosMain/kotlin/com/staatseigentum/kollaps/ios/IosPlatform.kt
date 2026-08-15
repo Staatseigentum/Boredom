@@ -90,18 +90,21 @@ private val TextFamily by lazy { family("vt323_regular" to FontWeight.Normal) }
 /**
  * Wraps the game in the pieces only this platform can provide.
  *
- * Sound and music are handed in as nothing, and that is a real gap rather than an oversight: both
- * are synthesised on the other two platforms — a tone generator writing samples into an audio
- * line — and neither `javax.sound` nor Android's `AudioTrack` exists here. The interface was
- * written to allow exactly this: [LocalSfx] and [LocalMusic] are nullable, every call site already
- * copes with silence, and the setting that turns sound off simply has nothing to turn off yet.
+ * Sound and music come from the same two generators the phone and the PC use — they live in
+ * `:core` and produce finished WAV bytes, so the only thing this platform had to supply was a way
+ * to play them. See [IosAudio].
+ *
+ * Handed over without asking whether the player wants to hear anything, which is deliberate and is
+ * what the other two do: the setting is enforced once, in `GameScreen`, by taking the player away
+ * from everything below it. Checking here as well would be a second place for the two answers to
+ * disagree.
  */
 @Composable
 fun IosPlatform(content: @Composable () -> Unit) {
     CompositionLocalProvider(
         LocalSpriteFactory provides IosSprites,
-        LocalSfx provides null,
-        LocalMusic provides null,
+        LocalSfx provides IosAudio.cues,
+        LocalMusic provides IosAudio.loop,
     ) {
         KollapsTheme(display = DisplayFamily, text = TextFamily, content = content)
     }

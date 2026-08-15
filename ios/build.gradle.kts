@@ -87,6 +87,9 @@ kotlin {
                 implementation(compose.material3)
                 implementation(compose.ui)
                 implementation(libs.kotlinx.serialization.json)
+                // Named rather than taken from Compose transitively: the audio renders its cues off
+                // the main thread, and a direct import deserves a direct dependency.
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
     }

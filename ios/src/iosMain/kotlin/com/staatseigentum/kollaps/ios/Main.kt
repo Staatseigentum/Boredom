@@ -106,6 +106,9 @@ class KollapsDelegate : UIResponder, UIApplicationDelegateProtocol {
 
     override fun applicationDidEnterBackground(application: UIApplication) {
         IosSave.save(Kollaps.game.state)
+        // A cue caught halfway through would otherwise be resumed on the way back in, seconds
+        // later and with nothing on screen to explain it.
+        IosAudio.silence()
     }
 
     override fun applicationWillTerminate(application: UIApplication) {

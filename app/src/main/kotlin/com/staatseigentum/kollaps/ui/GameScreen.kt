@@ -73,6 +73,9 @@ import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.Tiers
+import com.staatseigentum.kollaps.core.Tutorial
+import com.staatseigentum.kollaps.core.TutorialSpot
+import com.staatseigentum.kollaps.core.Unlocks
 import com.staatseigentum.kollaps.core.Wallclock
 import com.staatseigentum.kollaps.core.audio.Mood
 import com.staatseigentum.kollaps.core.pixel.Skins
@@ -187,6 +190,9 @@ interface GameActions {
 
     /** Sends the first-steps nudge away for good. */
     fun dismissTutorial()
+
+    /** Marks the system introduction currently on screen as read. */
+    fun dismissIntro()
 
     /**
      * Holds the game still while the collapse plays out.
@@ -436,7 +442,20 @@ fun GameScreen(
                     .fillMaxSize()
                     .safeDrawingPadding(),
             ) {
+                /*
+                 * Where the tutorial has been asked to take the player, if anywhere.
+                 *
+                 * Set by the hint at the bottom of the body and read by whichever layout is on
+                 * screen, because the two of them navigate in completely different ways: a phone
+                 * switches which screen is showing, and a wide window has all of it up already and
+                 * has nothing to do but clear the request.
+                 */
+                var goTo by remember { mutableStateOf<TutorialSpot?>(null) }
+
                 val body = @Composable { modifier: Modifier, phone: Boolean ->
+                    // The hint lives three composables down inside the tap area; this is how it
+                    // reaches back out to say where it would like the player taken.
+                    CompositionLocalProvider(LocalTutorialGuide provides { spot -> goTo = spot }) {
                     TapArea(
                         state = shownState,
                         stats = shownStats,
@@ -452,6 +471,7 @@ fun GameScreen(
                         // for the big bang, the line the universe is pressed onto.
                         modifier = modifier.collapseCentre().bigBangCentre(),
                     )
+                    }
                 }
                 val shop = @Composable { modifier: Modifier, pinned: ShopTab? ->
                     ShopPanel(
@@ -507,6 +527,12 @@ fun GameScreen(
                             )
                         }
                     }
+
+                    // Nothing to do but forget it: on a wide screen the body, the ladder and the
+                    // shop are all on screen at once, so there is nowhere to be taken. Cleared
+                    // rather than ignored, so a window narrowed a minute later does not suddenly
+                    // act on a request from before.
+                    LaunchedEffect(goTo) { if (goTo != null) goTo = null }
                 } else {
                     /*
                      * One thing at a time.
@@ -547,6 +573,36 @@ fun GameScreen(
                         if (collapse.running || bigBang.running) view = PhoneView.BODY.name
                     }
 
+                    /*
+                     * The tutorial, taken at its word.
+                     *
+                     * Half the opening is about somewhere that is not on screen — on a phone the
+                     * shop is a different screen entirely — so "→ Flotte zeigen" has to actually
+                     * put the player there. Upgrades share the fleet's area behind a switch, which
+                     * is why two spots land on the same view.
+                     */
+                    LaunchedEffect(goTo) {
+                        val target = goTo ?: return@LaunchedEffect
+                        view = when (target) {
+                            TutorialSpot.BODY -> PhoneView.BODY
+                            TutorialSpot.FLOTTE, TutorialSpot.UPGRADES -> PhoneView.FLEET
+                            TutorialSpot.KOSMOS -> PhoneView.COSMOS
+                        }.name
+                        goTo = null
+                    }
+
+                    // And the way there, marked while the step is open. A player who does not
+                    // press the line still sees which button the sentence is talking about.
+                    val marked = if (!Tutorial.appliesTo(shownState)) null else {
+                        when (Tutorial.current(shownState)?.spot) {
+                            TutorialSpot.FLOTTE, TutorialSpot.UPGRADES -> PhoneView.FLEET
+                            TutorialSpot.KOSMOS -> PhoneView.COSMOS
+                            // The body is where the phone already is, and marking the button for
+                            // the screen you are looking at teaches that the mark means nothing.
+                            TutorialSpot.BODY, null -> null
+                        }
+                    }
+
                     Column(modifier = Modifier.fillMaxSize()) {
                         StatusBand(state = shownState, stats = shownStats)
 
@@ -564,6 +620,7 @@ fun GameScreen(
                             state = shownState,
                             stats = shownStats,
                             current = current,
+                            marked = marked,
                             onSelect = { view = it.name },
                         )
                     }
@@ -607,6 +664,23 @@ fun GameScreen(
                 // answered and can afford to wait one more question.
                 if (state.prompt == null && state.pendingFind != null) {
                     FindDialog(state = state, onAnswer = actions::answerFind)
+                }
+
+                /*
+                 * And last of all, whatever has just unlocked.
+                 *
+                 * Behind every other card on purpose. A collapse can land a tier celebration, an
+                 * event and two unlocks in the same second, and the introduction is the one of
+                 * those that keeps: it waits in the state until it is read, so it can afford to go
+                 * to the back of the queue. Nothing else here can.
+                 */
+                val intro = Unlocks.pending(state)
+                if (intro != null &&
+                    state.prompt == null &&
+                    state.pendingFind == null &&
+                    !GameEngine.hasUncelebratedTier(state)
+                ) {
+                    IntroDialog(intro = intro, onDismiss = actions::dismissIntro)
                 }
             }
 

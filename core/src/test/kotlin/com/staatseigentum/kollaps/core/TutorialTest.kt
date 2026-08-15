@@ -31,16 +31,29 @@ class TutorialTest {
         assertNull(Tutorial.current(state), "Nach dem letzten Schritt kommt noch etwas")
     }
 
-    /** Puts the state into the shape the step asks for, without going through the engine. */
+    /**
+     * Puts the state into the shape the step asks for, without going through the engine.
+     *
+     * Throws on a step it does not know, which is the point of it: a step added to the list
+     * without a way to satisfy it would otherwise sit in the middle of the sequence for ever and
+     * the walk below would simply stop early without saying why.
+     */
     private fun satisfy(state: GameState, step: TutorialStep): GameState = when (step.id) {
         "tut_tap" -> state.copy(taps = 10)
-        "tut_collector" -> state.copy(collectors = mapOf("dust" to 1))
-        "tut_more" -> state.copy(collectors = mapOf("dust" to 10))
+        "tut_collector" -> state.copy(collectors = mapOf(FIRST to 1))
+        "tut_more" -> state.copy(collectors = mapOf(FIRST to 10))
+        "tut_second" -> state.copy(collectors = mapOf(FIRST to 10, SECOND to 1))
         "tut_upgrade" -> state.copy(upgrades = setOf(Upgrades.all.first().id))
         "tut_tier" -> state.copy(bestTier = 1)
-        "tut_cosmos" -> state.copy(bestTier = 3)
+        "tut_fleet_seen" -> state.copy(bestTier = 2)
+        "tut_offline" -> state.copy(bestTier = 3)
+        "tut_cosmos" -> state.copy(bestTier = 4)
+        "tut_collapse_soon" -> state.copy(bestTier = 6)
         else -> error("Unbekannter Schritt ${step.id}")
     }
+
+    private val FIRST get() = Collectors.all[0].id
+    private val SECOND get() = Collectors.all[1].id
 
     /**
      * The reason the conditions read the state rather than counting button presses.
@@ -50,11 +63,17 @@ class TutorialTest {
      */
     @Test
     fun `doing the thing first skips the step`() {
-        val ahead = GameState.new(0).copy(taps = 50, collectors = mapOf("dust" to 12))
+        val ahead = GameState.new(0).copy(taps = 50, collectors = mapOf(FIRST to 12))
         val step = Tutorial.current(ahead)
 
+        // Three steps in without reading one: tapping, the first machine and the tenth are all
+        // behind them, and what is left is the one thing twelve of the same machine is not.
         assertNotNull(step)
-        assertEquals("tut_upgrade", step.id)
+        assertEquals("tut_second", step.id)
+
+        // And with a second kind bought as well, the fleet is done with entirely.
+        val broader = ahead.copy(collectors = mapOf(FIRST to 12, SECOND to 3))
+        assertEquals("tut_upgrade", Tutorial.current(broader)?.id)
     }
 
     @Test
@@ -107,7 +126,7 @@ class TutorialTest {
     fun `every step is reachable by playing`() {
         val far = GameState(
             taps = 100_000,
-            collectors = mapOf("dust" to 500),
+            collectors = mapOf(FIRST to 500, SECOND to 120),
             upgrades = Upgrades.all.take(5).map { it.id }.toSet(),
             bestTier = Tiers.last.index,
         )

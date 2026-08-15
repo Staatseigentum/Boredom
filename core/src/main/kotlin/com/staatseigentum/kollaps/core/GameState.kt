@@ -330,6 +330,26 @@ data class GameState(
     val tutorialDone: Boolean = false,
 
     /**
+     * Which system introductions have been read.
+     *
+     * By id rather than by count, because the list they index into grows: a number would quietly
+     * mean something different the next time a system is added, and a player would be shown a card
+     * about orbits again because "three" now points somewhere else.
+     */
+    val seenIntros: Set<String> = emptySet(),
+
+    /**
+     * Whether [seenIntros] has been squared with the save it belongs to.
+     *
+     * A save from before the introductions existed has read none of them and has usually unlocked
+     * most of them. Without this it would be handed eleven cards in a row for systems it has been
+     * using for hours. So the first tick after loading marks everything already reached as read —
+     * and this flag is how that happens exactly once. A new game has reached nothing, so for it
+     * the same step does nothing at all.
+     */
+    val introsSeeded: Boolean = false,
+
+    /**
      * Id of whatever is waiting for an answer, if anything.
      *
      * Either a [CosmicEvent] id or, while a chain is running, the id of the [ChainStation] on the
