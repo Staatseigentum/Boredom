@@ -721,10 +721,23 @@ internal fun CosmosPanel(
     Column {
         // A second strip, a size smaller than the one above it, so the hierarchy reads without
         // a line or a label saying which belongs to which.
+        /*
+         * Scrolls, and the chips are as wide as their words.
+         *
+         * They used to share the width equally, which was written when this strip had three
+         * entries. There are six, and on a phone that is sixty-eight points each — narrower than
+         * the word ERFOLGE in the display face, so the label wrapped, the cell grew to two lines,
+         * and the whole strip went with it. The section holding the contracts sat in the middle of
+         * that, which is why they were hard to get at on a phone at all.
+         *
+         * The strip above this one has scrolled since it reached four tabs, for exactly the same
+         * reason and with the same note against it.
+         */
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(SpaceCard)
+                .horizontalScroll(rememberScrollState())
                 .sog(SogDepth.CONTAINER, Nebula)
                 .urknall(Nebula),
         ) {
@@ -733,7 +746,6 @@ internal fun CosmosPanel(
                     title = entry.title,
                     selected = section == entry,
                     onClick = { openSection = entry.name },
-                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -878,13 +890,16 @@ private fun CosmosChip(
                 sfx?.click()
                 onClick()
             }
-            .padding(top = 11.dp),
+            // Its own width now that the strip scrolls, with enough on either side of the word to
+            // make the whole cell a target rather than the seven letters in the middle of it.
+            .padding(top = 11.dp, start = 14.dp, end = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         PixelLabel(
             text = title,
             color = if (selected) Ember else Muted,
             size = 12,
+            maxLines = 1,
         )
         Spacer(Modifier.height(8.dp))
         Box(

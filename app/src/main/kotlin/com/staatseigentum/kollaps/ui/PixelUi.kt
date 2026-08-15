@@ -107,6 +107,16 @@ fun PixelLabel(
     modifier: Modifier = Modifier,
     color: Color = Starlight,
     size: Int = 13,
+    /**
+     * How many lines the label may take.
+     *
+     * Unlimited by default, which is right for a heading in a column. It is wrong in a row of
+     * chips sharing a width: a label one pixel too wide wrapped onto a second line, every cell in
+     * that row grew to match, and a strip that was meant to be one line tall became two with one
+     * word hanging under it. Naming the limit at those sites is cheaper than making every caller
+     * think about the widest string its list might one day hold.
+     */
+    maxLines: Int = Int.MAX_VALUE,
 ) {
     Text(
         text = text.uppercase(),
@@ -116,6 +126,10 @@ fun PixelLabel(
         fontWeight = FontWeight.Bold,
         fontSize = size.sp,
         letterSpacing = 0.5.sp,
+        maxLines = maxLines,
+        // A label held to one line has to be allowed to run off the end rather than being
+        // hyphenated or wrapped; the alternatives both take the height back.
+        softWrap = maxLines > 1,
     )
 }
 

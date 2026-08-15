@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
+import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Orbit
 import com.staatseigentum.kollaps.core.Orbits
@@ -54,6 +55,8 @@ private class Body(
 @Composable
 fun OrbitingBodies(
     state: GameState,
+    tier: CelestialTier,
+    side: OrbitSide,
     modifier: Modifier = Modifier,
 ) {
     val bodies = remember(state.orbits, state.satellites, state.runMass) { build(state) }
@@ -72,30 +75,57 @@ fun OrbitingBodies(
 
         val block = floor(3.dp.toPx()).coerceAtLeast(2f)
         val centre = Offset(size.width / 2f, size.height / 2f)
-        val reach = minOf(size.width, size.height) / 2f
+
+        /*
+         * The band the slots live in, rather than the whole half-width.
+         *
+         * `orbit.radius` is a share between nought and one, and it used to be multiplied straight
+         * by half the shorter side — which put the inner slots inside the body, because the body
+         * is drawn at half the shorter side too. Every occupied slot near the middle was a disc
+         * sitting on the planet.
+         *
+         * Now nought means just outside the body and one means just inside the box, so the
+         * arithmetic says what it always meant to: a slot is somewhere between the surface and
+         * the edge of what can be seen.
+         */
+        val inner = bodyRadius(minOf(size.width, size.height), tier) + block * 3f
+        val outer = (size.width / 2f - block * 3f).coerceAtLeast(inner)
+        fun radiusOf(share: Float) = inner + share * (outer - inner)
 
         // The rings first, all of them, so a body is never drawn under the path of a wider one.
-        for (body in bodies) {
-            val ring = if (body.resonant) Ember.copy(alpha = 0.35f) else Outline.copy(alpha = 0.5f)
-            val radius = body.radius * reach
-            val dots = (radius / block * 0.5f).toInt().coerceIn(16, 90)
-            for (index in 0 until dots) {
-                val angle = index.toFloat() / dots * TWO_PI
-                drawBlock(
-                    x = centre.x + cos(angle) * radius,
-                    y = centre.y + sin(angle) * radius,
-                    size = block,
-                    color = ring,
-                )
+        // Both halves draw the whole ring: a path is a path whichever side of the planet it is on,
+        // and half a dotted ellipse appearing and disappearing would read as a fault.
+        if (side == OrbitSide.INFRONT) {
+            for (body in bodies) {
+                val ring =
+                    if (body.resonant) Ember.copy(alpha = 0.35f) else Outline.copy(alpha = 0.5f)
+                val radius = radiusOf(body.radius)
+                val dots = (radius / block * 0.5f).toInt().coerceIn(16, 90)
+                for (index in 0 until dots) {
+                    val angle = index.toFloat() / dots * TWO_PI
+                    // Only the near half of the path is drawn over the body; the far half would
+                    // be a dotted line across a planet.
+                    if (sin(angle) < 0f && radius * FLATTEN < inner) continue
+                    drawBlock(
+                        x = centre.x + cos(angle) * radius,
+                        y = centre.y + sin(angle) * radius * FLATTEN,
+                        size = block,
+                        color = ring,
+                    )
+                }
             }
         }
 
         for (body in bodies) {
             if (body.blocks <= 0) continue
             val angle = (turn * body.speed + body.phase) * TWO_PI
-            val radius = body.radius * reach
+            if ((sin(angle) >= 0f) != (side == OrbitSide.INFRONT)) continue
+            val radius = radiusOf(body.radius)
             drawDisc(
-                centre = Offset(centre.x + cos(angle) * radius, centre.y + sin(angle) * radius),
+                centre = Offset(
+                    centre.x + cos(angle) * radius,
+                    centre.y + sin(angle) * radius * FLATTEN,
+                ),
                 blocks = body.blocks,
                 block = block,
                 colour = body.colour,
@@ -148,6 +178,14 @@ private fun DrawScope.drawBlock(x: Float, y: Float, size: Float, color: Color) {
     val snappedY = floor(y / size) * size
     drawRect(color = color, topLeft = Offset(snappedX, snappedY), size = Size(size, size))
 }
+
+/**
+ * How flat the paths are, as the vertical half-axis over the horizontal one.
+ *
+ * The same number the fleet rings use, and it has to be: two systems drawn round one body at two
+ * different tilts is two pictures of two different places.
+ */
+private const val FLATTEN = 0.34f
 
 /** One full turn of the innermost slot. Slow enough to watch, fast enough to notice. */
 private const val CYCLE_MILLIS = 42_000

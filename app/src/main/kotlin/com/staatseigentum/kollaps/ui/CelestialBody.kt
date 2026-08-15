@@ -61,6 +61,15 @@ fun CelestialBody(
      * canvas it costs a redraw, which is what it actually is.
      */
     extraTurns: () -> Float = { 0f },
+    /**
+     * How much of its own field the body fills, on top of its tier's share.
+     *
+     * One for the celebration, where the body is the only thing on screen. Less than one in the
+     * field, where the fleet and the orbital slots need a lane outside it — a body at the top of
+     * the ladder covers the shorter side of its box outright, and a ring around something that
+     * already touches both edges has nowhere to be. See [BODY_SCALE_IN_FIELD].
+     */
+    scale: Float = 1f,
 ) {
     val factory = LocalSpriteFactory.current
 
@@ -132,7 +141,7 @@ fun CelestialBody(
         val image = shown ?: return@Canvas
         val side = current.side
 
-        val available = min(size.width, size.height) * PixelPlanet.spriteFraction(tier)
+        val available = min(size.width, size.height) * PixelPlanet.spriteFraction(tier) * scale
         val edge = drawnEdge(available, side)
 
         drawImage(

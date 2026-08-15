@@ -1055,10 +1055,26 @@ private fun TapArea(
         // sequence is read straight off the clock rather than going through [sog].
         val collapse = LocalCollapse.current
         val bigBang = LocalBigBang.current
+        // Under the body, so the far half of every orbit passes behind the planet instead of
+        // over it. That one ordering is most of the difference between a system and a sticker.
+        OrbitingBodies(
+            state = state,
+            tier = tier,
+            side = OrbitSide.BEHIND,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Satellites(
+            state = state,
+            tier = tier,
+            side = OrbitSide.BEHIND,
+            modifier = Modifier.fillMaxSize(),
+        )
+
         CelestialBody(
             tier = tier,
             // Only one of the two can be running, so the sum is whichever it is.
             extraTurns = { (collapse?.extraSpin ?: 0f) + (bigBang?.extraSpin ?: 0f) },
+            scale = BODY_SCALE_IN_FIELD,
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
@@ -1087,12 +1103,20 @@ private fun TapArea(
         )
 
         // The real system, under the collector rings: these are bodies with mass and a tier,
-        // the rings above them are a picture of how many machines are in the shop.
-        OrbitingBodies(state = state, modifier = Modifier.fillMaxSize())
-
-        // Drawn over the body rather than behind it: half of each orbit passes in front, and
-        // sorting per satellite would cost more than the illusion is worth at this size.
-        Satellites(state = state, tier = tier, modifier = Modifier.fillMaxSize())
+        // the rings above them are a picture of how many machines are in the shop. This pass is
+        // the near half of both; the far half was drawn under the body above.
+        OrbitingBodies(
+            state = state,
+            tier = tier,
+            side = OrbitSide.INFRONT,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Satellites(
+            state = state,
+            tier = tier,
+            side = OrbitSide.INFRONT,
+            modifier = Modifier.fillMaxSize(),
+        )
 
         for (effect in effects) {
             key(effect.id) {

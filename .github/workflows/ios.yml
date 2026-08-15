@@ -30,11 +30,20 @@ on:
       - 'app/src/main/kotlin/**'
       - '.github/workflows/ios.yml'
 
+# Ein Lauf je Zweig. Kotlin/Native braucht für einen kalten Bau eine gute Stunde, und zwei davon
+# gleichzeitig heißt nur, dass beide auf dieselbe Maschine warten.
+concurrency:
+  group: iphone-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ipa:
     name: Unsignierte IPA
     # Apple-Silicon-Läufer mit Xcode. Der Linker für arm64-iOS und `actool` kommen beide von dort.
     runs-on: macos-14
+    # Der Standard wären sechs Stunden. Ein Bau, der so lange braucht, hängt — und hängt dann
+    # sechs Stunden lang, statt es zu sagen.
+    timeout-minutes: 120
 
     steps:
       - uses: actions/checkout@v4
@@ -48,20 +57,39 @@ jobs:
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
 
+      # Der Kotlin/Native-Werkzeugkasten: Übersetzer, LLVM und die Apple-Sysroots, zusammen gut
+      # anderthalb Gigabyte. `setup-gradle` kümmert sich um `~/.gradle` und nicht um `~/.konan`,
+      # also lud der erste Lauf das jedes Mal neu — was den halben Bau ausmachte.
+      #
+      # Der Schlüssel hängt an der Kotlin-Version, weil genau die entscheidet, welcher
+      # Werkzeugkasten geladen wird; `restore-keys` fängt den Fall ab, dass sie sich ändert und
+      # nur ein Teil neu geholt werden muss.
+      - name: Kotlin/Native-Werkzeugkasten aus dem Zwischenspeicher
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: konan-${{ runner.os }}-
+
       # Eigene Settings-Datei, siehe deren Kopf: `:ios` wird allein gebaut, weil sonst die
       # JVM- und die Multiplattform-Fassung desselben Kotlin-Plugins über zwei Klassenlader
       # kommen und Kotlin/Natives Werkzeugkasten sich selbst nicht mehr erkennt.
+      #
+      # `tee` statt `>`: der Bau dauert kalt eine gute Stunde, und ein Log, das erst am Ende
+      # erscheint, lässt genau in der Zeit nicht erkennen, ob gerade geladen, übersetzt oder
+      # gelinkt wird — oder gar nichts mehr passiert. Die Datei bleibt trotzdem, damit die
+      # Fehlerzeilen darunter noch einmal gesammelt herausfallen.
       - name: Programm bauen
         run: |
           set +e
           ./gradlew -c settings-ios.gradle.kts \
             :ios:linkReleaseExecutableIosArm64 \
-            --no-daemon --console=plain > build.log 2>&1
-          code=$?
-          # Kotlins eigene Fehlerzeilen zuerst — mehr ist es hier fast nie.
-          grep -E "^e: |^\* What went wrong|^Caused by|FAILURE:" build.log | head -n 60
-          echo "--- letzte Zeilen ---"
-          tail -n 30 build.log
+            --no-daemon --console=plain --info 2>&1 | tee build.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            echo "--- Kotlins eigene Fehlerzeilen ---"
+            grep -E "^e: |^\* What went wrong|^Caused by|FAILURE:" build.log | head -n 60
+          fi
           exit $code
 
       - name: Bündeln

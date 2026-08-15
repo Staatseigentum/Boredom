@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -241,13 +243,41 @@ fun StatusBand(state: GameState, stats: Stats, modifier: Modifier = Modifier) {
             .padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 8.dp)
             .sog(SogDepth.SHELL, Ember),
     ) {
+        /*
+         * The mass, at whatever size it still fits at.
+         *
+         * Both labels were fixed sizes in a row that shares its width by pushing them apart, and
+         * that held for as long as a mass was five characters. It is not: past the named units a
+         * mass reads `1,23 Sxd kg` and the rate under it is no shorter, and together at
+         * twenty-six and eleven points they are wider than a 360 point phone. What happened then
+         * was not a clip but a wrap — the band that is documented above as being exactly three
+         * lines tall quietly became four, and the rate ended up under the mass.
+         *
+         * Two things fix it and both are needed. The mass steps down through three whole sizes as
+         * it grows, because a pixel face may only ever be drawn at whole sizes; and each label is
+         * held to one line, so nothing can take the height even if a translation lands longer than
+         * anything measured here.
+         */
+        val mass = Numbers.formatMass(state.mass)
         Row(
             modifier = Modifier.fillMaxWidth().sog(SogDepth.CONTENT, Starlight).urknall(Starlight),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom,
         ) {
-            PixelLabel(text = Numbers.formatMass(state.mass), color = Starlight, size = 26)
-            PixelLabel(text = "+${Numbers.formatRate(stats.massPerSecond)}", color = Positive, size = 11)
+            PixelLabel(
+                text = mass,
+                color = Starlight,
+                size = massSize(mass),
+                maxLines = 1,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            Spacer(Modifier.width(8.dp))
+            PixelLabel(
+                text = "+${Numbers.formatRate(stats.massPerSecond)}",
+                color = Positive,
+                size = 11,
+                maxLines = 1,
+            )
         }
 
         val glow = Color(stats.tier.glowColor)
@@ -294,6 +324,20 @@ fun StatusBand(state: GameState, stats: Stats, modifier: Modifier = Modifier) {
 }
 
 /**
+ * How large the mass may be drawn, given how long it has become.
+ *
+ * Whole sizes and nothing between them: the display face is a pixel font, and a pixel font at a
+ * fractional size is the one thing this whole look cannot survive. Three steps is enough — the
+ * string only grows by the unit suffix, and it stops growing entirely once the exponent form
+ * takes over.
+ */
+private fun massSize(mass: String): Int = when {
+    mass.length <= 10 -> 26
+    mass.length <= 13 -> 21
+    else -> 17
+}
+
+/**
  * Where the player is and what is next, in one line.
  *
  * Shared by the phone band and the wide HUD, because it is one sentence about one thing and the two
@@ -335,8 +379,11 @@ fun StatusMarks(state: GameState, stats: Stats, size: Int = 10, modifier: Modifi
         }
     }
 
+    // Scrolls, because all three can be up at once — a singularity count, a buff and a lab
+    // ticking down — and three chips of running text is wider than a phone. Without this the last
+    // of them was simply cut off at the edge, which is the one that says what is happening *now*.
     Row(
-        modifier = modifier,
+        modifier = modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
