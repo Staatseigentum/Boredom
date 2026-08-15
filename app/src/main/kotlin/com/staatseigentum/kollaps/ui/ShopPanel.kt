@@ -436,7 +436,7 @@ private fun CollectorRow(
                 }
                 if (role != null) {
                     Text(
-                        text = "${role.label}: ${role.text}",
+                        text = "${role.label}: ${role.effectText}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Nebula,
                     )

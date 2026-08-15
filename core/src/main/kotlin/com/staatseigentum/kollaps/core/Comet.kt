@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import kotlin.random.Random
 
 /**
@@ -11,7 +12,7 @@ import kotlin.random.Random
  */
 enum class Buff(
     val id: String,
-    val label: String,
+    val germanLabel: String,
     val seconds: Double,
     /** How much it multiplies, so the engine never has to look up which comet granted it. */
     val factor: Double,
@@ -25,6 +26,8 @@ enum class Buff(
     /** The one worth breaking a hard core open for: longer than a surge and twice as strong. */
     INFERNO("inferno", "Feuersturm", 90.0, 15.0),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
 
     companion object {
         fun byId(id: String?): Buff? = entries.firstOrNull { it.id == id }
@@ -73,8 +76,8 @@ sealed interface CometReward {
  */
 enum class Comet(
     val id: String,
-    val title: String,
-    val flavor: String,
+    val germanTitle: String,
+    val germanFlavor: String,
     val weight: Int,
     val reward: CometReward,
     /**
@@ -88,42 +91,46 @@ enum class Comet(
 ) {
     WINDFALL(
         id = "windfall",
-        title = "Brocken",
-        flavor = "Fünfzehn Minuten Arbeit, auf einen Schlag.",
+        germanTitle = "Brocken",
+        germanFlavor = "Fünfzehn Minuten Arbeit, auf einen Schlag.",
         weight = 5,
         reward = CometReward.Windfall(15 * 60.0),
     ),
     SURGE(
         id = "surge",
-        title = "Sternwind",
-        flavor = "Alles läuft eine halbe Minute lang siebenfach.",
+        germanTitle = "Sternwind",
+        germanFlavor = "Alles läuft eine halbe Minute lang siebenfach.",
         weight = 4,
         reward = CometReward.Timed(Buff.SURGE),
     ),
     FRENZY(
         id = "frenzy",
-        title = "Splitterregen",
-        flavor = "Eine Minute lang zählt jeder Tipp hundertfach.",
+        germanTitle = "Splitterregen",
+        germanFlavor = "Eine Minute lang zählt jeder Tipp hundertfach.",
         weight = 2,
         reward = CometReward.Timed(Buff.FRENZY),
     ),
     ICE_CORE(
         id = "ice",
-        title = "Eiskern",
-        flavor = "Drei Treffer, bis die Kruste bricht. Darunter eine dreiviertel Stunde Arbeit.",
+        germanTitle = "Eiskern",
+        germanFlavor = "Drei Treffer, bis die Kruste bricht. Darunter eine dreiviertel Stunde Arbeit.",
         weight = 2,
         reward = CometReward.Windfall(45 * 60.0),
         hits = 3,
     ),
     EMBER_CORE(
         id = "ember",
-        title = "Glutkern",
-        flavor = "Zwei Treffer, und danach brennt anderthalb Minuten lang alles fünfzehnfach.",
+        germanTitle = "Glutkern",
+        germanFlavor = "Zwei Treffer, und danach brennt anderthalb Minuten lang alles fünfzehnfach.",
         weight = 1,
         reward = CometReward.Timed(Buff.INFERNO),
         hits = 2,
     ),
     ;
+
+    val title: String get() = Lang.t(germanTitle)
+
+    val flavor: String get() = Lang.t(germanFlavor)
 
     companion object {
         fun byId(id: String?): Comet? = entries.firstOrNull { it.id == id }

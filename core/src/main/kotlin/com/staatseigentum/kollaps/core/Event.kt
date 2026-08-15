@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /**
  * One of the two things an event lets the player pick.
  *
@@ -9,11 +11,15 @@ package com.staatseigentum.kollaps.core
  * different places, and that is the only difference between a chain and four separate events.
  */
 data class EventOption(
-    val label: String,
-    val flavor: String,
+    val germanLabel: String,
+    val germanFlavor: String,
     val reward: CometReward,
     val next: String? = null,
 ) {
+    val label: String get() = Lang.t(germanLabel)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
     val rewardText: String
         get() = when (reward) {
             is CometReward.Windfall ->
@@ -49,15 +55,15 @@ data class EventPrompt(
  */
 enum class CosmicEvent(
     val id: String,
-    val title: String,
-    val flavor: String,
+    val germanTitle: String,
+    val germanFlavor: String,
     val first: EventOption,
     val second: EventOption,
 ) {
     SONNENSTURM(
         id = "e_sturm",
-        title = "Sonnensturm",
-        flavor = "Eine Plasmawolke rollt heran. Du kannst sie einfangen oder in ihr surfen.",
+        germanTitle = "Sonnensturm",
+        germanFlavor = "Eine Plasmawolke rollt heran. Du kannst sie einfangen oder in ihr surfen.",
         first = EventOption(
             "Einfangen",
             "Die Ladung geht direkt in die Speicher.",
@@ -71,8 +77,8 @@ enum class CosmicEvent(
     ),
     TRUEMMERFELD(
         id = "e_truemmer",
-        title = "Trümmerfeld",
-        flavor = "Reste von etwas Großem, das hier einmal vorbeikam.",
+        germanTitle = "Trümmerfeld",
+        germanFlavor = "Reste von etwas Großem, das hier einmal vorbeikam.",
         first = EventOption(
             "Absammeln",
             "Langsam, gründlich, und die Ausbeute ist beträchtlich.",
@@ -86,8 +92,8 @@ enum class CosmicEvent(
     ),
     LINSE(
         id = "e_linse",
-        title = "Gravitationslinse",
-        flavor = "Für ein paar Minuten steht etwas Schweres genau richtig.",
+        germanTitle = "Gravitationslinse",
+        germanFlavor = "Für ein paar Minuten steht etwas Schweres genau richtig.",
         first = EventOption(
             "Durchleiten",
             "Die gebündelte Materie fällt dir in den Schoß.",
@@ -101,8 +107,8 @@ enum class CosmicEvent(
     ),
     STILLE(
         id = "e_stille",
-        title = "Stille",
-        flavor = "Nichts passiert. Das ist selten genug, um es zu nutzen.",
+        germanTitle = "Stille",
+        germanFlavor = "Nichts passiert. Das ist selten genug, um es zu nutzen.",
         first = EventOption(
             "Aufräumen",
             "Ein Rest, den bisher niemand eingesammelt hat.",
@@ -115,6 +121,10 @@ enum class CosmicEvent(
         ),
     ),
     ;
+
+    val title: String get() = Lang.t(germanTitle)
+
+    val flavor: String get() = Lang.t(germanFlavor)
 
     fun optionAt(index: Int): EventOption? = when (index) {
         0 -> first

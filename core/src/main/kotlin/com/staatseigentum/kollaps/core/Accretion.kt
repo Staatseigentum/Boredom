@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import com.staatseigentum.kollaps.core.pixel.Skin
 import kotlin.math.floor
 import kotlin.math.pow
@@ -14,12 +15,14 @@ import kotlin.random.Random
  * has: silicate becomes silicon in the fusion chain, metal becomes iron, and iron is what the
  * collapse forges gold out of. The early game was the one part of that story nobody told.
  */
-enum class Material(val id: String, val label: String, val colour: Int) {
+enum class Material(val id: String, val germanLabel: String, val colour: Int) {
     EIS("mat_ice", "Eis", 0xFF6EC6FF.toInt()),
     SILIKAT("mat_silicate", "Silikat", 0xFF8E95C4.toInt()),
     METALL("mat_metal", "Metall", 0xFFFFB74D.toInt()),
     KOHLENSTOFF("mat_carbon", "Kohlenstoff", 0xFF7C5CFF.toInt()),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
 
     companion object {
         fun byId(id: String?): Material? = entries.firstOrNull { it.id == id }
@@ -35,7 +38,7 @@ enum class Material(val id: String, val label: String, val colour: Int) {
  */
 data class Impact(
     val id: String,
-    val label: String,
+    val germanLabel: String,
     val material: Material,
     /** Seconds of current production this is worth. */
     val worth: Double,
@@ -51,7 +54,9 @@ data class Impact(
      * free reward, not to punish somebody who put the phone down.
      */
     val heavy: Boolean = false,
-)
+) {
+    val label: String get() = Lang.t(germanLabel)
+}
 
 /**
  * Impacts: the inflow the early game never had.
@@ -98,7 +103,7 @@ object Accretion {
     val all: List<Impact> = listOf(
         Impact(
             id = "im_dust",
-            label = "Staubschwade",
+            germanLabel = "Staubschwade",
             material = Material.SILIKAT,
             worth = 4.0,
             yield_ = 1,
@@ -106,7 +111,7 @@ object Accretion {
         ),
         Impact(
             id = "im_shard",
-            label = "Eisscherbe",
+            germanLabel = "Eisscherbe",
             material = Material.EIS,
             worth = 5.0,
             yield_ = 1,
@@ -114,7 +119,7 @@ object Accretion {
         ),
         Impact(
             id = "im_nugget",
-            label = "Metallklumpen",
+            germanLabel = "Metallklumpen",
             material = Material.METALL,
             worth = 7.0,
             yield_ = 1,
@@ -122,7 +127,7 @@ object Accretion {
         ),
         Impact(
             id = "im_tar",
-            label = "Teerbrocken",
+            germanLabel = "Teerbrocken",
             material = Material.KOHLENSTOFF,
             worth = 6.0,
             yield_ = 1,
@@ -130,7 +135,7 @@ object Accretion {
         ),
         Impact(
             id = "im_boulder",
-            label = "Felsbrocken",
+            germanLabel = "Felsbrocken",
             material = Material.SILIKAT,
             worth = 16.0,
             yield_ = 3,
@@ -139,7 +144,7 @@ object Accretion {
         ),
         Impact(
             id = "im_core",
-            label = "Kernfragment",
+            germanLabel = "Kernfragment",
             material = Material.METALL,
             worth = 20.0,
             yield_ = 4,
@@ -224,34 +229,38 @@ object Accretion {
  */
 enum class Shell(
     val id: String,
-    val label: String,
+    val germanLabel: String,
     /** What it mostly eats. Written as a share so a shell is cheaper when its sort is common. */
     val wants: Material,
     val second: Material,
-    val effect: String,
+    val germanEffect: String,
 ) {
     KERN(
         id = "sh_core",
-        label = "Kern",
+        germanLabel = "Kern",
         wants = Material.METALL,
         second = Material.SILIKAT,
-        effect = "Produktion, und die Fusion startet heißer",
+        germanEffect = "Produktion, und die Fusion startet heißer",
     ),
     MANTEL(
         id = "sh_mantle",
-        label = "Mantel",
+        germanLabel = "Mantel",
         wants = Material.SILIKAT,
         second = Material.KOHLENSTOFF,
-        effect = "Tippwert und Gravitation",
+        germanEffect = "Tippwert und Gravitation",
     ),
     KRUSTE(
         id = "sh_crust",
-        label = "Kruste",
+        germanLabel = "Kruste",
         wants = Material.EIS,
         second = Material.KOHLENSTOFF,
-        effect = "Offline-Anteil und Materialausbeute",
+        germanEffect = "Offline-Anteil und Materialausbeute",
     ),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
+
+    val effect: String get() = Lang.t(germanEffect)
 
     companion object {
         fun byId(id: String?): Shell? = entries.firstOrNull { it.id == id }

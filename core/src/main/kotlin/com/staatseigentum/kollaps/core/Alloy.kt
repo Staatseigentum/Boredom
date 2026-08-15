@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 /**
  * Two heavy elements, welded into something neither of them was.
  *
@@ -30,8 +31,8 @@ package com.staatseigentum.kollaps.core
  */
 enum class Alloy(
     val id: String,
-    val label: String,
-    val flavor: String,
+    val germanLabel: String,
+    val germanFlavor: String,
     val first: HeavyElement,
     val second: HeavyElement,
     /** How much of each is consumed. The same for both, so the rarer metal is what gates it. */
@@ -40,8 +41,8 @@ enum class Alloy(
 ) {
     ELEKTRUM(
         id = "al_electrum",
-        label = "Elektrum",
-        flavor = "Gold und Platin, in einem Guss. Die Legierung, aus der die ersten Münzen waren.",
+        germanLabel = "Elektrum",
+        germanFlavor = "Gold und Platin, in einem Guss. Die Legierung, aus der die ersten Münzen waren.",
         first = HeavyElement.GOLD,
         second = HeavyElement.PLATIN,
         cost = 250.0,
@@ -49,8 +50,8 @@ enum class Alloy(
     ),
     SCHWERGUSS(
         id = "al_dense",
-        label = "Schwerguss",
-        flavor = "Osmium in Platin gelöst. Ein Barren davon ist nicht zu tragen, sondern zu schieben.",
+        germanLabel = "Schwerguss",
+        germanFlavor = "Osmium in Platin gelöst. Ein Barren davon ist nicht zu tragen, sondern zu schieben.",
         first = HeavyElement.OSMIUM,
         second = HeavyElement.PLATIN,
         cost = 120.0,
@@ -58,8 +59,8 @@ enum class Alloy(
     ),
     ZUENDKERN(
         id = "al_ignition",
-        label = "Zündkern",
-        flavor = "Uran, mit Iridium umwickelt. Es brennt nicht, es fängt einfach an.",
+        germanLabel = "Zündkern",
+        germanFlavor = "Uran, mit Iridium umwickelt. Es brennt nicht, es fängt einfach an.",
         first = HeavyElement.URAN,
         second = HeavyElement.IRIDIUM,
         cost = 90.0,
@@ -67,8 +68,8 @@ enum class Alloy(
     ),
     STERNSTAHL(
         id = "al_starsteel",
-        label = "Sternstahl",
-        flavor = "Gold und Iridium. Weich genug zum Formen, hart genug, um es danach zu bereuen.",
+        germanLabel = "Sternstahl",
+        germanFlavor = "Gold und Iridium. Weich genug zum Formen, hart genug, um es danach zu bereuen.",
         first = HeavyElement.GOLD,
         second = HeavyElement.IRIDIUM,
         cost = 200.0,
@@ -76,14 +77,18 @@ enum class Alloy(
     ),
     ENDLEGIERUNG(
         id = "al_final",
-        label = "Endlegierung",
-        flavor = "Plutonium und Osmium. Es gibt keinen Grund, warum das halten sollte, und es hält.",
+        germanLabel = "Endlegierung",
+        germanFlavor = "Plutonium und Osmium. Es gibt keinen Grund, warum das halten sollte, und es hält.",
         first = HeavyElement.PLUTONIUM,
         second = HeavyElement.OSMIUM,
         cost = 40.0,
         effect = PrestigeEffect.SingularityGain(1.8),
     ),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
+
+    val flavor: String get() = Lang.t(germanFlavor)
 
     /** What it does, in the same words every other permanent bonus uses. */
     val effectText: String get() = effect.text

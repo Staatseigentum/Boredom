@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 /**
  * What kind of universe this one is.
  *
@@ -13,14 +14,14 @@ package com.staatseigentum.kollaps.core
  */
 enum class Path(
     val id: String,
-    val label: String,
-    val flavor: String,
+    val germanLabel: String,
+    val germanFlavor: String,
     val effects: List<PrestigeEffect>,
 ) {
     HAND(
         id = "path_hand",
-        label = "Die Hand",
-        flavor = "Ein Universum, in dem Masse dorthin kommt, wo jemand hinschlägt.",
+        germanLabel = "Die Hand",
+        germanFlavor = "Ein Universum, in dem Masse dorthin kommt, wo jemand hinschlägt.",
         effects = listOf(
             PrestigeEffect.TapMultiplier(8.0),
             PrestigeEffect.AutoTap(4.0),
@@ -29,8 +30,8 @@ enum class Path(
     ),
     MASCHINE(
         id = "path_machine",
-        label = "Die Maschine",
-        flavor = "Eines, das ohne dich weiterläuft und dabei kaum langsamer wird.",
+        germanLabel = "Die Maschine",
+        germanFlavor = "Eines, das ohne dich weiterläuft und dabei kaum langsamer wird.",
         effects = listOf(
             PrestigeEffect.GlobalMultiplier(2.5),
             PrestigeEffect.MilestoneBonus(0.03),
@@ -39,8 +40,8 @@ enum class Path(
     ),
     LABOR(
         id = "path_lab",
-        label = "Das Labor",
-        flavor = "Eines, in dem Wissen schneller entsteht als Materie — und über Nacht am meisten.",
+        germanLabel = "Das Labor",
+        germanFlavor = "Eines, in dem Wissen schneller entsteht als Materie — und über Nacht am meisten.",
         effects = listOf(
             PrestigeEffect.ResearchSpeed(3.0),
             PrestigeEffect.OfflineEfficiency(0.95),
@@ -49,8 +50,8 @@ enum class Path(
     ),
     KERN(
         id = "path_core",
-        label = "Der Kern",
-        flavor = "Eines, in dem Sterne heißer brennen und schwerer sterben.",
+        germanLabel = "Der Kern",
+        germanFlavor = "Eines, in dem Sterne heißer brennen und schwerer sterben.",
         effects = listOf(
             PrestigeEffect.FusionRate(4.0),
             PrestigeEffect.SingularityGain(1.4),
@@ -60,6 +61,10 @@ enum class Path(
 
     /** What this path does, in words, for the card that asks the player to pick one. */
     val effectTexts: List<String> get() = effects.map { it.text }
+
+    val label: String get() = Lang.t(germanLabel)
+
+    val flavor: String get() = Lang.t(germanFlavor)
 
     companion object {
         fun byId(id: String?): Path? = entries.firstOrNull { it.id == id }

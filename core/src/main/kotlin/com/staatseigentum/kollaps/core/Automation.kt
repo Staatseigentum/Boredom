@@ -1,7 +1,10 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 /** One setting a rule can be run at. */
-data class AutomationOption(val label: String, val value: Double)
+data class AutomationOption(val germanLabel: String, val value: Double) {
+    val label: String get() = Lang.t(germanLabel)
+}
 
 /**
  * A standing order the game carries out on its own.
@@ -16,17 +19,17 @@ data class AutomationOption(val label: String, val value: Double)
  */
 enum class AutomationRule(
     val id: String,
-    val label: String,
-    val flavor: String,
+    val germanLabel: String,
+    val germanFlavor: String,
     /** What the dial means, for the row's heading. */
-    val setting: String,
+    val germanSetting: String,
     val options: List<AutomationOption>,
 ) {
     COLLECTORS(
         id = "au_collectors",
-        label = "Kollektoren nachkaufen",
-        flavor = "Kauft den Kollektor mit der besten Rendite, solange genug übrig bleibt.",
-        setting = "Rücklage",
+        germanLabel = "Kollektoren nachkaufen",
+        germanFlavor = "Kauft den Kollektor mit der besten Rendite, solange genug übrig bleibt.",
+        germanSetting = "Rücklage",
         options = listOf(
             AutomationOption("×2", 2.0),
             AutomationOption("×4", 4.0),
@@ -36,9 +39,9 @@ enum class AutomationRule(
     ),
     UPGRADES(
         id = "au_upgrades",
-        label = "Upgrades kaufen",
-        flavor = "Nimmt jede Verbesserung mit, sobald sie klein genug gegen dein Vermögen ist.",
-        setting = "Höchstens",
+        germanLabel = "Upgrades kaufen",
+        germanFlavor = "Nimmt jede Verbesserung mit, sobald sie klein genug gegen dein Vermögen ist.",
+        germanSetting = "Höchstens",
         options = listOf(
             AutomationOption("die Hälfte", 0.5),
             AutomationOption("ein Zehntel", 0.1),
@@ -47,9 +50,9 @@ enum class AutomationRule(
     ),
     FUSION(
         id = "au_fusion",
-        label = "Fusionskette ausbauen",
-        flavor = "Baut die billigste Stufe aus, damit kein Ofen lange hungert.",
-        setting = "Rücklage",
+        germanLabel = "Fusionskette ausbauen",
+        germanFlavor = "Baut die billigste Stufe aus, damit kein Ofen lange hungert.",
+        germanSetting = "Rücklage",
         options = listOf(
             AutomationOption("×5", 5.0),
             AutomationOption("×20", 20.0),
@@ -58,9 +61,9 @@ enum class AutomationRule(
     ),
     ORBITS(
         id = "au_orbits",
-        label = "Bahnen ausbauen",
-        flavor = "Setzt Körper auf freie Bahnen und öffnet die nächste, wenn sie leicht drin ist.",
-        setting = "Rücklage",
+        germanLabel = "Bahnen ausbauen",
+        germanFlavor = "Setzt Körper auf freie Bahnen und öffnet die nächste, wenn sie leicht drin ist.",
+        germanSetting = "Rücklage",
         options = listOf(
             AutomationOption("×2", 2.0),
             AutomationOption("×5", 5.0),
@@ -69,9 +72,9 @@ enum class AutomationRule(
     ),
     RESEARCH(
         id = "au_research",
-        label = "Forschung anstoßen",
-        flavor = "Lässt die Bank nie leer stehen.",
-        setting = "Nimmt",
+        germanLabel = "Forschung anstoßen",
+        germanFlavor = "Lässt die Bank nie leer stehen.",
+        germanSetting = "Nimmt",
         options = listOf(
             AutomationOption("das billigste", 0.0),
             AutomationOption("das teuerste leistbare", 1.0),
@@ -97,9 +100,9 @@ enum class AutomationRule(
      */
     COLLAPSE(
         id = "au_collapse_counted",
-        label = "Kollabieren lassen",
-        flavor = "Kollabiert, sobald Warten kaum noch etwas bringt — und hört danach von selbst auf.",
-        setting = "Läufe",
+        germanLabel = "Kollabieren lassen",
+        germanFlavor = "Kollabiert, sobald Warten kaum noch etwas bringt — und hört danach von selbst auf.",
+        germanSetting = "Läufe",
         options = listOf(
             AutomationOption("5", 5.0),
             AutomationOption("10", 10.0),
@@ -108,6 +111,12 @@ enum class AutomationRule(
         ),
     ),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
+    val setting: String get() = Lang.t(germanSetting)
 
     fun optionAt(index: Int): AutomationOption = options[index.coerceIn(options.indices)]
 

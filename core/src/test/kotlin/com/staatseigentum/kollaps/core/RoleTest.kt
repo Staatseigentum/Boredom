@@ -215,7 +215,7 @@ class RoleTest {
         for (role in Role.entries) {
             assertTrue(role.label.isNotBlank(), role.id)
             assertTrue(role.flavor.isNotBlank(), role.id)
-            assertTrue(role.text.isNotBlank(), "${role.label} beschreibt sich nicht")
+            assertTrue(role.effectText.isNotBlank(), "${role.label} beschreibt sich nicht")
             assertTrue(role.output > 0.0 && role.cost > 0.0, role.label)
         }
         assertEquals(Role.entries.size, Role.entries.map { it.id }.toSet().size, "Doppelte Rollen-ID")

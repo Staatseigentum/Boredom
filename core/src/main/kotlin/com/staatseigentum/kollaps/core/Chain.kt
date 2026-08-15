@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /**
  * One stop in a chain: a situation and the two ways out of it.
  *
@@ -9,11 +11,15 @@ package com.staatseigentum.kollaps.core
  */
 data class ChainStation(
     val id: String,
-    val title: String,
-    val flavor: String,
+    val germanTitle: String,
+    val germanFlavor: String,
     val first: EventOption,
     val second: EventOption,
 ) {
+    val title: String get() = Lang.t(germanTitle)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
     fun optionAt(index: Int): EventOption? = when (index) {
         0 -> first
         1 -> second
@@ -35,12 +41,14 @@ data class ChainStation(
  */
 data class EventChain(
     val id: String,
-    val title: String,
+    val germanTitle: String,
     /** Not before this body — the later chains lean on things the early game has not met yet. */
     val unlockTier: String,
     val start: String,
     val stations: List<ChainStation>,
 ) {
+    val title: String get() = Lang.t(germanTitle)
+
     fun station(id: String?): ChainStation? = stations.firstOrNull { it.id == id }
 
     /** How many answers it takes to reach the end, on the longest way through. */
@@ -68,14 +76,14 @@ object Chains {
      */
     private val SIGNAL = EventChain(
         id = "chain_signal",
-        title = "Das Signal",
+        germanTitle = "Das Signal",
         unlockTier = "Erde",
         start = "sig_1",
         stations = listOf(
             ChainStation(
                 id = "sig_1",
-                title = "Ein Muster im Rauschen",
-                flavor = "Zwischen zwei Frequenzen liegt etwas, das sich alle elf Sekunden " +
+                germanTitle = "Ein Muster im Rauschen",
+                germanFlavor = "Zwischen zwei Frequenzen liegt etwas, das sich alle elf Sekunden " +
                     "wiederholt. Rauschen macht das nicht.",
                 first = EventOption(
                     "Zuhören",
@@ -92,8 +100,8 @@ object Chains {
             ),
             ChainStation(
                 id = "sig_hoeren",
-                title = "Es wiederholt sich",
-                flavor = "Vier Tage lang derselbe Abstand, dieselbe Länge. Und dann, einmal, " +
+                germanTitle = "Es wiederholt sich",
+                germanFlavor = "Vier Tage lang derselbe Abstand, dieselbe Länge. Und dann, einmal, " +
                     "ein Abstand zu viel.",
                 first = EventOption(
                     "Aufzeichnen",
@@ -109,8 +117,8 @@ object Chains {
             ),
             ChainStation(
                 id = "sig_antworten",
-                title = "Etwas antwortet",
-                flavor = "Dasselbe Muster kommt zurück — aber schneller, als Licht die Strecke " +
+                germanTitle = "Etwas antwortet",
+                germanFlavor = "Dasselbe Muster kommt zurück — aber schneller, als Licht die Strecke " +
                     "schafft. Es hat nicht auf dich gewartet. Es war schon näher.",
                 first = EventOption(
                     "Weitersenden",
@@ -126,8 +134,8 @@ object Chains {
             ),
             ChainStation(
                 id = "sig_archiv",
-                title = "Das Archiv",
-                flavor = "Die Aufzeichnung ist vollständig. Sie beschreibt, in einer Sprache " +
+                germanTitle = "Das Archiv",
+                germanFlavor = "Die Aufzeichnung ist vollständig. Sie beschreibt, in einer Sprache " +
                     "aus Abständen, den Aufbau von etwas sehr Schwerem.",
                 first = EventOption(
                     "Nachbauen",
@@ -142,8 +150,8 @@ object Chains {
             ),
             ChainStation(
                 id = "sig_naeher",
-                title = "Es kommt näher",
-                flavor = "Kein Objekt auf keinem Radar. Nur das Muster, jeden Tag lauter, und " +
+                germanTitle = "Es kommt näher",
+                germanFlavor = "Kein Objekt auf keinem Radar. Nur das Muster, jeden Tag lauter, und " +
                     "die Instrumente, die schwerer werden, als sie sein dürften.",
                 first = EventOption(
                     "Entgegengehen",
@@ -167,14 +175,14 @@ object Chains {
      */
     private val PASSAGIERE = EventChain(
         id = "chain_passagiere",
-        title = "Die Passagiere",
+        germanTitle = "Die Passagiere",
         unlockTier = "Saturn",
         start = "pas_1",
         stations = listOf(
             ChainStation(
                 id = "pas_1",
-                title = "Nicht allein angekommen",
-                flavor = "In den Rissen des Brockens sitzt etwas, das Wärme abgibt. Wenig, " +
+                germanTitle = "Nicht allein angekommen",
+                germanFlavor = "In den Rissen des Brockens sitzt etwas, das Wärme abgibt. Wenig, " +
                     "aber regelmäßig.",
                 first = EventOption(
                     "Einsammeln",
@@ -191,8 +199,8 @@ object Chains {
             ),
             ChainStation(
                 id = "pas_labor",
-                title = "Im Labor",
-                flavor = "Sie halten Vakuum aus, Kälte, harte Strahlung. Was sie nicht aushalten, " +
+                germanTitle = "Im Labor",
+                germanFlavor = "Sie halten Vakuum aus, Kälte, harte Strahlung. Was sie nicht aushalten, " +
                     "ist, einzeln zu sein.",
                 first = EventOption(
                     "Aufschließen",
@@ -207,8 +215,8 @@ object Chains {
             ),
             ChainStation(
                 id = "pas_feld",
-                title = "Das Feld",
-                flavor = "Sie sind mehr geworden. Nicht schnell — aber sie haben angefangen, " +
+                germanTitle = "Das Feld",
+                germanFlavor = "Sie sind mehr geworden. Nicht schnell — aber sie haben angefangen, " +
                     "sich am Zaun entlang anzuordnen.",
                 first = EventOption(
                     "Zusehen",
@@ -229,14 +237,14 @@ object Chains {
      */
     private val BAU = EventChain(
         id = "chain_bau",
-        title = "Der Bau",
+        germanTitle = "Der Bau",
         unlockTier = "Sonne",
         start = "bau_1",
         stations = listOf(
             ChainStation(
                 id = "bau_1",
-                title = "Eine Schale",
-                flavor = "Etwas umschließt den Stern zu zwei Dritteln. Es ist alt, es ist leer, " +
+                germanTitle = "Eine Schale",
+                germanFlavor = "Etwas umschließt den Stern zu zwei Dritteln. Es ist alt, es ist leer, " +
                     "und es ist nicht abgestürzt.",
                 first = EventOption(
                     "Betreten",
@@ -253,8 +261,8 @@ object Chains {
             ),
             ChainStation(
                 id = "bau_innen",
-                title = "Innen",
-                flavor = "Gänge für etwas, das größer war als du und dieselbe Schwerkraft mochte. " +
+                germanTitle = "Innen",
+                germanFlavor = "Gänge für etwas, das größer war als du und dieselbe Schwerkraft mochte. " +
                     "Kein Staub. Irgendwer hält hier sauber.",
                 first = EventOption(
                     "Weitergehen",
@@ -269,8 +277,8 @@ object Chains {
             ),
             ChainStation(
                 id = "bau_abbau",
-                title = "Der Abbau",
-                flavor = "Das dritte Drittel fehlte nicht. Es war abgetragen worden, von jemandem, " +
+                germanTitle = "Der Abbau",
+                germanFlavor = "Das dritte Drittel fehlte nicht. Es war abgetragen worden, von jemandem, " +
                     "der genauso angefangen hat wie du.",
                 first = EventOption(
                     "Weitermachen",

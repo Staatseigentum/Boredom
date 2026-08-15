@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.sqrt
@@ -20,8 +21,8 @@ import kotlin.math.sqrt
 enum class HeavyElement(
     val id: String,
     val symbol: String,
-    val label: String,
-    val flavor: String,
+    val germanLabel: String,
+    val germanFlavor: String,
     /** How much of it one square root of iron yields. */
     val perRoot: Double,
     /** How much [bonus] grows per tenfold increase in the amount held. */
@@ -31,8 +32,8 @@ enum class HeavyElement(
     GOLD(
         id = "au",
         symbol = "Au",
-        label = "Gold",
-        flavor = "Jedes Gramm davon war einmal in einem Stern, der schon tot war, als die Sonne anfing.",
+        germanLabel = "Gold",
+        germanFlavor = "Jedes Gramm davon war einmal in einem Stern, der schon tot war, als die Sonne anfing.",
         perRoot = 0.5,
         perDecade = 0.18,
         bonus = FusionBonus.SINGULARITY,
@@ -40,8 +41,8 @@ enum class HeavyElement(
     PLATIN(
         id = "pt",
         symbol = "Pt",
-        label = "Platin",
-        flavor = "Seltener als Gold, härter als Gold, und genauso wenig von hier.",
+        germanLabel = "Platin",
+        germanFlavor = "Seltener als Gold, härter als Gold, und genauso wenig von hier.",
         perRoot = 0.15,
         perDecade = 0.22,
         bonus = FusionBonus.GLOBAL,
@@ -49,8 +50,8 @@ enum class HeavyElement(
     URAN(
         id = "u",
         symbol = "U",
-        label = "Uran",
-        flavor = "Das schwerste, was ohne Hilfe entsteht. Es zerfällt seitdem und ist immer noch da.",
+        germanLabel = "Uran",
+        germanFlavor = "Das schwerste, was ohne Hilfe entsteht. Es zerfällt seitdem und ist immer noch da.",
         perRoot = 0.04,
         perDecade = 0.30,
         bonus = FusionBonus.TAP,
@@ -58,8 +59,8 @@ enum class HeavyElement(
     IRIDIUM(
         id = "ir",
         symbol = "Ir",
-        label = "Iridium",
-        flavor = "Liegt weltweit in genau einer Gesteinsschicht. Darunter Dinosaurier, darüber keine.",
+        germanLabel = "Iridium",
+        germanFlavor = "Liegt weltweit in genau einer Gesteinsschicht. Darunter Dinosaurier, darüber keine.",
         perRoot = 0.030,
         perDecade = 0.34,
         bonus = FusionBonus.FUSION,
@@ -67,8 +68,8 @@ enum class HeavyElement(
     OSMIUM(
         id = "os",
         symbol = "Os",
-        label = "Osmium",
-        flavor = "Das dichteste Ding, das man anfassen kann. Ein Würfel davon steht, wo man ihn hinstellt.",
+        germanLabel = "Osmium",
+        germanFlavor = "Das dichteste Ding, das man anfassen kann. Ein Würfel davon steht, wo man ihn hinstellt.",
         perRoot = 0.018,
         perDecade = 0.38,
         bonus = FusionBonus.RESEARCH,
@@ -76,13 +77,17 @@ enum class HeavyElement(
     PLUTONIUM(
         id = "pu",
         symbol = "Pu",
-        label = "Plutonium",
-        flavor = "Kommt in der Natur praktisch nicht vor. In einem sterbenden Stern schon.",
+        germanLabel = "Plutonium",
+        germanFlavor = "Kommt in der Natur praktisch nicht vor. In einem sterbenden Stern schon.",
         perRoot = 0.007,
         perDecade = 0.44,
         bonus = FusionBonus.COMETS,
     ),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
+
+    val flavor: String get() = Lang.t(germanFlavor)
 
     companion object {
         fun byId(id: String?): HeavyElement? = entries.firstOrNull { it.id == id }

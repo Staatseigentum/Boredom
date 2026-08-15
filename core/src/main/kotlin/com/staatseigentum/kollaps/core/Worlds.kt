@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /**
  * Which of the three shells a body is mostly made of.
  *
@@ -7,12 +9,14 @@ package com.staatseigentum.kollaps.core
  * one of the better ones: a body built evenly is a layered world, which is a thing to be and not
  * the absence of being anything.
  */
-enum class Lane(val id: String, val label: String) {
+enum class Lane(val id: String, val germanLabel: String) {
     METALL("ln_core", "Kern"),
     GESTEIN("ln_mantle", "Mantel"),
     EIS("ln_crust", "Kruste"),
     GESCHICHTET("ln_layered", "Geschichtet"),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
 
     companion object {
         /** The shell this lane is read off, or `null` for the layered one. */
@@ -32,11 +36,13 @@ enum class Lane(val id: String, val label: String) {
  * metal world and you built it deep" is a sentence, and a body that is 31 levels deep instead of
  * 30 is not a different sentence.
  */
-enum class Depth(val id: String, val label: String, val atLeast: Int) {
+enum class Depth(val id: String, val germanLabel: String, val atLeast: Int) {
     JUNG("dp_young", "jung", 6),
     GEREIFT("dp_grown", "gereift", 18),
     VOLLENDET("dp_whole", "vollendet", 36),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
 
     companion object {
         /** The deepest band this many levels reaches, or `null` below the first. */
@@ -59,11 +65,15 @@ enum class Depth(val id: String, val label: String, val atLeast: Int) {
  */
 data class WorldType(
     val id: String,
-    val label: String,
+    val germanLabel: String,
     val lane: Lane,
     val depth: Depth,
-    val flavor: String,
-)
+    val germanFlavor: String,
+) {
+    val label: String get() = Lang.t(germanLabel)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+}
 
 /**
  * The twelve worlds, and what having been them is worth.
@@ -92,10 +102,10 @@ object Worlds {
                 add(
                     WorldType(
                         id = "wt_${lane.id.removePrefix("ln_")}_${depth.id.removePrefix("dp_")}",
-                        label = labelOf(lane, depth),
+                        germanLabel = labelOf(lane, depth),
                         lane = lane,
                         depth = depth,
-                        flavor = flavorOf(lane, depth),
+                        germanFlavor = flavorOf(lane, depth),
                     ),
                 )
             }

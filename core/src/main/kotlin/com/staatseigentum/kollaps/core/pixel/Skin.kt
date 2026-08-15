@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core.pixel
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import kotlin.math.roundToInt
 
 /**
@@ -16,8 +17,8 @@ import kotlin.math.roundToInt
  */
 data class Skin(
     val id: String,
-    val name: String,
-    val flavor: String,
+    val germanName: String,
+    val germanFlavor: String,
     /** Achievements needed before it can be picked. Zero for the one everybody starts with. */
     val requiredAchievements: Int,
     /**
@@ -33,6 +34,10 @@ data class Skin(
     val tint: Int = 0xFFFFFFFF.toInt(),
     val tintStrength: Float = 0f,
 ) {
+    val name: String get() = Lang.t(germanName)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
     /** One colour, put through this scheme. Alpha is never touched. */
     fun apply(argb: Int): Int {
         if (desaturation <= 0f && tintStrength <= 0f) return argb
@@ -73,8 +78,8 @@ object Skins {
 
     val ORIGINAL = Skin(
         id = "skin_original",
-        name = "Wie es ist",
-        flavor = "Die Farben, die die Körper ohnehin haben.",
+        germanName = "Wie es ist",
+        germanFlavor = "Die Farben, die die Körper ohnehin haben.",
         requiredAchievements = 0,
     )
 
@@ -82,8 +87,8 @@ object Skins {
         ORIGINAL,
         Skin(
             id = "skin_kalt",
-            name = "Kaltlicht",
-            flavor = "Alles zwei Kelvin zu blau. So sieht es aus, wenn niemand zusieht.",
+            germanName = "Kaltlicht",
+            germanFlavor = "Alles zwei Kelvin zu blau. So sieht es aus, wenn niemand zusieht.",
             requiredAchievements = 10,
             desaturation = 0.35f,
             tint = 0xFF6FA8FF.toInt(),
@@ -91,8 +96,8 @@ object Skins {
         ),
         Skin(
             id = "skin_rost",
-            name = "Rost",
-            flavor = "Eisen, überall, seit sehr langer Zeit.",
+            germanName = "Rost",
+            germanFlavor = "Eisen, überall, seit sehr langer Zeit.",
             requiredAchievements = 20,
             desaturation = 0.25f,
             tint = 0xFFC2611F.toInt(),
@@ -100,8 +105,8 @@ object Skins {
         ),
         Skin(
             id = "skin_gift",
-            name = "Grünstich",
-            flavor = "Ein Himmel, unter dem man besser nicht länger stehen bleibt.",
+            germanName = "Grünstich",
+            germanFlavor = "Ein Himmel, unter dem man besser nicht länger stehen bleibt.",
             requiredAchievements = 30,
             desaturation = 0.30f,
             tint = 0xFF63D66A.toInt(),
@@ -109,8 +114,8 @@ object Skins {
         ),
         Skin(
             id = "skin_asche",
-            name = "Asche",
-            flavor = "Was übrig bleibt, wenn die Farbe als Erstes geht.",
+            germanName = "Asche",
+            germanFlavor = "Was übrig bleibt, wenn die Farbe als Erstes geht.",
             requiredAchievements = 40,
             desaturation = 0.72f,
             tint = 0xFF3A3A44.toInt(),
@@ -118,8 +123,8 @@ object Skins {
         ),
         Skin(
             id = "skin_vollzaehlig",
-            name = "Vollzählig",
-            flavor = "Als hätte jemand jeden einzelnen Fänger vergolden lassen. Hat auch jemand.",
+            germanName = "Vollzählig",
+            germanFlavor = "Als hätte jemand jeden einzelnen Fänger vergolden lassen. Hat auch jemand.",
             requiredAchievements = 0,
             requiredAchievement = "a_alle_voll",
             desaturation = 0.55f,
@@ -128,8 +133,8 @@ object Skins {
         ),
         Skin(
             id = "skin_himmel",
-            name = "Voller Himmel",
-            flavor = "Acht Universen, die alle noch da sind. Man sieht sie einander leuchten.",
+            germanName = "Voller Himmel",
+            germanFlavor = "Acht Universen, die alle noch da sind. Man sieht sie einander leuchten.",
             requiredAchievements = 0,
             requiredAchievement = "a_voller_himmel",
             desaturation = 0.28f,
@@ -138,8 +143,8 @@ object Skins {
         ),
         Skin(
             id = "skin_katalog",
-            name = "Katalog",
-            flavor = "Die Farben einer Übersichtskarte. Kein Körper mehr, nur noch ein Eintrag.",
+            germanName = "Katalog",
+            germanFlavor = "Die Farben einer Übersichtskarte. Kein Körper mehr, nur noch ein Eintrag.",
             requiredAchievements = 0,
             requiredAchievement = "a_kennung_koerper",
             desaturation = 0.62f,
@@ -148,8 +153,8 @@ object Skins {
         ),
         Skin(
             id = "skin_monochrom",
-            name = "Ein Kanal",
-            flavor = "Ein Bildschirm, der nur eine Farbe konnte, und es hat gereicht.",
+            germanName = "Ein Kanal",
+            germanFlavor = "Ein Bildschirm, der nur eine Farbe konnte, und es hat gereicht.",
             requiredAchievements = 55,
             desaturation = 1.0f,
             tint = 0xFF7FE08A.toInt(),

@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /**
  * One system, the moment it first exists, said in three sentences.
  *
@@ -9,13 +11,20 @@ package com.staatseigentum.kollaps.core
  */
 data class FeatureIntro(
     val id: String,
-    val title: String,
+    val germanTitle: String,
     /** Where to go to find it, in the words the interface itself uses. */
-    val where: String,
+    val germanWhere: String,
     /** What it is, and — more useful — what it is *for*. */
-    val text: String,
+    val germanText: String,
     val appearsWhen: (GameState) -> Boolean,
-)
+) {
+    val title: String get() = Lang.t(germanTitle)
+
+    /** Where to go to find it, in the words the interface itself uses. */
+    val where: String get() = Lang.t(germanWhere)
+
+    val text: String get() = Lang.t(germanText)
+}
 
 /**
  * What to say when something new turns up.
@@ -53,18 +62,18 @@ object Unlocks {
          */
         FeatureIntro(
             id = "un_impacts",
-            title = "Einschläge",
-            where = "Aufbau",
-            text = "Du bist ein Brocken, und du wächst, weil andere Brocken auf dich fallen. " +
+            germanTitle = "Einschläge",
+            germanWhere = "Aufbau",
+            germanText = "Du bist ein Brocken, und du wächst, weil andere Brocken auf dich fallen. " +
                 "Tippe sie an, bevor sie aufschlagen: das bringt sofort Masse — und Material, " +
                 "das liegen bleibt. Was du damit anfängst, steht unter Aufbau.",
             appearsWhen = { it.impactsAbsorbed > 0 },
         ),
         FeatureIntro(
             id = "un_shells",
-            title = "Schichten",
-            where = "Aufbau",
-            text = "Aus Material baust du Kern, Mantel und Kruste. Der Kern erhöht die " +
+            germanTitle = "Schichten",
+            germanWhere = "Aufbau",
+            germanText = "Aus Material baust du Kern, Mantel und Kruste. Der Kern erhöht die " +
                 "Produktion, der Mantel Tippwert und Anziehung, die Kruste Offline-Ertrag und " +
                 "Ausbeute. Ab sechs Schichten bekommt dein Körper einen Typ — und der bleibt " +
                 "eingetragen, auch wenn der Kollaps alles andere mitnimmt.",
@@ -72,9 +81,9 @@ object Unlocks {
         ),
         FeatureIntro(
             id = "un_collapse",
-            title = "Der Kollaps",
-            where = "Kosmos · Kollaps",
-            text = "Dein Körper ist schwer genug, um in sich zusammenzufallen. Das setzt den " +
+            germanTitle = "Der Kollaps",
+            germanWhere = "Kosmos · Kollaps",
+            germanText = "Dein Körper ist schwer genug, um in sich zusammenzufallen. Das setzt den " +
                 "Lauf zurück — Masse, Kollektoren, Upgrades, alles — und du bekommst " +
                 "Singularitäten dafür, die dauerhaft bleiben und alles Folgende schneller " +
                 "machen. Es ist kein Verlust, es ist die zweite Hälfte des Spiels.",
@@ -82,106 +91,106 @@ object Unlocks {
         ),
         FeatureIntro(
             id = "un_roles",
-            title = "Rollen",
-            where = "Flotte · auf einen Kollektor tippen",
-            text = "Jeder Kollektor kann eine Aufgabe bekommen. Eine erhöht seinen eigenen " +
+            germanTitle = "Rollen",
+            germanWhere = "Flotte · auf einen Kollektor tippen",
+            germanText = "Jeder Kollektor kann eine Aufgabe bekommen. Eine erhöht seinen eigenen " +
                 "Ausstoß, eine andere den seiner Nachbarn — es lohnt sich, nicht überall " +
                 "dasselbe einzustellen.",
             appearsWhen = { Roles.isUnlocked(it) },
         ),
         FeatureIntro(
             id = "un_orbits",
-            title = "Bahnen",
-            where = "Bahnen",
-            text = "Um deinen Körper lassen sich Bahnen öffnen und mit Trabanten besetzen. Zwei " +
+            germanTitle = "Bahnen",
+            germanWhere = "Bahnen",
+            germanText = "Um deinen Körper lassen sich Bahnen öffnen und mit Trabanten besetzen. Zwei " +
                 "Trabanten derselben Stufe verschmelzen zu einer höheren. Und Bahnen, deren " +
                 "Umlaufzeiten glatt zueinander passen, verstärken sich gegenseitig.",
             appearsWhen = { Orbits.isUnlocked(it) },
         ),
         FeatureIntro(
             id = "un_fusion",
-            title = "Fusion",
-            where = "Fusion",
-            text = "Dein Körper brennt jetzt. Aus Wasserstoff wird Helium, daraus Kohlenstoff, " +
+            germanTitle = "Fusion",
+            germanWhere = "Fusion",
+            germanText = "Dein Körper brennt jetzt. Aus Wasserstoff wird Helium, daraus Kohlenstoff, " +
                 "und so weiter bis zum Eisen — jedes Element multipliziert, was du ohnehin " +
                 "produzierst. Fusoren kaufst du wie Kollektoren.",
             appearsWhen = { Fusion.isUnlocked(it) },
         ),
         FeatureIntro(
             id = "un_lab",
-            title = "Das Labor",
-            where = "Kosmos · Labor",
-            text = "Ein Projekt läuft auf der echten Uhr — auch wenn das Spiel zu ist. Es gibt " +
+            germanTitle = "Das Labor",
+            germanWhere = "Kosmos · Labor",
+            germanText = "Ein Projekt läuft auf der echten Uhr — auch wenn das Spiel zu ist. Es gibt " +
                 "nur eine Bank, also läuft immer nur eines. Vor dem Weglegen etwas anzuschieben " +
                 "ist darum fast immer richtig.",
             appearsWhen = { ResearchTree.isUnlocked(it) },
         ),
         FeatureIntro(
             id = "un_rules",
-            title = "Automatik",
-            where = "Kosmos · Regeln",
-            text = "Regeln nehmen dir ab, was du sonst von Hand machst: Kollektoren nachkaufen, " +
+            germanTitle = "Automatik",
+            germanWhere = "Kosmos · Regeln",
+            germanText = "Regeln nehmen dir ab, was du sonst von Hand machst: Kollektoren nachkaufen, " +
                 "Bahnen ausbauen, Projekte anschieben. Jede lässt sich einzeln einstellen und " +
                 "einzeln wieder ausschalten.",
             appearsWhen = { Automation.isUnlocked(it) },
         ),
         FeatureIntro(
             id = "un_contracts",
-            title = "Aufträge",
-            where = "Kosmos · Regeln",
-            text = "Drei Ziele liegen auf dem Tisch und werden nachgelegt. Bezahlt wird in " +
+            germanTitle = "Aufträge",
+            germanWhere = "Kosmos · Regeln",
+            germanText = "Drei Ziele liegen auf dem Tisch und werden nachgelegt. Bezahlt wird in " +
                 "Äonen — der Währung des Urknalls. Ein Balken unter jedem sagt, wie weit du bist.",
             appearsWhen = { Contract.isUnlocked(it) },
         ),
         FeatureIntro(
             id = "un_challenges",
-            title = "Herausforderungen",
-            where = "Kosmos · Regeln",
-            text = "Ein Lauf unter erschwerten Regeln — kein Tippen, keine Upgrades, halbe " +
+            germanTitle = "Herausforderungen",
+            germanWhere = "Kosmos · Regeln",
+            germanText = "Ein Lauf unter erschwerten Regeln — kein Tippen, keine Upgrades, halbe " +
                 "Produktion. Wer ihn schafft, behält einen dauerhaften Bonus. Mehrere lassen " +
                 "sich kombinieren, und das zahlt sich überproportional aus.",
             appearsWhen = { it.collapses > 0 },
         ),
         FeatureIntro(
             id = "un_heavy",
-            title = "Schwere Elemente",
-            where = "Fusion",
-            text = "Jenseits von Eisen geht es nicht mehr durch Brennen weiter — nur der " +
+            germanTitle = "Schwere Elemente",
+            germanWhere = "Fusion",
+            germanText = "Jenseits von Eisen geht es nicht mehr durch Brennen weiter — nur der " +
                 "Kollaps selbst schmiedet diese Elemente. Sie bleiben über den Lauf hinaus und " +
                 "heben an, was deine Fusionskette wert ist.",
             appearsWhen = { Heavy.isUnlocked(it) },
         ),
         FeatureIntro(
             id = "un_bigbang",
-            title = "Der Urknall",
-            where = "Kosmos · Kollaps",
-            text = "Die dritte Ebene. Der Urknall räumt auch die Singularitäten ab und gibt " +
+            germanTitle = "Der Urknall",
+            germanWhere = "Kosmos · Kollaps",
+            germanText = "Die dritte Ebene. Der Urknall räumt auch die Singularitäten ab und gibt " +
                 "Äonen dafür — und du wählst eine von vier Ausrichtungen, die den ganzen " +
                 "nächsten Durchgang prägt. Dein altes Universum geht dabei nicht verloren.",
             appearsWhen = { BigBang.isUnlocked(it) },
         ),
         FeatureIntro(
             id = "un_sky",
-            title = "Der Himmel",
-            where = "Kosmos · Himmel",
-            text = "Jedes Universum, das du hinter dir lässt, bleibt als Galaxie am Himmel " +
+            germanTitle = "Der Himmel",
+            germanWhere = "Kosmos · Himmel",
+            germanText = "Jedes Universum, das du hinter dir lässt, bleibt als Galaxie am Himmel " +
                 "stehen und arbeitet weiter. Du kannst ihnen Aufgaben geben, sie ausbauen, zwei " +
                 "verschmelzen — und alte wieder besuchen.",
             appearsWhen = { Multiverse.isUnlocked(it) },
         ),
         FeatureIntro(
             id = "un_alloys",
-            title = "Legierungen",
-            where = "Fusion",
-            text = "Zwei schwere Elemente lassen sich zu einer Legierung schmieden. Die kostet " +
+            germanTitle = "Legierungen",
+            germanWhere = "Fusion",
+            germanText = "Zwei schwere Elemente lassen sich zu einer Legierung schmieden. Die kostet " +
                 "beide dauerhaft und gibt dafür einen Bonus, den kein einzelnes Element hat.",
             appearsWhen = { Alloy.isUnlocked(it) },
         ),
         FeatureIntro(
             id = "un_catalogue",
-            title = "Die Kennungsleiter",
-            where = "Leiter · links am Rand",
-            text = "Über dem Schwarzen Loch hört die Leiter nicht auf. Jeder Körper kommt " +
+            germanTitle = "Die Kennungsleiter",
+            germanWhere = "Leiter · links am Rand",
+            germanText = "Über dem Schwarzen Loch hört die Leiter nicht auf. Jeder Körper kommt " +
                 "sechshundertsechsundsiebzig Mal wieder, mit einer Kennung von AA bis ZZ — " +
                 "sechzehntausend Sprossen. Manche davon sind Funde und wollen bestimmt werden.",
             appearsWhen = { Designations.isUnlocked(it) },

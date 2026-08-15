@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /**
  * Something worth stopping for, found while climbing the catalogue ladder.
  *
@@ -23,10 +25,16 @@ package com.staatseigentum.kollaps.core
  */
 data class CatalogueFind(
     val id: String,
-    val title: String,
-    val flavor: String,
-    val fragment: String,
+    val germanTitle: String,
+    val germanFlavor: String,
+    val germanFragment: String,
 ) {
+    val title: String get() = Lang.t(germanTitle)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
+    val fragment: String get() = Lang.t(germanFragment)
+
     companion object {
 
         /** Rungs of the catalogue ladder between two finds. */
@@ -136,23 +144,27 @@ data class CatalogueFind(
 }
 
 /** What the player did with a find. */
-enum class FindAnswer(val id: String, val label: String, val flavor: String) {
+enum class FindAnswer(val id: String, val germanLabel: String, val germanFlavor: String) {
     AUSWERTEN(
         id = "find_study",
-        label = "Auswerten",
-        flavor = "Zerlegen, vermessen, aufschreiben. Zahlt ein Äon.",
+        germanLabel = "Auswerten",
+        germanFlavor = "Zerlegen, vermessen, aufschreiben. Zahlt ein Äon.",
     ),
     ANZAPFEN(
         id = "find_tap",
-        label = "Anzapfen",
-        flavor = "Nehmen, was drin ist. Wirkt bis zum nächsten Kollaps und nicht darüber hinaus.",
+        germanLabel = "Anzapfen",
+        germanFlavor = "Nehmen, was drin ist. Wirkt bis zum nächsten Kollaps und nicht darüber hinaus.",
     ),
     RUHEN(
         id = "find_leave",
-        label = "In Ruhe lassen",
-        flavor = "Notieren und weiterziehen. Bringt nichts außer dem Eintrag.",
+        germanLabel = "In Ruhe lassen",
+        germanFlavor = "Notieren und weiterziehen. Bringt nichts außer dem Eintrag.",
     ),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
+
+    val flavor: String get() = Lang.t(germanFlavor)
 
     companion object {
         fun byId(id: String?): FindAnswer? = entries.firstOrNull { it.id == id }

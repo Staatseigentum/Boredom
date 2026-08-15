@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /**
  * Where a step wants the player to be.
  *
@@ -36,12 +38,16 @@ enum class TutorialSpot(val label: String) {
  */
 data class TutorialStep(
     val id: String,
-    val title: String,
-    val text: String,
+    val germanTitle: String,
+    val germanText: String,
     /** Where this happens, or `null` for a step that is about the screen you are already on. */
     val spot: TutorialSpot?,
     val isDone: (GameState) -> Boolean,
-)
+) {
+    val title: String get() = Lang.t(germanTitle)
+
+    val text: String get() = Lang.t(germanText)
+}
 
 /**
  * The opening, walked through rather than hinted at.
@@ -70,32 +76,32 @@ object Tutorial {
     val steps: List<TutorialStep> = listOf(
         TutorialStep(
             id = "tut_tap",
-            title = "Tipp den Körper an",
-            text = "Jeder Tipp bringt Masse. Am Anfang ist das die einzige Quelle — und die " +
+            germanTitle = "Tipp den Körper an",
+            germanText = "Jeder Tipp bringt Masse. Am Anfang ist das die einzige Quelle — und die " +
                 "Zahl oben zählt mit, was du hast.",
             spot = TutorialSpot.BODY,
             isDone = { it.taps >= 10 },
         ),
         TutorialStep(
             id = "tut_collector",
-            title = "Kauf deinen ersten Kollektor",
-            text = "Kollektoren sammeln Masse, ohne dass du etwas tust — auch dann, wenn die " +
+            germanTitle = "Kauf deinen ersten Kollektor",
+            germanText = "Kollektoren sammeln Masse, ohne dass du etwas tust — auch dann, wenn die " +
                 "App zu ist. Ab hier läuft das Spiel auch ohne dich weiter.",
             spot = TutorialSpot.FLOTTE,
             isDone = { state -> state.collectors.values.sum() >= 1 },
         ),
         TutorialStep(
             id = "tut_more",
-            title = "Und noch ein paar davon",
-            text = "Alle zehn Stück wird ein Kollektor dauerhaft besser. Der Knopf oben in der " +
+            germanTitle = "Und noch ein paar davon",
+            germanText = "Alle zehn Stück wird ein Kollektor dauerhaft besser. Der Knopf oben in der " +
                 "Flotte kauft gleich zehn oder hundert auf einmal, statt hundertmal zu tippen.",
             spot = TutorialSpot.FLOTTE,
             isDone = { state -> state.collectors.values.sum() >= 10 },
         ),
         TutorialStep(
             id = "tut_second",
-            title = "Nimm eine zweite Sorte dazu",
-            text = "Weiter unten in der Flotte stehen teurere Maschinen. Eine neue Sorte bringt " +
+            germanTitle = "Nimm eine zweite Sorte dazu",
+            germanText = "Weiter unten in der Flotte stehen teurere Maschinen. Eine neue Sorte bringt " +
                 "fast immer mehr als die zehnte Kopie der alten — und schaltet später eigene " +
                 "Upgrades frei.",
             spot = TutorialSpot.FLOTTE,
@@ -103,40 +109,40 @@ object Tutorial {
         ),
         TutorialStep(
             id = "tut_upgrade",
-            title = "Kauf ein Upgrade",
-            text = "Kollektoren machen mehr Masse, Upgrades machen jede davon mehr wert — und " +
+            germanTitle = "Kauf ein Upgrade",
+            germanText = "Kollektoren machen mehr Masse, Upgrades machen jede davon mehr wert — und " +
                 "sie sind es, die über einen Lauf den Unterschied ausmachen.",
             spot = TutorialSpot.UPGRADES,
             isDone = { it.upgrades.isNotEmpty() },
         ),
         TutorialStep(
             id = "tut_tier",
-            title = "Werde größer",
-            text = "Genug Masse, und aus dem Gestein wird ein größerer Körper. Der Balken oben " +
+            germanTitle = "Werde größer",
+            germanText = "Genug Masse, und aus dem Gestein wird ein größerer Körper. Der Balken oben " +
                 "zeigt, wie weit es noch ist.",
             spot = TutorialSpot.BODY,
             isDone = { it.bestTier >= 1 },
         ),
         TutorialStep(
             id = "tut_fleet_seen",
-            title = "Deine Flotte fliegt mit",
-            text = "Was du kaufst, siehst du: die Maschinen kreisen um deinen Körper, eine " +
+            germanTitle = "Deine Flotte fliegt mit",
+            germanText = "Was du kaufst, siehst du: die Maschinen kreisen um deinen Körper, eine " +
                 "Bahn je Sorte. Wer viel besitzt, sieht es, ohne in den Laden zu gehen.",
             spot = TutorialSpot.BODY,
             isDone = { it.bestTier >= 2 },
         ),
         TutorialStep(
             id = "tut_offline",
-            title = "Es läuft auch ohne dich",
-            text = "Leg das Spiel ruhig weg. Beim Öffnen bekommst du die Zeit gutgeschrieben — " +
+            germanTitle = "Es läuft auch ohne dich",
+            germanText = "Leg das Spiel ruhig weg. Beim Öffnen bekommst du die Zeit gutgeschrieben — " +
                 "ein Bericht sagt dir dann, was in der Zwischenzeit angefallen ist.",
             spot = null,
             isDone = { it.bestTier >= 3 },
         ),
         TutorialStep(
             id = "tut_cosmos",
-            title = "Sieh dir den Kosmos an",
-            text = "Dort steht alles, was nicht gekauft wird: der Kollaps, das Labor, die " +
+            germanTitle = "Sieh dir den Kosmos an",
+            germanText = "Dort steht alles, was nicht gekauft wird: der Kollaps, das Labor, die " +
                 "Automatik, deine Erfolge und die Einstellungen. Kein Grund zur Eile — aber gut " +
                 "zu wissen, wo es liegt.",
             spot = TutorialSpot.KOSMOS,
@@ -144,8 +150,8 @@ object Tutorial {
         ),
         TutorialStep(
             id = "tut_collapse_soon",
-            title = "Der Kollaps kommt noch",
-            text = "Irgendwann ist dein Körper schwer genug, um zusammenzufallen. Das setzt den " +
+            germanTitle = "Der Kollaps kommt noch",
+            germanText = "Irgendwann ist dein Körper schwer genug, um zusammenzufallen. Das setzt den " +
                 "Lauf zurück und macht dich dauerhaft schneller. Es meldet sich von selbst, " +
                 "wenn es so weit ist.",
             spot = null,

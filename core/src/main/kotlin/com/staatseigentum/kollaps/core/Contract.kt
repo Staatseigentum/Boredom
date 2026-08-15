@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /**
  * Three things worth doing next, drawn from a deck and replaced as they are finished.
  *
@@ -26,7 +28,7 @@ package com.staatseigentum.kollaps.core
  */
 data class Contract(
     val id: String,
-    val title: String,
+    val germanTitle: String,
     /** What it pays, in Äonen. */
     val reward: Double,
     /** How deep a player has to be before this one is worth offering. */
@@ -79,6 +81,8 @@ data class Contract(
      */
     val ceiling: ((GameState) -> Double)? = null,
 ) {
+    val title: String get() = Lang.t(germanTitle)
+
     /** Where this contract stands, with its own zero subtracted where it has one. */
     fun progressOf(state: GameState): Double {
         val now = counter(state)
@@ -119,7 +123,7 @@ data class Contract(
         val all: List<Contract> = listOf(
             Contract(
                 id = "ct_rungs",
-                title = "Fünfzig Sprossen über dem Tor",
+                germanTitle = "Fünfzig Sprossen über dem Tor",
                 reward = 2.0,
                 requiredBigBangs = Multiverse.SLOTS,
                 counter = { (GameEngine.tierOf(it).index - Tiers.last.index).coerceAtLeast(0).toDouble() },
@@ -128,7 +132,7 @@ data class Contract(
             ),
             Contract(
                 id = "ct_alloys",
-                title = "Zwei Legierungen schmieden",
+                germanTitle = "Zwei Legierungen schmieden",
                 reward = 3.0,
                 requiredBigBangs = 1,
                 counter = { it.alloys.size.toDouble() },
@@ -138,7 +142,7 @@ data class Contract(
             ),
             Contract(
                 id = "ct_collapses",
-                title = "Fünf Kollapse",
+                germanTitle = "Fünf Kollapse",
                 reward = 2.0,
                 requiredBigBangs = 0,
                 counter = { it.collapses.toDouble() },
@@ -148,7 +152,7 @@ data class Contract(
             ),
             Contract(
                 id = "ct_fleet",
-                title = "Tausend Maschinen gleichzeitig",
+                germanTitle = "Tausend Maschinen gleichzeitig",
                 reward = 2.0,
                 requiredBigBangs = 0,
                 counter = { it.collectors.values.sum().toDouble() },
@@ -158,7 +162,7 @@ data class Contract(
             ),
             Contract(
                 id = "ct_finds",
-                title = "Drei Katalogfunde beantworten",
+                germanTitle = "Drei Katalogfunde beantworten",
                 reward = 3.0,
                 requiredBigBangs = Multiverse.SLOTS,
                 counter = { it.findsAnswered.toDouble() },
@@ -168,7 +172,7 @@ data class Contract(
             ),
             Contract(
                 id = "ct_sky",
-                title = "Vier Galaxien gleichzeitig am Rechnen",
+                germanTitle = "Vier Galaxien gleichzeitig am Rechnen",
                 reward = 4.0,
                 requiredBigBangs = 4,
                 counter = {
@@ -180,7 +184,7 @@ data class Contract(
             ),
             Contract(
                 id = "ct_challenge",
-                title = "Eine Herausforderung bestehen",
+                germanTitle = "Eine Herausforderung bestehen",
                 reward = 3.0,
                 requiredBigBangs = 0,
                 counter = { it.challengesDone.size.toDouble() },
@@ -190,7 +194,7 @@ data class Contract(
             ),
             Contract(
                 id = "ct_orbits",
-                title = "Sechs Bahnen gleichzeitig besetzt",
+                germanTitle = "Sechs Bahnen gleichzeitig besetzt",
                 reward = 2.0,
                 requiredBigBangs = 0,
                 counter = { Orbits.occupiedCount(it).toDouble() },
@@ -200,7 +204,7 @@ data class Contract(
             ),
             Contract(
                 id = "ct_research",
-                title = "Drei Projekte durchziehen",
+                germanTitle = "Drei Projekte durchziehen",
                 reward = 3.0,
                 requiredBigBangs = 1,
                 counter = { it.research.size.toDouble() },
@@ -210,7 +214,7 @@ data class Contract(
             ),
             Contract(
                 id = "ct_metal",
-                title = "Fünfhundert Gramm Gold im Lager",
+                germanTitle = "Fünfhundert Gramm Gold im Lager",
                 reward = 2.0,
                 requiredBigBangs = 1,
                 counter = { Heavy.amountOf(it, HeavyElement.GOLD) },

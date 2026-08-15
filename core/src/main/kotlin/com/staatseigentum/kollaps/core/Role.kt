@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 /**
  * How a collector is set up to work.
  *
@@ -13,8 +14,8 @@ package com.staatseigentum.kollaps.core
  */
 enum class Role(
     val id: String,
-    val label: String,
-    val flavor: String,
+    val germanLabel: String,
+    val germanFlavor: String,
     /** Multiplies what one copy of this collector produces. */
     val output: Double,
     /** Multiplies what a copy costs. */
@@ -24,39 +25,46 @@ enum class Role(
 ) {
     MENGE(
         id = "r_bulk",
-        label = "Menge",
-        flavor = "Billiger gebaut, dafür schlampiger. Es zählt, wie viele es sind.",
+        germanLabel = "Menge",
+        germanFlavor = "Billiger gebaut, dafür schlampiger. Es zählt, wie viele es sind.",
         output = 0.80,
         cost = 0.85,
         networkPerStep = 0.0,
     ),
     GUETE(
         id = "r_quality",
-        label = "Güte",
-        flavor = "Sorgfältig gebaut und entsprechend teuer. Es zählt, was einer leistet.",
+        germanLabel = "Güte",
+        germanFlavor = "Sorgfältig gebaut und entsprechend teuer. Es zählt, was einer leistet.",
         output = 1.50,
         cost = 1.25,
         networkPerStep = 0.0,
     ),
     NETZ(
         id = "r_network",
-        label = "Netz",
-        flavor = "Arbeitet kaum noch selbst, sondern koordiniert alle anderen.",
+        germanLabel = "Netz",
+        germanFlavor = "Arbeitet kaum noch selbst, sondern koordiniert alle anderen.",
         output = 0.60,
         cost = 1.0,
         networkPerStep = 0.06,
     ),
     ;
 
+    val label: String get() = Lang.t(germanLabel)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
     /** What it does, in words, for the row that offers it. */
-    val text: String
+    val effectText: String
         get() = buildList {
-            if (output != 1.0) add("${Numbers.formatMultiplier(output)} Ausstoß")
-            if (cost != 1.0) add("${Numbers.formatMultiplier(cost)} Preis")
+            if (output != 1.0) add(Lang.t("%s Ausstoß", Numbers.formatMultiplier(output)))
+            if (cost != 1.0) add(Lang.t("%s Preis", Numbers.formatMultiplier(cost)))
             if (networkPerStep > 0.0) {
                 add(
-                    "+${Numbers.formatPercent(networkPerStep)} auf alle anderen " +
-                        "je ${Milestones.STEP} Stück",
+                    Lang.t(
+                        "+%s auf alle anderen je %s Stück",
+                        Numbers.formatPercent(networkPerStep),
+                        Milestones.STEP,
+                    ),
                 )
             }
         }.joinToString(" · ")

@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /**
  * Something the player did, recorded once and kept forever.
  *
@@ -8,11 +10,15 @@ package com.staatseigentum.kollaps.core
  */
 data class Achievement(
     val id: String,
-    val name: String,
-    val flavor: String,
+    val germanName: String,
+    val germanFlavor: String,
     /** True once the state has earned it. Only ever asked about the current state. */
     val earned: (GameState) -> Boolean,
-)
+) {
+    val name: String get() = Lang.t(germanName)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+}
 
 object Achievements {
 

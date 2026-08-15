@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import kotlinx.serialization.Serializable
 import kotlin.math.ln
 import kotlin.math.pow
@@ -16,35 +17,39 @@ import kotlin.math.pow
  * wants and metal is what the forge wants — and which of those you are short of changes across an
  * evening. That is the decision.
  */
-enum class GalaxyJob(val id: String, val label: String, val flavor: String) {
+enum class GalaxyJob(val id: String, val germanLabel: String, val germanFlavor: String) {
     /** Feeds the universe that is actually being played. What every galaxy does by default. */
     FOERDERN(
         id = "job_produce",
-        label = "Fördern",
-        flavor = "Schickt herüber, was sie herstellt. Das aktive Universum merkt es sofort.",
+        germanLabel = "Fördern",
+        germanFlavor = "Schickt herüber, was sie herstellt. Das aktive Universum merkt es sofort.",
     ),
 
     /** Äonen instead of production, and considerably more of them. */
     RECHNEN(
         id = "job_aeons",
-        label = "Rechnen",
-        flavor = "Stellt die Produktion ein und rechnet stattdessen. Zahlt in Äonen.",
+        germanLabel = "Rechnen",
+        germanFlavor = "Stellt die Produktion ein und rechnet stattdessen. Zahlt in Äonen.",
     ),
 
     /** Throws comets at the active universe. */
     SUCHEN(
         id = "job_comets",
-        label = "Suchen",
-        flavor = "Durchkämmt sich selbst nach Losem und wirft es herüber.",
+        germanLabel = "Suchen",
+        germanFlavor = "Durchkämmt sich selbst nach Losem und wirft es herüber.",
     ),
 
     /** The first way to heavy elements that does not go through a collapse. */
     GRABEN(
         id = "job_metal",
-        label = "Graben",
-        flavor = "Holt schwere Kerne aus dem eigenen Kern. Langsam, aber ohne Kollaps.",
+        germanLabel = "Graben",
+        germanFlavor = "Holt schwere Kerne aus dem eigenen Kern. Langsam, aber ohne Kollaps.",
     ),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
+
+    val flavor: String get() = Lang.t(germanFlavor)
 
     companion object {
         val DEFAULT = FOERDERN

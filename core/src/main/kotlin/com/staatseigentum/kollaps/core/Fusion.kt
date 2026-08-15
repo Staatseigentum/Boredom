@@ -1,12 +1,13 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.min
 import kotlin.math.pow
 
 /** What a fused element is worth. Two elements may pull on the same lever. */
-enum class FusionBonus(val label: String) {
+enum class FusionBonus(val germanLabel: String) {
     GLOBAL("Gesamtproduktion"),
     TAP("Masse pro Tipp"),
     OFFLINE("Offline-Ausbeute"),
@@ -18,6 +19,9 @@ enum class FusionBonus(val label: String) {
 
     /** How fast the bench works through a project. */
     RESEARCH("Forschungstempo"),
+    ;
+
+    val label: String get() = Lang.t(germanLabel)
 }
 
 /**
@@ -35,8 +39,8 @@ enum class FusionBonus(val label: String) {
 enum class Element(
     val id: String,
     val symbol: String,
-    val label: String,
-    val flavor: String,
+    val germanLabel: String,
+    val germanFlavor: String,
     /** How much [bonus] grows per tenfold increase in the amount held. */
     val perDecade: Double,
     val bonus: FusionBonus,
@@ -44,52 +48,56 @@ enum class Element(
     WASSERSTOFF(
         id = "h",
         symbol = "H",
-        label = "Wasserstoff",
-        flavor = "Der erste Stoff überhaupt. Alles andere ist daraus gemacht.",
+        germanLabel = "Wasserstoff",
+        germanFlavor = "Der erste Stoff überhaupt. Alles andere ist daraus gemacht.",
         perDecade = 0.05,
         bonus = FusionBonus.GLOBAL,
     ),
     HELIUM(
         id = "he",
         symbol = "He",
-        label = "Helium",
-        flavor = "Asche des ersten Feuers. Wurde am Himmel entdeckt, bevor jemand es in der Hand hatte.",
+        germanLabel = "Helium",
+        germanFlavor = "Asche des ersten Feuers. Wurde am Himmel entdeckt, bevor jemand es in der Hand hatte.",
         perDecade = 0.12,
         bonus = FusionBonus.TAP,
     ),
     KOHLENSTOFF(
         id = "c",
         symbol = "C",
-        label = "Kohlenstoff",
-        flavor = "Drei Heliumkerne, die sich gleichzeitig treffen. Unwahrscheinlich, und doch bist du daraus.",
+        germanLabel = "Kohlenstoff",
+        germanFlavor = "Drei Heliumkerne, die sich gleichzeitig treffen. Unwahrscheinlich, und doch bist du daraus.",
         perDecade = 0.09,
         bonus = FusionBonus.GLOBAL,
     ),
     SAUERSTOFF(
         id = "o",
         symbol = "O",
-        label = "Sauerstoff",
-        flavor = "Das dritthäufigste Element im Universum, und das erste, das jemand vermisst.",
+        germanLabel = "Sauerstoff",
+        germanFlavor = "Das dritthäufigste Element im Universum, und das erste, das jemand vermisst.",
         perDecade = 0.05,
         bonus = FusionBonus.OFFLINE,
     ),
     SILIZIUM(
         id = "si",
         symbol = "Si",
-        label = "Silizium",
-        flavor = "Sand, Glas, Rechner. Im Stern bleibt dafür etwa ein Tag Zeit.",
+        germanLabel = "Silizium",
+        germanFlavor = "Sand, Glas, Rechner. Im Stern bleibt dafür etwa ein Tag Zeit.",
         perDecade = 0.15,
         bonus = FusionBonus.COMETS,
     ),
     EISEN(
         id = "fe",
         symbol = "Fe",
-        label = "Eisen",
-        flavor = "Hier hört Fusion auf zu zahlen. Was jetzt noch wächst, wächst nach innen.",
+        germanLabel = "Eisen",
+        germanFlavor = "Hier hört Fusion auf zu zahlen. Was jetzt noch wächst, wächst nach innen.",
         perDecade = 0.20,
         bonus = FusionBonus.SINGULARITY,
     ),
     ;
+
+    val label: String get() = Lang.t(germanLabel)
+
+    val flavor: String get() = Lang.t(germanFlavor)
 
     companion object {
         fun byId(id: String?): Element? = entries.firstOrNull { it.id == id }
@@ -106,8 +114,8 @@ enum class Element(
  */
 data class FusionStage(
     val id: String,
-    val name: String,
-    val flavor: String,
+    val germanName: String,
+    val germanFlavor: String,
     /** `null` for the intake, which makes its output out of nothing. */
     val input: Element?,
     val output: Element,
@@ -115,6 +123,10 @@ data class FusionStage(
     val baseRate: Double,
     val ratio: Double,
 ) {
+    val name: String get() = Lang.t(germanName)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
     fun costAt(level: Int): Double = baseCost * COST_GROWTH.pow(level)
 
     companion object {
@@ -140,8 +152,8 @@ object Fusion {
     val stages: List<FusionStage> = listOf(
         FusionStage(
             id = "intake",
-            name = "Wasserstoffzapfung",
-            flavor = "Schöpft den dünnen Nebel zwischen den Sternen ab und drückt ihn nach innen.",
+            germanName = "Wasserstoffzapfung",
+            germanFlavor = "Schöpft den dünnen Nebel zwischen den Sternen ab und drückt ihn nach innen.",
             input = null,
             output = Element.WASSERSTOFF,
             baseCost = 5e10,
@@ -150,8 +162,8 @@ object Fusion {
         ),
         FusionStage(
             id = "pp",
-            name = "Protonenkette",
-            flavor = "Vier Protonen gehen hinein, ein Heliumkern kommt heraus. Der Rest wird Licht.",
+            germanName = "Protonenkette",
+            germanFlavor = "Vier Protonen gehen hinein, ein Heliumkern kommt heraus. Der Rest wird Licht.",
             input = Element.WASSERSTOFF,
             output = Element.HELIUM,
             baseCost = 3e11,
@@ -160,8 +172,8 @@ object Fusion {
         ),
         FusionStage(
             id = "triple",
-            name = "Drei-Alpha-Ofen",
-            flavor = "Zwingt drei Heliumkerne zur selben Sekunde an denselben Ort.",
+            germanName = "Drei-Alpha-Ofen",
+            germanFlavor = "Zwingt drei Heliumkerne zur selben Sekunde an denselben Ort.",
             input = Element.HELIUM,
             output = Element.KOHLENSTOFF,
             baseCost = 2.5e12,
@@ -170,8 +182,8 @@ object Fusion {
         ),
         FusionStage(
             id = "alpha",
-            name = "Alpha-Prozess",
-            flavor = "Kohlenstoff fängt ein weiteres Helium ein. Der Stern merkt kaum, dass er brennt.",
+            germanName = "Alpha-Prozess",
+            germanFlavor = "Kohlenstoff fängt ein weiteres Helium ein. Der Stern merkt kaum, dass er brennt.",
             input = Element.KOHLENSTOFF,
             output = Element.SAUERSTOFF,
             baseCost = 2e13,
@@ -180,8 +192,8 @@ object Fusion {
         ),
         FusionStage(
             id = "burning",
-            name = "Sauerstoffbrand",
-            flavor = "Die vorletzte Stufe. Ab hier zählt der Stern in Tagen statt in Jahrmillionen.",
+            germanName = "Sauerstoffbrand",
+            germanFlavor = "Die vorletzte Stufe. Ab hier zählt der Stern in Tagen statt in Jahrmillionen.",
             input = Element.SAUERSTOFF,
             output = Element.SILIZIUM,
             baseCost = 1.6e14,
@@ -190,8 +202,8 @@ object Fusion {
         ),
         FusionStage(
             id = "silicon",
-            name = "Siliziumbrand",
-            flavor = "Vierundzwanzig Stunden, dann steht ein Eisenkern im Zentrum und alles ist vorbei.",
+            germanName = "Siliziumbrand",
+            germanFlavor = "Vierundzwanzig Stunden, dann steht ein Eisenkern im Zentrum und alles ist vorbei.",
             input = Element.SILIZIUM,
             output = Element.EISEN,
             baseCost = 1.2e15,
