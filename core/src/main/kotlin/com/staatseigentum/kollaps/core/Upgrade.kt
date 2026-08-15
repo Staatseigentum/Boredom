@@ -73,6 +73,12 @@ data class Upgrade(
     val cost: Double,
     val effect: UpgradeEffect,
     val unlock: UnlockCondition,
+    /**
+     * The collector this upgrade is named after, if its name and flavour are templates.
+     *
+     * `null` for every hand-written upgrade, which is most of them. See [compose].
+     */
+    val about: String? = null,
 ) {
     /**
      * What the shop row says.
@@ -81,8 +87,27 @@ data class Upgrade(
      * unlike a tier's name, an upgrade's name is only ever text: everything that refers to one
      * refers to its [id].
      */
-    val name: String get() = Lang.t(germanName)
-    val flavor: String get() = Lang.t(germanFlavor)
+    val name: String get() = compose(germanName)
+
+    val flavor: String get() = compose(germanFlavor)
+
+    /**
+     * Fills [about]'s name into a template, or translates it whole if there is no template.
+     *
+     * The two hundred mark upgrades are one sentence each with a machine's name in it — "Doppelte
+     * Leistung aus jedem Staubfänger" — and they used to be *built* that way, by pasting the name
+     * in when the catalogue was constructed. That was two problems at once. It made two hundred
+     * near-identical strings to translate, and, worse, it pasted in whatever language happened to
+     * be current at class-load: switch to English afterwards and every mark upgrade kept its
+     * German machine name for ever, because the string had been baked long before.
+     *
+     * As a template both go away. Nine names and one sentence cover all two hundred, and the name
+     * is filled in at the moment it is read, in whatever language is current then.
+     */
+    private fun compose(german: String): String {
+        val subject = about ?: return Lang.t(german)
+        return Lang.t(german, nameOf(subject))
+    }
 
     /** Which shelf this belongs on, read straight off the effect. */
     val group: UpgradeGroup
@@ -420,11 +445,12 @@ object Upgrades {
         COLLECTOR_UPGRADE_STEPS.map { (required, priceFactor, suffix) ->
             Upgrade(
                 id = "${collector.id}_${required}",
-                germanName = "${collector.name} $suffix",
-                germanFlavor = "Doppelte Leistung aus jedem ${collector.name}.",
+                germanName = "%s $suffix",
+                germanFlavor = "Doppelte Leistung aus jedem %s.",
                 cost = collector.baseCost * priceFactor,
                 effect = UpgradeEffect.CollectorMultiplier(collector.id, 2.0),
                 unlock = UnlockCondition.CollectorsOwned(collector.id, required),
+                about = collector.id,
             )
         }
     }

@@ -84,6 +84,52 @@ class LanguageCoverageTest {
     }
 
     /**
+     * The one thing that must never be true.
+     *
+     * Switching language may change what is written; it may not change what is *there*. A blank
+     * where a name used to be is worse than the German name — the fallback exists precisely so
+     * that an unfinished translation reads as unfinished rather than as broken.
+     */
+    @Test
+    fun `nothing goes blank in english`() {
+        Lang.current = Language.EN
+        for (collector in Collectors.all) {
+            assertTrue(collector.name.isNotBlank(), collector.id)
+            assertTrue(collector.flavor.isNotBlank(), collector.id)
+        }
+        for (upgrade in Upgrades.all) {
+            assertTrue(upgrade.name.isNotBlank(), upgrade.id)
+            assertTrue(upgrade.flavor.isNotBlank(), upgrade.id)
+            assertTrue(upgrade.effectText.isNotBlank(), upgrade.id)
+        }
+        for (tier in Tiers.all) assertTrue(tier.label.isNotBlank(), tier.name)
+        for (achievement in Achievements.all) {
+            assertTrue(achievement.name.isNotBlank(), achievement.id)
+        }
+        for (challenge in Challenge.entries) {
+            assertTrue(challenge.title.isNotBlank(), challenge.name)
+            assertTrue(challenge.goalText.isNotBlank(), challenge.name)
+            assertTrue(challenge.ruleText.isNotBlank(), challenge.name)
+        }
+    }
+
+    /**
+     * The trap found while converting the tiers.
+     *
+     * Half the game refers to a rung by its German name — `Tiers.byName`, the challenge goals,
+     * several achievements. If the language ever changed what [CelestialTier.name] returns, every
+     * one of those lookups would fail, and only in English. That is why the tier is the one
+     * catalogue whose text field was not renamed; see its [CelestialTier.germanName].
+     */
+    @Test
+    fun `a tier keeps its key whatever language is on`() {
+        val german = Tiers.all.map { it.name }
+        Lang.current = Language.EN
+        assertTrue(Tiers.all.map { it.name } == german, "Die Stufennamen sind Schlüssel")
+        assertTrue(Tiers.byName("Erde").index > 0, "Die Suche nach dem Namen ist gebrochen")
+    }
+
+    /**
      * What is left, printed rather than asserted.
      *
      * The list is the work order. Run this test alone to see it — it is why the batches can be

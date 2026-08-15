@@ -65,7 +65,8 @@ import com.staatseigentum.kollaps.core.pixel.Skins
 object Texts {
 
     /** Everything, deduplicated, in catalogue order. */
-    val all: List<String> get() = (content + UI_ONLY).filter { it.isNotBlank() }.distinct()
+    val all: List<String> get() =
+        (content + Templates.all + UI_ONLY).filter { it.isNotBlank() }.distinct()
 
     /** What is still untranslated. Empty is the whole goal. */
     val missing: List<String> get() = Lang.missing(all)
@@ -87,29 +88,24 @@ object Texts {
             for (upgrade in Upgrades.all) {
                 add(upgrade.germanName)
                 add(upgrade.germanFlavor)
-                add(upgrade.effectText)
             }
             for (role in Role.entries) {
                 add(role.germanLabel)
                 add(role.germanFlavor)
-                add(role.effectText)
             }
 
             // ---- prestige, in all three currencies
             for (upgrade in PrestigeUpgrades.all) {
                 add(upgrade.germanName)
                 add(upgrade.germanFlavor)
-                add(upgrade.effectText)
             }
             for (investment in Investments.all) {
                 add(investment.germanName)
                 add(investment.germanFlavor)
-                add(investment.effectText)
             }
             for (upgrade in AeonUpgrades.all) {
                 add(upgrade.germanName)
                 add(upgrade.germanFlavor)
-                add(upgrade.effectText)
             }
             for (path in Path.entries) {
                 add(path.germanLabel)
@@ -118,7 +114,6 @@ object Texts {
             for (node in PathTrees.all) {
                 add(node.germanName)
                 add(node.germanFlavor)
-                add(node.effectText)
             }
 
             // ---- the systems that unlock one after another
@@ -138,12 +133,10 @@ object Texts {
             for (alloy in Alloy.entries) {
                 add(alloy.germanLabel)
                 add(alloy.germanFlavor)
-                add(alloy.effectText)
             }
             for (project in ResearchTree.all) {
                 add(project.germanName)
                 add(project.germanFlavor)
-                add(project.effectText)
             }
             for (rule in AutomationRule.entries) {
                 add(rule.germanLabel)
@@ -194,8 +187,6 @@ object Texts {
             for (challenge in Challenge.entries) {
                 add(challenge.germanTitle)
                 add(challenge.germanFlavor)
-                add(challenge.ruleText)
-                add(challenge.goalText)
             }
             for (contract in Contract.all) add(contract.germanTitle)
             addAll(Lore.allLines)
