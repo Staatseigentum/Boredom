@@ -11,6 +11,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.staatseigentum.kollaps.GameViewModel
 import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.Comet
+import com.staatseigentum.kollaps.core.Impact
 import com.staatseigentum.kollaps.update.UpdateViewModel
 import com.staatseigentum.kollaps.core.NumberFormat
 import androidx.compose.runtime.mutableStateOf
@@ -68,6 +69,9 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun dismissOfflineReport() = model.dismissOfflineReport()
             override fun acknowledgeTier() = model.acknowledgeTier()
             override fun catchComet(comet: Comet) = model.catchComet(comet)
+            override fun absorbImpact(impact: Impact) = model.absorbImpact(impact)
+            override fun missImpact(impact: Impact) = model.missImpact(impact)
+            override fun buildShell(id: String) = model.buildShell(id)
             override fun chooseEvent(optionIndex: Int) = model.chooseEvent(optionIndex)
             override fun dismissEvent() = model.dismissEvent()
             override fun bigBang(pathId: String) = model.bigBang(pathId)

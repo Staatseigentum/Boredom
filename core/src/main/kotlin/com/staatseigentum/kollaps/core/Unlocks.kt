@@ -41,6 +41,35 @@ data class FeatureIntro(
 object Unlocks {
 
     val all: List<FeatureIntro> = listOf(
+        /*
+         * The two earliest cards in the game, and the only two that are hung on something the
+         * player *did* rather than on a system unlocking.
+         *
+         * That is not a style choice, it is the only shape that works here. Accretion is live from
+         * the first second of a dev game, and [GameEngine.seedIntros] marks everything already
+         * reached as read on the first tick — so a card gated on "the system exists" would be
+         * marked read before the window had finished opening, on a brand new save, for ever. Hung
+         * on the first catch and the first layer instead, both of which a new game is at nought.
+         */
+        FeatureIntro(
+            id = "un_impacts",
+            title = "Einschläge",
+            where = "Aufbau",
+            text = "Du bist ein Brocken, und du wächst, weil andere Brocken auf dich fallen. " +
+                "Tippe sie an, bevor sie aufschlagen: das bringt sofort Masse — und Material, " +
+                "das liegen bleibt. Was du damit anfängst, steht unter Aufbau.",
+            appearsWhen = { it.impactsAbsorbed > 0 },
+        ),
+        FeatureIntro(
+            id = "un_shells",
+            title = "Schichten",
+            where = "Aufbau",
+            text = "Aus Material baust du Kern, Mantel und Kruste. Der Kern erhöht die " +
+                "Produktion, der Mantel Tippwert und Anziehung, die Kruste Offline-Ertrag und " +
+                "Ausbeute. Ab sechs Schichten bekommt dein Körper einen Typ — und der bleibt " +
+                "eingetragen, auch wenn der Kollaps alles andere mitnimmt.",
+            appearsWhen = { Shells.total(it) >= 3 },
+        ),
         FeatureIntro(
             id = "un_collapse",
             title = "Der Kollaps",

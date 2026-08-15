@@ -247,6 +247,9 @@ object GameEngine {
         ticked = healContractMarks(ticked)
         ticked = dealContracts(ticked)
         ticked = seedIntros(ticked)
+        // Cheap when the systems are off — [Worlds.current] answers `null` before it looks at
+        // anything — and the only place a save that predates the record catches up with itself.
+        ticked = recordWorld(ticked)
         ticked = sample(ticked, seconds)
         if (ticked.runningChallengeIds.isNotEmpty()) {
             ticked = ticked.copy(challengeSeconds = ticked.challengeSeconds + seconds)
@@ -836,6 +839,10 @@ object GameEngine {
                 achievements = state.achievements,
                 playedSeconds = state.playedSeconds,
                 cometsCaught = state.cometsCaught,
+                // The body comes apart and takes the shells and the loose material with it. What
+                // it cannot take is the note saying what this body *was*. See [Worlds].
+                worldTypes = state.worldTypes,
+                impactsAbsorbed = state.impactsAbsorbed,
                 soundOn = state.soundOn,
                 skinId = state.skinId,
                 hapticsOn = state.hapticsOn,
@@ -930,6 +937,10 @@ object GameEngine {
                 bestHistory = state.bestHistory,
                 playedSeconds = state.playedSeconds,
                 cometsCaught = state.cometsCaught,
+                // Kept for the same reason everything else in this block is: it is a record of
+                // what happened, not a thing that is owned.
+                worldTypes = state.worldTypes,
+                impactsAbsorbed = state.impactsAbsorbed,
                 soundOn = state.soundOn,
                 skinId = state.skinId,
                 hapticsOn = state.hapticsOn,
@@ -1441,6 +1452,10 @@ object GameEngine {
         achievements = state.achievements,
         playedSeconds = state.playedSeconds,
         cometsCaught = state.cometsCaught,
+        // The body is taken apart and so is everything lying on it — but not the note saying what
+        // it was. That note is the only reason to build a different one next time. See [Worlds].
+        worldTypes = state.worldTypes,
+        impactsAbsorbed = state.impactsAbsorbed,
         soundOn = state.soundOn,
         skinId = state.skinId,
         hapticsOn = state.hapticsOn,
@@ -1590,6 +1605,80 @@ object GameEngine {
                 )
             },
         )
+    }
+
+    // ---------------------------------------------------------------- accretion
+
+    /**
+     * Takes an impact in: mass now, material to build with later.
+     *
+     * The mass is measured against current production rather than fixed — see [Accretion.massOf] —
+     * so the very first dust cloud is worth taking and so is the last one before the comets take
+     * over. The material is what the whole update is actually for.
+     */
+    fun absorbImpact(state: GameState, impact: Impact): GameState {
+        if (!Dev.enabled) return state
+        val gained = Accretion.massOf(state, impact)
+        val won = impact.yield_ * Shells.yieldFactor(state)
+        val stock = state.materials.toMutableMap()
+        stock.combine(impact.material.id, won) { a, b -> a + b }
+        return award(
+            credit(state, gained).copy(
+                materials = stock,
+                impactsAbsorbed = state.impactsAbsorbed + 1,
+            ),
+        )
+    }
+
+    /**
+     * One that was left alone.
+     *
+     * Only the heavy ones cost anything, and what they cost is a fifth of what catching them would
+     * have paid — never more than the player is currently making in a few seconds. A game that
+     * punished putting the phone down would have stopped being an idle game; see [Impact.heavy].
+     */
+    fun missImpact(state: GameState, impact: Impact): GameState {
+        if (!Dev.enabled) return state
+        val lost = Accretion.lossOf(state, impact)
+        if (lost <= 0.0) return state
+        // Only what is actually in hand. Debt is not a thing this game has anywhere else, and a
+        // negative mass would read as a broken save rather than as a missed rock.
+        return state.copy(mass = (state.mass - lost).coerceAtLeast(0.0))
+    }
+
+    /**
+     * Builds one level onto a shell, if there is material for both of its costs.
+     *
+     * Checked here as well as in the panel that offers it, for the same reason every other purchase
+     * is: the screen decides what to show, the rules decide what may happen.
+     */
+    fun buildShell(state: GameState, shellId: String): GameState {
+        val shell = Shell.byId(shellId) ?: return state
+        if (!Shells.canBuild(state, shell)) return state
+
+        val stock = state.materials.toMutableMap()
+        for ((material, cost) in Shells.costOf(state, shell)) {
+            stock[material.id] = ((stock[material.id] ?: 0.0) - cost).coerceAtLeast(0.0)
+        }
+        val built = state.shells.toMutableMap()
+        built[shell.id] = Shells.levelOf(state, shell) + 1
+
+        // Recorded immediately rather than on the next tick, so the card that says what the body
+        // has become appears on the press that made it so.
+        return award(recordWorld(state.copy(materials = stock, shells = built)))
+    }
+
+    /**
+     * Writes down what the body currently is, if it has not been that before.
+     *
+     * Runs from the tick as well as from the purchase, because a world type can also be reached by
+     * something *else* changing the shares — and because a save built before this existed should
+     * record what it already is the moment it is opened.
+     */
+    private fun recordWorld(state: GameState): GameState {
+        val world = Worlds.current(state) ?: return state
+        if (world.id in state.worldTypes) return state
+        return state.copy(worldTypes = state.worldTypes + world.id)
     }
 
     // ---------------------------------------------------------------- settings
@@ -2025,11 +2114,24 @@ object GameEngine {
     @Volatile
     private var folded: Modifiers? = null
 
+    /**
+     * Which side of the [Dev] flag the cached fold was taken on.
+     *
+     * The state is not the only input any more: the same save folds differently depending on
+     * whether the unfinished systems are live. A running game sets the flag once at startup and
+     * never touches it again, so this is always a hit there — but a test that folds a state with
+     * the flag off and then asks for the same object with it on would otherwise be handed the
+     * answer to the other question, and would pass or fail for reasons nothing in it mentions.
+     */
+    @Volatile
+    private var foldedInDev: Boolean = false
+
     private fun modifiersOf(state: GameState): Modifiers {
         val cached = folded
-        if (cached != null && foldedFor === state) return cached
+        if (cached != null && foldedFor === state && foldedInDev == Dev.enabled) return cached
         return foldModifiers(state).also {
             folded = it
+            foldedInDev = Dev.enabled
             foldedFor = state
         }
     }
@@ -2207,6 +2309,29 @@ object GameEngine {
         // on. Same fold as everything else permanent: an alloy is a different way to earn a lasting
         // bonus, not a different kind of bonus.
         Alloy.effects(state).forEach { apply(mods, it) }
+
+        /*
+         * And what the body itself is made of.
+         *
+         * Last, and multiplying rather than adding, because that is what a shell is: the core does
+         * not produce anything, it makes the fleet standing on it produce more. A system that added
+         * its own mass per second would be a fourteenth source of production; this is a reason to
+         * care about the thirteen that exist.
+         *
+         * Behind the flag as a whole rather than trusting the maps to be empty: a save carried back
+         * from the dev build into the shipped one has shells in it, and must play exactly as the
+         * shipped game plays.
+         */
+        if (Dev.enabled) {
+            mods.global *= Shells.productionFactor(state)
+            mods.tapMultiplier *= Shells.tapFactor(state)
+            // Added to the share rather than multiplying it, and capped: the crust is worth a few
+            // points of offline yield, not a way past the ceiling every other source stops at.
+            mods.offlineEfficiency =
+                (mods.offlineEfficiency + Shells.offlineBonus(state)).coerceAtMost(1.0)
+            // And every world the save has ever been, which is the part a collapse cannot take.
+            mods.global *= Worlds.multiplier(state)
+        }
 
         if (Fusion.isUnlocked(state)) {
             mods.global *= Fusion.factorFor(state, FusionBonus.GLOBAL)

@@ -8,6 +8,7 @@ import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.core.SaveCodec
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.Impact
 import com.staatseigentum.kollaps.core.NumberFormat
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.OfflineReport
@@ -172,6 +173,18 @@ open class PlainGame(start: GameState = GameState.new(NOW)) : GameActions {
 
     override fun catchComet(comet: Comet) {
         state = GameEngine.catchComet(state, comet)
+    }
+
+    override fun absorbImpact(impact: Impact) {
+        state = GameEngine.absorbImpact(state, impact)
+    }
+
+    override fun missImpact(impact: Impact) {
+        state = GameEngine.missImpact(state, impact)
+    }
+
+    override fun buildShell(id: String) {
+        state = GameEngine.buildShell(state, id)
     }
 
     override fun chooseEvent(optionIndex: Int) {

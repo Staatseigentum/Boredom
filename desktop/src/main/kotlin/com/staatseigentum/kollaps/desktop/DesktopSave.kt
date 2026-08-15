@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.desktop
 
+import com.staatseigentum.kollaps.core.Dev
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.SaveCodec
 import java.io.File
@@ -22,8 +23,19 @@ object DesktopSave {
     /** How many places there are to keep a game. Matches the phone. */
     const val SLOTS = 3
 
+    /**
+     * Where the files go, which is somewhere else entirely while the dev systems are on.
+     *
+     * The whole point of the dev build is to be able to break things, and a save is the one thing
+     * in this game that cannot be rebuilt from source. Sharing a directory would mean one crash in
+     * an unfinished system costs somebody the four hours they actually played — so the dev build
+     * keeps its own three slots, its own marker, and never opens the real ones at all.
+     */
     private val directory: File
-        get() = File(System.getProperty("user.home"), ".kollaps")
+        get() = File(
+            System.getProperty("user.home"),
+            if (Dev.enabled) ".kollaps-dev" else ".kollaps",
+        )
 
     private fun fileFor(slot: Int): File =
         File(directory, if (slot <= 0) "spielstand.txt" else "spielstand-${slot + 1}.txt")

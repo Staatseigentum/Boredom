@@ -312,10 +312,14 @@ private fun LowerSection(
         ) {
             for (entry in tabs) {
                 val selected = entry == tab
-                val label = if (entry == WideTab.UPGRADES && offers.any { it.affordable }) {
-                    "${entry.title} ${offers.count { it.affordable }}"
-                } else {
-                    entry.title
+                val label = when {
+                    entry == WideTab.UPGRADES && offers.any { it.affordable } ->
+                        "${entry.title} ${offers.count { it.affordable }}"
+                    // Badged for the same reason the upgrades are: material sitting unspent is the
+                    // one thing in this panel that goes stale, and the tab is usually not open.
+                    entry == WideTab.AUFBAU && buildableCount(state) > 0 ->
+                        "${entry.title} ${buildableCount(state)}"
+                    else -> entry.title
                 }
                 Box(
                     modifier = Modifier
@@ -336,6 +340,7 @@ private fun LowerSection(
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             when (tab) {
                 WideTab.UPGRADES -> UpgradeGrid(offers = offers, onBuy = actions::buyUpgrade)
+                WideTab.AUFBAU -> AufbauPanel(state = state, actions = actions)
                 WideTab.ORBITS -> OrbitPanel(state = state, actions = actions)
                 WideTab.FUSION -> FusionPanel(
                     state = state,
@@ -485,12 +490,14 @@ private fun CollapseFooter(state: GameState, stats: Stats, onCollapse: () -> Uni
 /** The four places the lower panel can be. See [WideShop] for why the fleet is not among them. */
 private enum class WideTab(val title: String) {
     UPGRADES("Upgrades"),
+    AUFBAU("Aufbau"),
     ORBITS("Bahnen"),
     FUSION("Fusion"),
     COSMOS("Kosmos"),
     ;
 
     fun availableIn(state: GameState): Boolean = when (this) {
+        AUFBAU -> aufbauAvailable(state)
         ORBITS -> com.staatseigentum.kollaps.core.Orbits.isUnlocked(state)
         FUSION -> com.staatseigentum.kollaps.core.Fusion.isUnlocked(state)
         else -> true

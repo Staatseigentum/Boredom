@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.staatseigentum.kollaps.core.Dev
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.core.Wallclock
@@ -37,8 +38,16 @@ import com.staatseigentum.kollaps.ui.SlotSummary
  *
  * Arguments: `--tier 17` starts on a given rung, which is otherwise hours away, `--frisch`
  * ignores whatever is in the save file, and `--kein-update` skips the launch check.
+ *
+ * And `--dev`, which is not like the other three. The first three change how this window starts;
+ * `--dev` changes what game is in it. See [Dev]: it turns on the systems of the next update, which
+ * are compiled into every build and reached by none of them. It also moves the save files, so a
+ * session spent breaking an unfinished system cannot cost anybody the game they actually play.
  */
 fun main(args: Array<String>) {
+    // Before anything else, and before the save directory is ever asked where it is: half of what
+    // this switch does is decide which files this window is allowed to touch.
+    if ("--dev" in args) Dev.enable()
     // The clock the whole game reads, installed before anything asks the time — the save is
     // credited for the hours the window was shut while the window is still being put together.
     Wallclock.readFrom(System::currentTimeMillis)
@@ -65,13 +74,15 @@ private fun window(args: Array<String>) = application {
     }
 
     if (!ignoreSave) println("Spielstand: ${DesktopSave.location()}")
+    if (Dev.enabled) println("DEV: Akkretion, Aufbau und Weltentypen sind an.")
 
     Window(
         onCloseRequest = {
             DesktopSave.save(game.state)
             exitApplication()
         },
-        title = "Kollaps",
+        // Named so nobody plays the dev build for an evening thinking it was the real one.
+        title = if (Dev.enabled) "Kollaps — Dev (Akkretion)" else "Kollaps",
         icon = windowIcon(),
         // Wide enough for the two-column layout, and resizable down to a phone shape if that is
         // what somebody wants. Both are the same screen; only the width decides.

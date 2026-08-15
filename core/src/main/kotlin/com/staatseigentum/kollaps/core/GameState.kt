@@ -446,6 +446,31 @@ data class GameState(
     val automation: Map<String, Int> = emptyMap(),
 
     /**
+     * Material knocked loose by impacts and not yet built into anything, by [Material.id].
+     *
+     * Part of the run, exactly like the elements: a collapse takes the body apart, and what was
+     * lying on it goes with it. See [Accretion].
+     */
+    val materials: Map<String, Double> = emptyMap(),
+
+    /**
+     * How deep each shell has been built, by [Shell.id]. Part of the run, for the same reason.
+     */
+    val shells: Map<String, Int> = emptyMap(),
+
+    /** Impacts caught, across all runs. Permanent, like the comet counter it sits next to. */
+    val impactsAbsorbed: Long = 0,
+
+    /**
+     * Every kind of world this save has ever been, by [WorldType.id].
+     *
+     * The one thing the accretion systems leave behind. A collapse takes the material and the
+     * shells; it cannot take the fact that the body *was* an ice world once, and that record is
+     * what makes building a different one next run worth anything. See [Worlds].
+     */
+    val worldTypes: Set<String> = emptySet(),
+
+    /**
      * Automatic collapses still owed, from the count the player set. See [AutomationRule.COLLAPSE].
      *
      * The whole reason that rule is allowed to exist again. It is not a switch that hands the game

@@ -12,6 +12,7 @@ import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.ResearchTree
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.Impact
 import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.Roles
 import com.staatseigentum.kollaps.core.Stats
@@ -222,6 +223,18 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun catchComet(comet: Comet) {
         _state.value = GameEngine.catchComet(_state.value, comet)
+    }
+
+    fun absorbImpact(impact: Impact) {
+        _state.value = GameEngine.absorbImpact(_state.value, impact)
+    }
+
+    fun missImpact(impact: Impact) {
+        _state.value = GameEngine.missImpact(_state.value, impact)
+    }
+
+    fun buildShell(id: String) {
+        _state.value = GameEngine.buildShell(_state.value, id)
     }
 
     fun chooseEvent(optionIndex: Int) {

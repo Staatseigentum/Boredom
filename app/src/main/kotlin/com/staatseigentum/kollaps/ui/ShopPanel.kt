@@ -78,6 +78,7 @@ import com.staatseigentum.kollaps.ui.theme.Starlight
 enum class ShopTab(val title: String) {
     COLLECTORS("Flotte"),
     UPGRADES("Upgrades"),
+    AUFBAU("Aufbau"),
     ORBITS("Bahnen"),
     FUSION("Fusion"),
     COSMOS("Kosmos"),
@@ -94,6 +95,7 @@ enum class ShopTab(val title: String) {
 private fun tabsFor(state: GameState): List<ShopTab> =
     ShopTab.entries.filter {
         when (it) {
+            ShopTab.AUFBAU -> aufbauAvailable(state)
             ShopTab.ORBITS -> Orbits.isUnlocked(state)
             ShopTab.FUSION -> Fusion.isUnlocked(state)
             else -> true
@@ -188,6 +190,8 @@ fun ShopPanel(
                 offers = GameEngine.upgradeOffers(state),
                 onBuy = actions::buyUpgrade,
             )
+
+            ShopTab.AUFBAU -> AufbauPanel(state = state, actions = actions)
 
             ShopTab.ORBITS -> OrbitPanel(state = state, actions = actions)
 

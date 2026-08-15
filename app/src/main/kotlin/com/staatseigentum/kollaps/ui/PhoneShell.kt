@@ -78,6 +78,7 @@ import kotlinx.coroutines.delay
 enum class PhoneView(val label: String) {
     BODY("Körper"),
     FLEET("Flotte"),
+    AUFBAU("Aufbau"),
     ORBITS("Bahnen"),
     FUSION("Fusion"),
     COSMOS("Kosmos"),
@@ -93,6 +94,7 @@ enum class PhoneView(val label: String) {
          */
         fun availableIn(state: GameState): List<PhoneView> = entries.filter {
             when (it) {
+                AUFBAU -> aufbauAvailable(state)
                 ORBITS -> Orbits.isUnlocked(state)
                 FUSION -> Fusion.isUnlocked(state)
                 else -> true
@@ -205,6 +207,18 @@ private fun NavIcon(view: PhoneView, tint: Color, glow: Color) {
                         color = tint,
                         topLeft = Offset(0f, index * (bar + gap)),
                         size = Size(side, bar),
+                    )
+                }
+            }
+
+            // Three layers, drawn as bands of a body cut in half: crust, mantle, core. The one
+            // icon that is a cross-section, because that is exactly what the panel behind it is.
+            PhoneView.AUFBAU -> {
+                val ring = side / 6f
+                for (index in 0 until 3) {
+                    drawCircle(
+                        color = if (index % 2 == 0) tint else glow,
+                        radius = side / 2f - index * ring,
                     )
                 }
             }

@@ -57,9 +57,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.staatseigentum.kollaps.core.Accretion
 import com.staatseigentum.kollaps.core.BuyAmount
 import com.staatseigentum.kollaps.core.CelestialTier
 import com.staatseigentum.kollaps.core.Comet
+import com.staatseigentum.kollaps.core.Impact
+import com.staatseigentum.kollaps.core.Shells
 import com.staatseigentum.kollaps.core.Element
 import com.staatseigentum.kollaps.core.Fusion
 import com.staatseigentum.kollaps.core.Designations
@@ -128,6 +131,15 @@ interface GameActions {
 
     /** Catches a comet that drifted past and was tapped in time. */
     fun catchComet(comet: Comet)
+
+    /** Takes in an impact that was tapped before it grazed past. See [Accretion]. */
+    fun absorbImpact(impact: Impact)
+
+    /** Notes one that was not. Only the heavy ones cost anything. */
+    fun missImpact(impact: Impact)
+
+    /** Builds one level onto a shell of the body, paid in material. See [Shells]. */
+    fun buildShell(id: String)
 
     /** Answers the waiting event with one of its two options. */
     fun chooseEvent(optionIndex: Int)
@@ -388,7 +400,10 @@ fun GameScreen(
     // The palette is settled once, here, so every body on screen agrees on it — and it is
     // resolved rather than taken raw, so a scheme that is not actually earned falls back. Off the
     // shown state, so the body being pulled in keeps the colours it had.
-    val skin = Skins.current(shownState.skinId, shownState.achievements)
+    // Bent towards whatever the body is mostly built out of, on top of the scheme the player
+    // picked — see [Shells.tintOver]. This is the only thing the composition does to the renderer,
+    // and it does it to every sprite on screen at once because they all read the same skin.
+    val skin = Shells.tintOver(Skins.current(shownState.skinId, shownState.achievements), shownState)
 
     // The number format likewise, and for the same reason: one place decides, everything below
     // reads the same thing. Applied on every change rather than once, because a save imported
@@ -610,6 +625,7 @@ fun GameScreen(
                             when (current) {
                                 PhoneView.BODY -> body(Modifier.fillMaxSize(), true)
                                 PhoneView.FLEET -> shop(Modifier.fillMaxSize(), ShopTab.COLLECTORS)
+                                PhoneView.AUFBAU -> shop(Modifier.fillMaxSize(), ShopTab.AUFBAU)
                                 PhoneView.ORBITS -> shop(Modifier.fillMaxSize(), ShopTab.ORBITS)
                                 PhoneView.FUSION -> shop(Modifier.fillMaxSize(), ShopTab.FUSION)
                                 PhoneView.COSMOS -> shop(Modifier.fillMaxSize(), ShopTab.COSMOS)
@@ -1243,6 +1259,17 @@ private fun TapArea(
                 )
             }
         }
+
+        // Over the body, so a fragment falling towards it is never behind it — and under the comet
+        // below, because the two only ever overlap in the first hour and the comet is worth far
+        // more: a fragment hidden by a comet costs a few seconds, a comet hidden by a fragment
+        // costs a quarter of an hour.
+        ImpactOverlay(
+            state = state,
+            onAbsorb = actions::absorbImpact,
+            onMiss = actions::missImpact,
+            modifier = Modifier.fillMaxSize(),
+        )
 
         // Last, so a comet is never covered by the body it drifts past.
         CometOverlay(
