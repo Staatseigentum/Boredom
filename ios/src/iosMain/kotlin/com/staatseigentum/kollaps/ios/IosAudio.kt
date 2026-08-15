@@ -47,7 +47,14 @@ private fun ByteArray.toNSData(): NSData? {
     }
 }
 
-/** A player over WAV bytes, or `null` if this device will not open one. */
+/**
+ * A player over WAV bytes, or `null` if this device will not open one.
+ *
+ * The opt-in is for the `error` parameter and nothing else: every Objective-C method that reports
+ * failure through an `NSError**` arrives in Kotlin as one taking a pointer, and a pointer is
+ * foreign no matter that the only value ever passed is a null.
+ */
+@OptIn(ExperimentalForeignApi::class)
 private fun playerOf(wav: ByteArray): AVAudioPlayer? {
     val data = wav.toNSData() ?: return null
     return runCatching {
@@ -63,6 +70,7 @@ private fun playerOf(wav: ByteArray): AVAudioPlayer? {
  * ring switch — a phone on silent stays silent. Both are what somebody expects of a game they
  * opened on a train.
  */
+@OptIn(ExperimentalForeignApi::class)
 private fun openSession() {
     runCatching {
         val session = AVAudioSession.sharedInstance()
