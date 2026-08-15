@@ -169,7 +169,7 @@ private fun InvestmentRow(
                     color = Starlight,
                 )
                 Text(
-                    text = investment.perLevel,
+                    text = investment.effectText,
                     style = MaterialTheme.typography.bodySmall,
                     color = Ember,
                 )

@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /** What a challenge takes away for as long as it is running. */
 sealed interface ChallengeRule {
     /** Collectors produce nothing. The run is whatever the player's finger can do. */
@@ -66,8 +68,8 @@ sealed interface ChallengeGoal {
  */
 enum class Challenge(
     val id: String,
-    val title: String,
-    val flavor: String,
+    val germanTitle: String,
+    val germanFlavor: String,
     val rule: ChallengeRule,
     val goal: ChallengeGoal,
     val reward: PrestigeEffect,
@@ -76,16 +78,16 @@ enum class Challenge(
 ) {
     HANDARBEIT(
         id = "c_hand",
-        title = "Handarbeit",
-        flavor = "Die ganze Flotte steht still. Was du willst, holst du dir selbst.",
+        germanTitle = "Handarbeit",
+        germanFlavor = "Die ganze Flotte steht still. Was du willst, holst du dir selbst.",
         rule = ChallengeRule.NoCollectors,
         goal = ChallengeGoal.ReachTier("Erde"),
         reward = PrestigeEffect.TapMultiplier(3.0),
     ),
     NICHTSTUN(
         id = "c_idle",
-        title = "Nichtstun",
-        flavor = "Nimm die Hände weg. Einen Staubfänger kriegst du geschenkt — der Rest " +
+        germanTitle = "Nichtstun",
+        germanFlavor = "Nimm die Hände weg. Einen Staubfänger kriegst du geschenkt — der Rest " +
             "wächst ohne dich.",
         rule = ChallengeRule.NoTaps,
         goal = ChallengeGoal.ReachTier("Saturn"),
@@ -93,8 +95,8 @@ enum class Challenge(
     ),
     SPRINT(
         id = "c_sprint",
-        title = "Sprint",
-        flavor = "Bis zum Saturn, in fünfundvierzig Minuten. Die Uhr läuft nur, wenn du spielst.",
+        germanTitle = "Sprint",
+        germanFlavor = "Bis zum Saturn, in fünfundvierzig Minuten. Die Uhr läuft nur, wenn du spielst.",
         rule = ChallengeRule.Handicap(1.0),
         goal = ChallengeGoal.ReachTierWithin("Saturn", 45 * 60.0),
         reward = PrestigeEffect.CometFrequency(2.0),
@@ -102,8 +104,8 @@ enum class Challenge(
     ),
     HALBE_KRAFT(
         id = "c_half",
-        title = "Halbe Kraft",
-        flavor = "Alles bringt die Hälfte. Bis zum Schwarzen Loch trotzdem.",
+        germanTitle = "Halbe Kraft",
+        germanFlavor = "Alles bringt die Hälfte. Bis zum Schwarzen Loch trotzdem.",
         rule = ChallengeRule.Handicap(0.5),
         goal = ChallengeGoal.ReachTier("Schwarzes Loch"),
         reward = PrestigeEffect.GlobalMultiplier(2.5),
@@ -111,8 +113,8 @@ enum class Challenge(
     ),
     ROHBAU(
         id = "c_raw",
-        title = "Rohbau",
-        flavor = "Der Upgrade-Laden ist zu. Mehr Maschinen ja, bessere nein.",
+        germanTitle = "Rohbau",
+        germanFlavor = "Der Upgrade-Laden ist zu. Mehr Maschinen ja, bessere nein.",
         rule = ChallengeRule.NoUpgrades,
         goal = ChallengeGoal.ReachTier("Jupiter"),
         reward = PrestigeEffect.MilestoneBonus(0.03),
@@ -120,8 +122,8 @@ enum class Challenge(
     ),
     ALLEIN(
         id = "c_alone",
-        title = "Allein",
-        flavor = "Nichts bleibt auf einer Bahn. Was du schaffst, schaffst du ohne Trabanten.",
+        germanTitle = "Allein",
+        germanFlavor = "Nichts bleibt auf einer Bahn. Was du schaffst, schaffst du ohne Trabanten.",
         rule = ChallengeRule.NoOrbits,
         goal = ChallengeGoal.ReachTier("Roter Überriese"),
         reward = PrestigeEffect.FusionRate(1.5),
@@ -129,8 +131,8 @@ enum class Challenge(
     ),
     EILE(
         id = "c_rush",
-        title = "Eile",
-        flavor = "Bis zur Sonne, in neunzig Minuten. Die Uhr läuft nur, wenn du spielst.",
+        germanTitle = "Eile",
+        germanFlavor = "Bis zur Sonne, in neunzig Minuten. Die Uhr läuft nur, wenn du spielst.",
         rule = ChallengeRule.Handicap(1.0),
         goal = ChallengeGoal.ReachTierWithin("Sonne", 90 * 60.0),
         reward = PrestigeEffect.ResearchSpeed(1.5),
@@ -138,8 +140,8 @@ enum class Challenge(
     ),
     ASKESE(
         id = "c_ascetic",
-        title = "Askese",
-        flavor = "Kein einziges Upgrade, den ganzen Weg bis zur Sonne. Nur Maschinen und Geduld.",
+        germanTitle = "Askese",
+        germanFlavor = "Kein einziges Upgrade, den ganzen Weg bis zur Sonne. Nur Maschinen und Geduld.",
         rule = ChallengeRule.NoUpgrades,
         goal = ChallengeGoal.ReachTier("Sonne"),
         reward = PrestigeEffect.GlobalMultiplier(3.0),
@@ -151,8 +153,8 @@ enum class Challenge(
     // by the third universe left the other five with nothing optional to do.
     SERIENSTOPP(
         id = "c_nomiles",
-        title = "Serienstopp",
-        flavor = "Jede Maschine zählt einzeln. Die Fertigungsstraßen haben Betriebsferien.",
+        germanTitle = "Serienstopp",
+        germanFlavor = "Jede Maschine zählt einzeln. Die Fertigungsstraßen haben Betriebsferien.",
         rule = ChallengeRule.NoMilestones,
         goal = ChallengeGoal.ReachTier("Roter Zwerg"),
         reward = PrestigeEffect.MilestoneBonus(0.04),
@@ -160,8 +162,8 @@ enum class Challenge(
     ),
     WACHDIENST(
         id = "c_nooffline",
-        title = "Wachdienst",
-        flavor = "Zugeklappt läuft nichts weiter. Was du willst, musst du sehen.",
+        germanTitle = "Wachdienst",
+        germanFlavor = "Zugeklappt läuft nichts weiter. Was du willst, musst du sehen.",
         rule = ChallengeRule.NoOffline,
         goal = ChallengeGoal.ReachTier("Blauer Riese"),
         reward = PrestigeEffect.OfflineEfficiency(1.0),
@@ -169,8 +171,8 @@ enum class Challenge(
     ),
     KALTE_KETTE(
         id = "c_nofusion",
-        title = "Kalte Kette",
-        flavor = "Kein Ofen brennt. Schwere Kerne musst du diesmal woanders herbekommen.",
+        germanTitle = "Kalte Kette",
+        germanFlavor = "Kein Ofen brennt. Schwere Kerne musst du diesmal woanders herbekommen.",
         rule = ChallengeRule.NoFusion,
         goal = ChallengeGoal.ReachTier("Neutronenstern"),
         reward = PrestigeEffect.FusionRate(2.0),
@@ -178,8 +180,8 @@ enum class Challenge(
     ),
     EINSAMES_UNIVERSUM(
         id = "c_nosky",
-        title = "Einsames Universum",
-        flavor = "Die anderen Galaxien schweigen. Dieses hier schafft es allein oder gar nicht.",
+        germanTitle = "Einsames Universum",
+        germanFlavor = "Die anderen Galaxien schweigen. Dieses hier schafft es allein oder gar nicht.",
         rule = ChallengeRule.NoSky,
         goal = ChallengeGoal.ReachTier("Schwarzes Loch"),
         reward = PrestigeEffect.GlobalMultiplier(4.0),
@@ -187,8 +189,8 @@ enum class Challenge(
     ),
     HANDBETRIEB(
         id = "c_hand2",
-        title = "Handbetrieb",
-        flavor = "Noch einmal ohne Flotte, und diesmal bis zur Sonne.",
+        germanTitle = "Handbetrieb",
+        germanFlavor = "Noch einmal ohne Flotte, und diesmal bis zur Sonne.",
         rule = ChallengeRule.NoCollectors,
         goal = ChallengeGoal.ReachTier("Sonne"),
         reward = PrestigeEffect.TapMultiplier(6.0),
@@ -196,8 +198,8 @@ enum class Challenge(
     ),
     VIERTELKRAFT(
         id = "c_quarter",
-        title = "Viertelkraft",
-        flavor = "Alles bringt ein Viertel. Bis zum Schwarzen Loch trotzdem.",
+        germanTitle = "Viertelkraft",
+        germanFlavor = "Alles bringt ein Viertel. Bis zum Schwarzen Loch trotzdem.",
         rule = ChallengeRule.Handicap(0.25),
         goal = ChallengeGoal.ReachTier("Schwarzes Loch"),
         reward = PrestigeEffect.GlobalMultiplier(6.0),
@@ -205,8 +207,8 @@ enum class Challenge(
     ),
     HETZE(
         id = "c_dash",
-        title = "Hetze",
-        flavor = "Bis zum Schwarzen Loch, in zwei Stunden. Die Uhr läuft nur, wenn du spielst.",
+        germanTitle = "Hetze",
+        germanFlavor = "Bis zum Schwarzen Loch, in zwei Stunden. Die Uhr läuft nur, wenn du spielst.",
         rule = ChallengeRule.Handicap(1.0),
         goal = ChallengeGoal.ReachTierWithin("Schwarzes Loch", 120 * 60.0),
         reward = PrestigeEffect.SingularityGain(1.6),
@@ -214,8 +216,8 @@ enum class Challenge(
     ),
     ROHBAU_ZWEI(
         id = "c_raw2",
-        title = "Rohbau II",
-        flavor = "Der Laden bleibt zu, den ganzen Weg bis zum Schwarzen Loch.",
+        germanTitle = "Rohbau II",
+        germanFlavor = "Der Laden bleibt zu, den ganzen Weg bis zum Schwarzen Loch.",
         rule = ChallengeRule.NoUpgrades,
         goal = ChallengeGoal.ReachTier("Schwarzes Loch"),
         reward = PrestigeEffect.MilestoneBonus(0.05),
@@ -223,30 +225,46 @@ enum class Challenge(
     ),
     ;
 
-    /** What the goal asks for, as a line the player can read. */
+    val title: String get() = Lang.t(germanTitle)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
+    /**
+     * What the goal asks for, as a line the player can read.
+     *
+     * The body's name arrives already translated — [Tiers.nameOf] goes through [Lang] — so the
+     * template takes it as a value. Written the other way round, as a translated fragment glued
+     * into a German frame, an English goal would read "Reach in 20 minutes Black Hole".
+     */
     val goalText: String
         get() = when (goal) {
-            is ChallengeGoal.ReachTier -> "Erreiche ${goal.tierName}"
+            is ChallengeGoal.ReachTier -> Lang.t("Erreiche %s", Lang.t(goal.tierName))
             is ChallengeGoal.ReachTierWithin ->
-                "Erreiche ${goal.tierName} in ${Numbers.formatDuration(goal.seconds.toLong())}"
+                Lang.t(
+                    "Erreiche %s in %s",
+                    Lang.t(goal.tierName),
+                    Numbers.formatDuration(goal.seconds.toLong()),
+                )
         }
 
     val ruleText: String
         get() = when (rule) {
-            is ChallengeRule.NoCollectors -> "Kollektoren produzieren nichts"
+            is ChallengeRule.NoCollectors -> Lang.t("Kollektoren produzieren nichts")
             is ChallengeRule.NoTaps ->
-                "Tippen bringt nichts, Kollektoren nur " +
-                    Numbers.formatPercent(ChallengeRule.NoTaps.COLLECTOR_POWER)
+                Lang.t(
+                    "Tippen bringt nichts, Kollektoren nur %s",
+                    Numbers.formatPercent(ChallengeRule.NoTaps.COLLECTOR_POWER),
+                )
             is ChallengeRule.Handicap ->
-                if (rule.factor >= 1.0) "Keine Einschränkung"
-                else "Alles bringt nur ${Numbers.formatPercent(rule.factor)}"
+                if (rule.factor >= 1.0) Lang.t("Keine Einschränkung")
+                else Lang.t("Alles bringt nur %s", Numbers.formatPercent(rule.factor))
 
-            is ChallengeRule.NoUpgrades -> "Der Upgrade-Laden bleibt zu"
-            is ChallengeRule.NoOrbits -> "Nichts hält sich auf einer Bahn"
-            is ChallengeRule.NoMilestones -> "Keine Meilenstein-Boni"
-            is ChallengeRule.NoOffline -> "Geschlossen zählt nicht"
-            is ChallengeRule.NoFusion -> "Die Fusionskette bleibt kalt"
-            is ChallengeRule.NoSky -> "Die Galaxien tragen nichts bei"
+            is ChallengeRule.NoUpgrades -> Lang.t("Der Upgrade-Laden bleibt zu")
+            is ChallengeRule.NoOrbits -> Lang.t("Nichts hält sich auf einer Bahn")
+            is ChallengeRule.NoMilestones -> Lang.t("Keine Meilenstein-Boni")
+            is ChallengeRule.NoOffline -> Lang.t("Geschlossen zählt nicht")
+            is ChallengeRule.NoFusion -> Lang.t("Die Fusionskette bleibt kalt")
+            is ChallengeRule.NoSky -> Lang.t("Die Galaxien tragen nichts bei")
         }
 
     /** Whether this one, on its own, has been met by the state given. */

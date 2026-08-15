@@ -24,7 +24,7 @@ data class Investment(
     val germanName: String,
     val germanFlavor: String,
     /** What a level says it does, for the row. */
-    val perLevel: String,
+    val germanPerLevel: String,
     val baseCost: Double,
     /** Price multiplier per level already owned. */
     val growth: Double,
@@ -41,6 +41,9 @@ data class Investment(
     /** Shown text, translated where a translation exists. */
     val name: String get() = Lang.t(germanName)
     val flavor: String get() = Lang.t(germanFlavor)
+
+    /** What one more level buys, for the row. Named like every other catalogue's effect line. */
+    val effectText: String get() = Lang.t(germanPerLevel)
 
     /** Price of going from [level] to [level] + 1. */
     fun costAt(level: Int): Double = baseCost * growth.pow(level)
@@ -67,7 +70,7 @@ object Investments {
             id = "i_start_mass",
             germanName = "Rücklagenkonto",
             germanFlavor = "Jeder Durchlauf legt etwas zur Seite, das der nächste vorfindet.",
-            perLevel = "je Stufe ×4 Startmasse",
+            germanPerLevel = "je Stufe ×4 Startmasse",
             baseCost = 4.0,
             growth = 1.26,
             maxLevel = 120,
@@ -80,7 +83,7 @@ object Investments {
             id = "i_tap",
             germanName = "Muskelgedächtnis",
             germanFlavor = "Die Hand weiß, wo sie hinschlägt, bevor der Kopf es merkt.",
-            perLevel = "je Stufe +30 % pro Tipp",
+            germanPerLevel = "je Stufe +30 % pro Tipp",
             baseCost = 5.0,
             growth = 1.28,
             maxLevel = 60,
@@ -90,7 +93,7 @@ object Investments {
             id = "i_global",
             germanName = "Verdichtung",
             germanFlavor = "Was oft genug durch einen Horizont ging, bleibt dichter zurück.",
-            perLevel = "je Stufe +12 % auf alles",
+            germanPerLevel = "je Stufe +12 % auf alles",
             baseCost = 8.0,
             growth = 1.32,
             maxLevel = 80,
@@ -101,7 +104,7 @@ object Investments {
             id = "i_comets",
             germanName = "Bahnrechnung",
             germanFlavor = "Du weißt inzwischen nicht nur wo, sondern auch wann.",
-            perLevel = "je Stufe +15 % Kometen",
+            germanPerLevel = "je Stufe +15 % Kometen",
             baseCost = 7.0,
             growth = 1.30,
             maxLevel = 25,
@@ -112,7 +115,7 @@ object Investments {
             id = "i_offline_cap",
             germanName = "Tiefkühlhalle",
             germanFlavor = "Reihe um Reihe Kammern, und alle nehmen weiter an.",
-            perLevel = "je Stufe +3 Stunden offline",
+            germanPerLevel = "je Stufe +3 Stunden offline",
             baseCost = 9.0,
             growth = 1.30,
             maxLevel = 40,
@@ -123,7 +126,7 @@ object Investments {
             id = "i_offline_share",
             germanName = "Nachtschicht",
             germanFlavor = "Irgendwann arbeitet die Flotte ohne dich genauso gut wie mit dir.",
-            perLevel = "je Stufe +4 Punkte Offline-Ausbeute",
+            germanPerLevel = "je Stufe +4 Punkte Offline-Ausbeute",
             baseCost = 10.0,
             growth = 1.34,
             // Twelve levels is the whole way from the base share to everything; beyond that a
@@ -140,7 +143,7 @@ object Investments {
             id = "i_fleet",
             germanName = "Eingelagerte Flotte",
             germanFlavor = "Nicht die Anlagen überleben den Kollaps, sondern das Lagerverzeichnis.",
-            perLevel = "je Stufe +3 je freigeschaltetem Kollektor",
+            germanPerLevel = "je Stufe +3 je freigeschaltetem Kollektor",
             baseCost = 16.0,
             growth = 1.34,
             maxLevel = 200,
@@ -151,7 +154,7 @@ object Investments {
             id = "i_milestone",
             germanName = "Serienfertigung",
             germanFlavor = "Jede fünfundzwanzigste Maschine ist ein bisschen besser als die davor.",
-            perLevel = "je Stufe +1 Punkt je Meilenstein",
+            germanPerLevel = "je Stufe +1 Punkt je Meilenstein",
             baseCost = 22.0,
             growth = 1.36,
             maxLevel = 60,
@@ -162,7 +165,7 @@ object Investments {
             id = "i_fusion",
             germanName = "Brennkammern",
             germanFlavor = "Mehr Öfen an derselben Kette, alle mit demselben Feuer.",
-            perLevel = "je Stufe +20 % Fusionstempo",
+            germanPerLevel = "je Stufe +20 % Fusionstempo",
             baseCost = 26.0,
             growth = 1.32,
             maxLevel = 100,
@@ -173,7 +176,7 @@ object Investments {
             id = "i_research",
             germanName = "Zweite Schicht",
             germanFlavor = "Das Labor läuft jetzt auch nachts. Warten muss man trotzdem.",
-            perLevel = "je Stufe +15 % Forschungstempo",
+            germanPerLevel = "je Stufe +15 % Forschungstempo",
             baseCost = 30.0,
             growth = 1.34,
             maxLevel = 80,
@@ -184,7 +187,7 @@ object Investments {
             id = "i_bonus",
             germanName = "Gebündelte Enden",
             germanFlavor = "Singularitäten liegen dichter, wenn man sie ordentlich stapelt.",
-            perLevel = "je Stufe +2 Punkte je Singularität",
+            germanPerLevel = "je Stufe +2 Punkte je Singularität",
             baseCost = 35.0,
             growth = 1.38,
             maxLevel = 100,
@@ -198,7 +201,7 @@ object Investments {
             germanName = "Sauberer Schnitt",
             germanFlavor = "Beim nächsten Kollaps geht weniger daneben.",
             // The one that pays in its own currency, so it is the steepest and the shortest.
-            perLevel = "je Stufe +8 % Singularitäten je Kollaps",
+            germanPerLevel = "je Stufe +8 % Singularitäten je Kollaps",
             baseCost = 45.0,
             growth = 1.45,
             // Left at twenty-five while every other ceiling was raised, and deliberately so. This
@@ -213,7 +216,7 @@ object Investments {
             id = "i_autotap",
             germanName = "Fremde Finger",
             germanFlavor = "Irgendwo tippt etwas weiter, das du nie eingestellt hast.",
-            perLevel = "je Stufe +2 Tipps je Sekunde",
+            germanPerLevel = "je Stufe +2 Tipps je Sekunde",
             baseCost = 28.0,
             growth = 1.33,
             maxLevel = 80,

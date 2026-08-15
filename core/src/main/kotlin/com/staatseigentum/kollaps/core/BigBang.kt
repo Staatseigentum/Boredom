@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.sqrt
@@ -92,11 +93,15 @@ object BigBang {
 /** Something bought with Äonen. Survives everything, including the big bang that paid for it. */
 data class AeonUpgrade(
     val id: String,
-    val name: String,
-    val flavor: String,
+    val germanName: String,
+    val germanFlavor: String,
     val cost: Double,
     val effect: PrestigeEffect,
 ) {
+    val name: String get() = Lang.t(germanName)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
     val effectText: String get() = effect.text
 }
 
@@ -105,57 +110,57 @@ object AeonUpgrades {
     val all: List<AeonUpgrade> = listOf(
         AeonUpgrade(
             id = "ae_global_1",
-            name = "Erste Ausdehnung",
-            flavor = "Der Raum selbst arbeitet für dich, seit du ihn einmal neu gefaltet hast.",
+            germanName = "Erste Ausdehnung",
+            germanFlavor = "Der Raum selbst arbeitet für dich, seit du ihn einmal neu gefaltet hast.",
             cost = 1.0,
             effect = PrestigeEffect.GlobalMultiplier(10.0),
         ),
         AeonUpgrade(
             id = "ae_start_mass",
-            name = "Übriggebliebene Materie",
-            flavor = "Ein Universum später findet sich immer noch etwas in den Taschen.",
+            germanName = "Übriggebliebene Materie",
+            germanFlavor = "Ein Universum später findet sich immer noch etwas in den Taschen.",
             cost = 2.0,
             effect = PrestigeEffect.StartingMass(2_000_000_000.0),
         ),
         AeonUpgrade(
             id = "ae_singularity",
-            name = "Dichteres Nichts",
-            flavor = "Jede Singularität wiegt schwerer als in der Welt davor.",
+            germanName = "Dichteres Nichts",
+            germanFlavor = "Jede Singularität wiegt schwerer als in der Welt davor.",
             cost = 3.0,
             effect = PrestigeEffect.SingularityBonus(0.25),
         ),
         AeonUpgrade(
             id = "ae_auto",
-            name = "Ewiges Schlagwerk",
-            flavor = "Es hat vor diesem Universum getippt und wird nach ihm weitertippen.",
+            germanName = "Ewiges Schlagwerk",
+            germanFlavor = "Es hat vor diesem Universum getippt und wird nach ihm weitertippen.",
             cost = 4.0,
             effect = PrestigeEffect.AutoTap(30.0),
         ),
         AeonUpgrade(
             id = "ae_milestone",
-            name = "Eingespielte Serien",
-            flavor = "Die Fertigungsstraßen erinnern sich an jede Auflage, die es je gab.",
+            germanName = "Eingespielte Serien",
+            germanFlavor = "Die Fertigungsstraßen erinnern sich an jede Auflage, die es je gab.",
             cost = 5.0,
             effect = PrestigeEffect.MilestoneBonus(0.10),
         ),
         AeonUpgrade(
             id = "ae_collectors",
-            name = "Mitgenommene Flotte",
-            flavor = "Hundert Stück von allem, noch bevor der erste Stein fällt.",
+            germanName = "Mitgenommene Flotte",
+            germanFlavor = "Hundert Stück von allem, noch bevor der erste Stein fällt.",
             cost = 6.0,
             effect = PrestigeEffect.StartingCollectors(100),
         ),
         AeonUpgrade(
             id = "ae_comet",
-            name = "Dichter Kometenstrom",
-            flavor = "Die Trümmer des letzten Universums ziehen immer noch vorbei.",
+            germanName = "Dichter Kometenstrom",
+            germanFlavor = "Die Trümmer des letzten Universums ziehen immer noch vorbei.",
             cost = 8.0,
             effect = PrestigeEffect.CometFrequency(3.0),
         ),
         AeonUpgrade(
             id = "ae_global_2",
-            name = "Zweite Ausdehnung",
-            flavor = "Und noch einmal, und diesmal weiß der Raum schon, wie es geht.",
+            germanName = "Zweite Ausdehnung",
+            germanFlavor = "Und noch einmal, und diesmal weiß der Raum schon, wie es geht.",
             cost = 12.0,
             effect = PrestigeEffect.GlobalMultiplier(50.0),
         ),
@@ -165,43 +170,43 @@ object AeonUpgrades {
         // something.
         AeonUpgrade(
             id = "ae_fusion",
-            name = "Ewiges Feuer",
-            flavor = "Es brannte im letzten Universum und hat den Übergang nicht bemerkt.",
+            germanName = "Ewiges Feuer",
+            germanFlavor = "Es brannte im letzten Universum und hat den Übergang nicht bemerkt.",
             cost = 16.0,
             effect = PrestigeEffect.FusionRate(5.0),
         ),
         AeonUpgrade(
             id = "ae_research",
-            name = "Übertragene Bibliothek",
-            flavor = "Ein Labor, das schon weiß, was es diesmal herausfinden wird.",
+            germanName = "Übertragene Bibliothek",
+            germanFlavor = "Ein Labor, das schon weiß, was es diesmal herausfinden wird.",
             cost = 22.0,
             effect = PrestigeEffect.ResearchSpeed(4.0),
         ),
         AeonUpgrade(
             id = "ae_offline",
-            name = "Langer Atem",
-            flavor = "Vier Tage Abwesenheit sind für eine Galaxie keine Erwähnung wert.",
+            germanName = "Langer Atem",
+            germanFlavor = "Vier Tage Abwesenheit sind für eine Galaxie keine Erwähnung wert.",
             cost = 30.0,
             effect = PrestigeEffect.OfflineCapHours(96.0),
         ),
         AeonUpgrade(
             id = "ae_global_3",
-            name = "Dritte Ausdehnung",
-            flavor = "Der Raum dehnt sich inzwischen, ohne dass jemand es anstößt.",
+            germanName = "Dritte Ausdehnung",
+            germanFlavor = "Der Raum dehnt sich inzwischen, ohne dass jemand es anstößt.",
             cost = 40.0,
             effect = PrestigeEffect.GlobalMultiplier(250.0),
         ),
         AeonUpgrade(
             id = "ae_collectors_2",
-            name = "Vollständige Werft",
-            flavor = "Fünfhundert Stück von allem, und die Baupläne für den Rest.",
+            germanName = "Vollständige Werft",
+            germanFlavor = "Fünfhundert Stück von allem, und die Baupläne für den Rest.",
             cost = 55.0,
             effect = PrestigeEffect.StartingCollectors(500),
         ),
         AeonUpgrade(
             id = "ae_global_4",
-            name = "Letzte Ausdehnung",
-            flavor = "Danach kommt nichts mehr. Es sei denn, du machst weiter.",
+            germanName = "Letzte Ausdehnung",
+            germanFlavor = "Danach kommt nichts mehr. Es sei denn, du machst weiter.",
             cost = 75.0,
             effect = PrestigeEffect.GlobalMultiplier(1_500.0),
         ),

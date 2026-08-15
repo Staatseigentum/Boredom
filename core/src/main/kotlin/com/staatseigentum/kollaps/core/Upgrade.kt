@@ -125,33 +125,51 @@ data class Upgrade(
     val effectText: String
         get() = when (effect) {
             is UpgradeEffect.TapFlat ->
-                "+${Numbers.format(effect.amount)} kg pro Tipp"
+                Lang.t("+%s kg pro Tipp", Numbers.format(effect.amount))
 
             is UpgradeEffect.TapMultiplier ->
-                "${Numbers.formatMultiplier(effect.factor)} Masse pro Tipp"
+                Lang.t("%s Masse pro Tipp", Numbers.formatMultiplier(effect.factor))
 
+            // The collector's name is already translated by the time it arrives here, so the
+            // template takes it as a value rather than being written around it. That is the whole
+            // reason these are templates: a sentence glued together from translated fragments can
+            // only ever have German word order with English words in it.
             is UpgradeEffect.CollectorMultiplier ->
-                "${Numbers.formatMultiplier(effect.factor)} ${nameOf(effect.collectorId)}"
+                Lang.t(
+                    "%s %s",
+                    Numbers.formatMultiplier(effect.factor),
+                    nameOf(effect.collectorId),
+                )
 
             is UpgradeEffect.CollectorSynergy ->
-                "Jeder ${nameOf(effect.sourceId)} gibt ${nameOf(effect.targetId)} " +
-                    "+${Numbers.formatPercent(effect.perUnit)}"
+                Lang.t(
+                    "Jeder %s gibt %s +%s",
+                    nameOf(effect.sourceId),
+                    nameOf(effect.targetId),
+                    Numbers.formatPercent(effect.perUnit),
+                )
 
             is UpgradeEffect.FleetSynergy ->
-                "Jeder ${nameOf(effect.sourceId)} gibt allen Kollektoren " +
-                    "+${Numbers.formatPercent(effect.perUnit)}"
+                Lang.t(
+                    "Jeder %s gibt allen Kollektoren +%s",
+                    nameOf(effect.sourceId),
+                    Numbers.formatPercent(effect.perUnit),
+                )
 
             is UpgradeEffect.GlobalMultiplier ->
-                "${Numbers.formatMultiplier(effect.factor)} auf alles"
+                Lang.t("%s auf alles", Numbers.formatMultiplier(effect.factor))
 
             is UpgradeEffect.TapFromProduction ->
-                "Tippen gibt zusätzlich ${Numbers.formatPercent(effect.fraction)} deiner Produktion"
+                Lang.t(
+                    "Tippen gibt zusätzlich %s deiner Produktion",
+                    Numbers.formatPercent(effect.fraction),
+                )
 
             is UpgradeEffect.OfflineEfficiency ->
-                "Offline-Ertrag auf ${Numbers.formatPercent(effect.fraction)}"
+                Lang.t("Offline-Ertrag auf %s", Numbers.formatPercent(effect.fraction))
 
             is UpgradeEffect.OfflineCapHours ->
-                "Offline-Zeit zählt bis zu ${effect.hours.toInt()} Stunden"
+                Lang.t("Offline-Zeit zählt bis zu %s Stunden", effect.hours.toInt())
         }
 }
 

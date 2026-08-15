@@ -1,7 +1,26 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /** One line of the story, and what earned it. */
-data class Fragment(val id: String, val source: String, val text: String)
+/**
+ * One line of the chronicle, and what occasioned it.
+ *
+ * [count] is the number in "third collapse" and `null` for a line hung on a body, whose name is
+ * its own source. It is a value rather than part of the string so that the ordinal reads correctly
+ * in both languages — German writes "3. Kollaps" and English writes "Collapse 3", and no amount of
+ * gluing gets from one to the other.
+ */
+data class Fragment(
+    val id: String,
+    val germanSource: String,
+    val germanText: String,
+    val count: Int? = null,
+) {
+    val source: String get() = if (count == null) Lang.t(germanSource) else Lang.t(germanSource, count)
+
+    val text: String get() = Lang.t(germanText)
+}
 
 /**
  * The game's only voice.
@@ -67,21 +86,21 @@ object Lore {
     /** The line for reaching a rung, or `null` if the ladder has grown past the text. */
     fun forTier(index: Int): Fragment? {
         val text = LADDER.getOrNull(index) ?: return null
-        return Fragment("lore_tier_$index", Tiers.byIndex(index).label, text)
+        return Fragment("lore_tier_$index", Tiers.byIndex(index).germanName, text)
     }
 
     /** The line for the *n*-th collapse, counting from one. */
     fun forCollapse(count: Int): Fragment? {
         if (count < 1) return null
         val text = COLLAPSES[(count - 1).coerceAtMost(COLLAPSES.lastIndex)]
-        return Fragment("lore_collapse_$count", "$count. Kollaps", text)
+        return Fragment("lore_collapse_$count", "%s. Kollaps", text, count)
     }
 
     /** The line for the *n*-th big bang, counting from one. */
     fun forBigBang(count: Int): Fragment? {
         if (count < 1) return null
         val text = BANGS[(count - 1).coerceAtMost(BANGS.lastIndex)]
-        return Fragment("lore_bang_$count", "$count. Urknall", text)
+        return Fragment("lore_bang_$count", "%s. Urknall", text, count)
     }
 
     /**
@@ -104,6 +123,18 @@ object Lore {
 
     /** How many there are to find in total, for the header of the list. */
     val total: Int get() = LADDER.size + COLLAPSES.size + BANGS.size
+
+    /**
+     * Every line, in German, for the translation collector.
+     *
+     * The three lists are private because nothing outside should index into them — a line is
+     * reached through [forTier] and its neighbours, which know which moment belongs to which list.
+     * This is the one exception, and it reads them whole rather than indexing.
+     */
+    val allLines: List<String> get() = LADDER + COLLAPSES + BANGS + SOURCES
+
+    /** The two source templates, which are display text as much as the lines are. */
+    private val SOURCES = listOf("%s. Kollaps", "%s. Urknall")
 
     /** Whether there is anything to show yet. One line on the first rung is not a chronicle. */
     fun isWorthShowing(state: GameState): Boolean = unlocked(state).size >= 2

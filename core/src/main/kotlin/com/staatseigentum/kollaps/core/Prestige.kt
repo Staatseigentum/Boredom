@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+
 /** What a prestige upgrade changes. Every one of these survives a collapse. */
 sealed interface PrestigeEffect {
     /** Raises the share of production credited while the app is closed. */
@@ -75,64 +77,70 @@ sealed interface PrestigeEffect {
 val PrestigeEffect.text: String
     get() = when (this) {
         is PrestigeEffect.OfflineEfficiency ->
-            "Offline-Ertrag mindestens ${Numbers.formatPercent(fraction)}"
+            Lang.t("Offline-Ertrag mindestens %s", Numbers.formatPercent(fraction))
 
         is PrestigeEffect.OfflineCapHours ->
-            "Offline-Zeit zählt bis zu ${hours.toInt()} Stunden"
+            Lang.t("Offline-Zeit zählt bis zu %s Stunden", hours.toInt())
 
         is PrestigeEffect.StartingCollectors ->
             // "Jeder freigeschaltete" and not "jeder". The head start covers the machines the shop
             // will actually sell, which is not every machine in the game — the catalogue fleet is
             // out until its ladder opens. The sentence used to promise all of them, and for a
             // while it delivered on that promise, which is how the dead buy button got made.
-            "Jeder freigeschaltete Kollektor startet mit $count Stück"
+            Lang.t("Jeder freigeschaltete Kollektor startet mit %s Stück", count)
 
         is PrestigeEffect.StartingMass ->
-            "Start mit ${Numbers.formatMass(mass)}"
+            Lang.t("Start mit %s", Numbers.formatMass(mass))
 
         is PrestigeEffect.CometFrequency ->
-            "Kometen kommen ${Numbers.formatMultiplier(factor)} so oft"
+            Lang.t("Kometen kommen %s so oft", Numbers.formatMultiplier(factor))
 
         is PrestigeEffect.GlobalMultiplier ->
-            "${Numbers.formatMultiplier(factor)} auf alles, dauerhaft"
+            Lang.t("%s auf alles, dauerhaft", Numbers.formatMultiplier(factor))
 
         is PrestigeEffect.SingularityGain ->
-            "${Numbers.formatMultiplier(factor)} Singularitäten je Kollaps"
+            Lang.t("%s Singularitäten je Kollaps", Numbers.formatMultiplier(factor))
 
         is PrestigeEffect.TapMultiplier ->
-            "${Numbers.formatMultiplier(factor)} Masse pro Tipp, dauerhaft"
+            Lang.t("%s Masse pro Tipp, dauerhaft", Numbers.formatMultiplier(factor))
 
         is PrestigeEffect.AutoTap ->
-            "Tippt ${Numbers.format(perSecond)}× pro Sekunde von allein"
+            Lang.t("Tippt %s× pro Sekunde von allein", Numbers.format(perSecond))
 
         is PrestigeEffect.SingularityBonus ->
-            "Jede Singularität gibt ${Numbers.formatPercent(perSingularity)} statt " +
-                "${Numbers.formatPercent(GameEngine.SINGULARITY_BONUS)}"
+            Lang.t(
+                "Jede Singularität gibt %s statt %s",
+                Numbers.formatPercent(perSingularity),
+                Numbers.formatPercent(GameEngine.SINGULARITY_BONUS),
+            )
 
         is PrestigeEffect.AutoBuy ->
-            "Kauft Kollektoren von allein, sobald du das Vierfache übrig hast"
+            Lang.t("Kauft Kollektoren von allein, sobald du das Vierfache übrig hast")
 
         is PrestigeEffect.MilestoneBonus ->
-            "Jeder Meilenstein gibt ${Numbers.formatPercent(Milestones.FACTOR - 1.0 + extra)} " +
-                "statt ${Numbers.formatPercent(Milestones.FACTOR - 1.0)}"
+            Lang.t(
+                "Jeder Meilenstein gibt %s statt %s",
+                Numbers.formatPercent(Milestones.FACTOR - 1.0 + extra),
+                Numbers.formatPercent(Milestones.FACTOR - 1.0),
+            )
 
         is PrestigeEffect.FusionRate ->
-            "Jede Fusionsstufe läuft ${Numbers.formatMultiplier(factor)} so schnell"
+            Lang.t("Jede Fusionsstufe läuft %s so schnell", Numbers.formatMultiplier(factor))
 
         is PrestigeEffect.ResearchSpeed ->
-            "Forschung dauert nur noch ${Numbers.formatPercent(1.0 / factor)} der Zeit"
+            Lang.t("Forschung dauert nur noch %s der Zeit", Numbers.formatPercent(1.0 / factor))
 
         is PrestigeEffect.SkyYield ->
-            "Galaxien wiegen ${Numbers.formatMultiplier(factor)} so schwer"
+            Lang.t("Galaxien wiegen %s so schwer", Numbers.formatMultiplier(factor))
 
         is PrestigeEffect.OrbitYield ->
-            "Trabanten liefern ${Numbers.formatMultiplier(factor)}"
+            Lang.t("Trabanten liefern %s", Numbers.formatMultiplier(factor))
 
         is PrestigeEffect.MetalYield ->
-            "Der Kollaps schmiedet ${Numbers.formatMultiplier(factor)} Metall"
+            Lang.t("Der Kollaps schmiedet %s Metall", Numbers.formatMultiplier(factor))
 
         is PrestigeEffect.ContractBonus ->
-            "Jeder Auftrag zahlt ${Numbers.format(extra)} Äonen extra"
+            Lang.t("Jeder Auftrag zahlt %s Äonen extra", Numbers.format(extra))
     }
 
 /**
@@ -144,14 +152,18 @@ val PrestigeEffect.text: String
  */
 data class PrestigeUpgrade(
     val id: String,
-    val name: String,
-    val flavor: String,
+    val germanName: String,
+    val germanFlavor: String,
     /** Singularities it costs. */
     val cost: Double,
     val effect: PrestigeEffect,
     /** Collapses the player needs before this is even shown. */
     val requiredCollapses: Int = 0,
 ) {
+    val name: String get() = Lang.t(germanName)
+
+    val flavor: String get() = Lang.t(germanFlavor)
+
     val effectText: String get() = effect.text
 }
 
@@ -160,100 +172,100 @@ object PrestigeUpgrades {
     val all: List<PrestigeUpgrade> = listOf(
         PrestigeUpgrade(
             id = "p_offline_1",
-            name = "Wache Drohnen",
-            flavor = "Sie hören nicht auf, nur weil du weg bist.",
+            germanName = "Wache Drohnen",
+            germanFlavor = "Sie hören nicht auf, nur weil du weg bist.",
             cost = 3.0,
             effect = PrestigeEffect.OfflineEfficiency(1.0),
         ),
         PrestigeUpgrade(
             id = "p_start_mass",
-            name = "Rücklage",
-            flavor = "Ein Rest Masse, den der Kollaps nicht mitgenommen hat.",
+            germanName = "Rücklage",
+            germanFlavor = "Ein Rest Masse, den der Kollaps nicht mitgenommen hat.",
             cost = 5.0,
             effect = PrestigeEffect.StartingMass(50_000.0),
         ),
         PrestigeUpgrade(
             id = "p_tap",
-            name = "Eingeübter Griff",
-            flavor = "Die Hände erinnern sich an jeden Durchlauf.",
+            germanName = "Eingeübter Griff",
+            germanFlavor = "Die Hände erinnern sich an jeden Durchlauf.",
             cost = 6.0,
             effect = PrestigeEffect.TapMultiplier(5.0),
         ),
         PrestigeUpgrade(
             id = "p_comet_1",
-            name = "Kometenbahn",
-            flavor = "Du weißt inzwischen, wo man wartet.",
+            germanName = "Kometenbahn",
+            germanFlavor = "Du weißt inzwischen, wo man wartet.",
             cost = 8.0,
             effect = PrestigeEffect.CometFrequency(2.0),
         ),
         PrestigeUpgrade(
             id = "p_auto_1",
-            name = "Kleiner Automat",
-            flavor = "Ein Arm, ein Motor, ein Takt. Er wird nicht müde und beschwert sich nie.",
+            germanName = "Kleiner Automat",
+            germanFlavor = "Ein Arm, ein Motor, ein Takt. Er wird nicht müde und beschwert sich nie.",
             cost = 12.0,
             effect = PrestigeEffect.AutoTap(3.0),
             requiredCollapses = 1,
         ),
         PrestigeUpgrade(
             id = "p_auto_2",
-            name = "Schlagwerk",
-            flavor = "Zehn Arme im Takt. Du darfst zusehen — oder mittippen, das zählt dazu.",
+            germanName = "Schlagwerk",
+            germanFlavor = "Zehn Arme im Takt. Du darfst zusehen — oder mittippen, das zählt dazu.",
             cost = 40.0,
             effect = PrestigeEffect.AutoTap(10.0),
             requiredCollapses = 2,
         ),
         PrestigeUpgrade(
             id = "p_offline_2",
-            name = "Langzeitspeicher",
-            flavor = "Lagert die Ausbeute einen ganzen Tag lang ein.",
+            germanName = "Langzeitspeicher",
+            germanFlavor = "Lagert die Ausbeute einen ganzen Tag lang ein.",
             cost = 10.0,
             effect = PrestigeEffect.OfflineCapHours(24.0),
             requiredCollapses = 1,
         ),
         PrestigeUpgrade(
             id = "p_collectors_1",
-            name = "Bewahrte Baupläne",
-            flavor = "Der Kollaps frisst die Anlagen, nicht das Wissen.",
+            germanName = "Bewahrte Baupläne",
+            germanFlavor = "Der Kollaps frisst die Anlagen, nicht das Wissen.",
             cost = 15.0,
             effect = PrestigeEffect.StartingCollectors(5),
             requiredCollapses = 1,
         ),
         PrestigeUpgrade(
             id = "p_global_1",
-            name = "Verdichtete Materie",
-            flavor = "Was einmal durch ein schwarzes Loch ging, wiegt mehr.",
+            germanName = "Verdichtete Materie",
+            germanFlavor = "Was einmal durch ein schwarzes Loch ging, wiegt mehr.",
             cost = 20.0,
             effect = PrestigeEffect.GlobalMultiplier(3.0),
             requiredCollapses = 1,
         ),
         PrestigeUpgrade(
             id = "p_autobuy",
-            name = "Selbsttätige Beschaffung",
-            flavor = "Sie kauft nach, wenn reichlich da ist, und lässt dir den Rest für Upgrades.",
+            germanName = "Selbsttätige Beschaffung",
+            germanFlavor = "Sie kauft nach, wenn reichlich da ist, und lässt dir den Rest für Upgrades.",
             cost = 25.0,
             effect = PrestigeEffect.AutoBuy,
             requiredCollapses = 2,
         ),
         PrestigeUpgrade(
             id = "p_singularity",
-            name = "Saubere Trennung",
-            flavor = "Beim Kollabieren geht weniger verloren.",
+            germanName = "Saubere Trennung",
+            germanFlavor = "Beim Kollabieren geht weniger verloren.",
             cost = 30.0,
             effect = PrestigeEffect.SingularityGain(1.5),
             requiredCollapses = 2,
         ),
         PrestigeUpgrade(
             id = "p_collectors_2",
-            name = "Vorgefertigte Flotte",
-            flavor = "Der nächste Durchlauf beginnt nicht mehr bei null.",
+            germanName = "Vorgefertigte Flotte",
+            germanFlavor = "Der nächste Durchlauf beginnt nicht mehr bei null.",
             cost = 45.0,
             effect = PrestigeEffect.StartingCollectors(25),
             requiredCollapses = 2,
         ),
         PrestigeUpgrade(
             id = "p_global_2",
-            name = "Entropiekonto",
-            flavor = "Die Unordnung von neun Universen, gebündelt.",
+            germanName = "Entropiekonto",
+            germanFlavor = "Die Unordnung von neun Universen, gebündelt.",
             cost = 80.0,
             effect = PrestigeEffect.GlobalMultiplier(5.0),
             requiredCollapses = 3,
@@ -263,80 +275,80 @@ object PrestigeUpgrades {
         // third collapse left most of that road with nothing new on it.
         PrestigeUpgrade(
             id = "p_global_3",
-            name = "Dritte Ausdehnung",
-            flavor = "Der Raum hat sich daran gewöhnt, für dich zu arbeiten.",
+            germanName = "Dritte Ausdehnung",
+            germanFlavor = "Der Raum hat sich daran gewöhnt, für dich zu arbeiten.",
             cost = 150.0,
             effect = PrestigeEffect.GlobalMultiplier(8.0),
             requiredCollapses = 5,
         ),
         PrestigeUpgrade(
             id = "p_collectors_3",
-            name = "Vollständiges Lagerverzeichnis",
-            flavor = "Nicht mehr nur die Liste überlebt, sondern auch, wo alles stand.",
+            germanName = "Vollständiges Lagerverzeichnis",
+            germanFlavor = "Nicht mehr nur die Liste überlebt, sondern auch, wo alles stand.",
             cost = 220.0,
             effect = PrestigeEffect.StartingCollectors(80),
             requiredCollapses = 6,
         ),
         PrestigeUpgrade(
             id = "p_offline_3",
-            name = "Dauerbetrieb",
-            flavor = "Drei Tage ohne dich, und niemand hat gemerkt, dass du weg warst.",
+            germanName = "Dauerbetrieb",
+            germanFlavor = "Drei Tage ohne dich, und niemand hat gemerkt, dass du weg warst.",
             cost = 300.0,
             effect = PrestigeEffect.OfflineCapHours(72.0),
             requiredCollapses = 7,
         ),
         PrestigeUpgrade(
             id = "p_fusion_1",
-            name = "Durchgeheizt",
-            flavor = "Die Öfen gehen zwischen zwei Universen nicht mehr aus.",
+            germanName = "Durchgeheizt",
+            germanFlavor = "Die Öfen gehen zwischen zwei Universen nicht mehr aus.",
             cost = 400.0,
             effect = PrestigeEffect.FusionRate(2.5),
             requiredCollapses = 8,
         ),
         PrestigeUpgrade(
             id = "p_research_1",
-            name = "Übertragene Notizen",
-            flavor = "Was einmal verstanden wurde, muss nicht zweimal verstanden werden.",
+            germanName = "Übertragene Notizen",
+            germanFlavor = "Was einmal verstanden wurde, muss nicht zweimal verstanden werden.",
             cost = 550.0,
             effect = PrestigeEffect.ResearchSpeed(2.0),
             requiredCollapses = 10,
         ),
         PrestigeUpgrade(
             id = "p_auto_3",
-            name = "Unermüdlich",
-            flavor = "Dreißig Schläge in der Sekunde, und keiner davon von dir.",
+            germanName = "Unermüdlich",
+            germanFlavor = "Dreißig Schläge in der Sekunde, und keiner davon von dir.",
             cost = 700.0,
             effect = PrestigeEffect.AutoTap(30.0),
             requiredCollapses = 12,
         ),
         PrestigeUpgrade(
             id = "p_milestone_1",
-            name = "Eingefahrene Serien",
-            flavor = "Die Fertigung kennt jede Auflage, die es je gegeben hat.",
+            germanName = "Eingefahrene Serien",
+            germanFlavor = "Die Fertigung kennt jede Auflage, die es je gegeben hat.",
             cost = 900.0,
             effect = PrestigeEffect.MilestoneBonus(0.05),
             requiredCollapses = 14,
         ),
         PrestigeUpgrade(
             id = "p_comet_2",
-            name = "Dichter Trümmergürtel",
-            flavor = "Von acht Universen bleibt einiges liegen, und alles davon fliegt.",
+            germanName = "Dichter Trümmergürtel",
+            germanFlavor = "Von acht Universen bleibt einiges liegen, und alles davon fliegt.",
             cost = 1_100.0,
             effect = PrestigeEffect.CometFrequency(3.0),
             requiredCollapses = 16,
         ),
         PrestigeUpgrade(
             id = "p_global_4",
-            name = "Vierte Ausdehnung",
-            flavor = "Irgendwann fragt der Raum nicht mehr nach, er dehnt sich einfach.",
+            germanName = "Vierte Ausdehnung",
+            germanFlavor = "Irgendwann fragt der Raum nicht mehr nach, er dehnt sich einfach.",
             cost = 1_400.0,
             effect = PrestigeEffect.GlobalMultiplier(15.0),
             requiredCollapses = 18,
         ),
         PrestigeUpgrade(
             id = "p_singularity_2",
-            name = "Doppelter Schnitt",
-            flavor = "Zwei Singularitäten, wo vorher eine war. Frag nicht, welche die echte ist.",
+            germanName = "Doppelter Schnitt",
+            germanFlavor = "Zwei Singularitäten, wo vorher eine war. Frag nicht, welche die echte ist.",
             cost = 2_000.0,
             effect = PrestigeEffect.SingularityGain(2.0),
             requiredCollapses = 22,

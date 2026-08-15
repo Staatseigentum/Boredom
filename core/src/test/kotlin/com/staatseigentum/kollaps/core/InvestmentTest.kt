@@ -255,7 +255,7 @@ class InvestmentTest {
         for (item in Investments.all) {
             assertTrue(item.name.isNotBlank(), item.id)
             assertTrue(item.flavor.isNotBlank(), item.id)
-            assertTrue(item.perLevel.isNotBlank(), "${item.name} sagt nicht, was eine Stufe bringt")
+            assertTrue(item.effectText.isNotBlank(), "${item.name} sagt nicht, was eine Stufe bringt")
             assertTrue(item.baseCost > 0.0, item.name)
             assertTrue(item.maxLevel > 0, item.name)
             assertTrue(item.requiredCollapses >= 0, item.name)

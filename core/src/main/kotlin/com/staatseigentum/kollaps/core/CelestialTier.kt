@@ -83,6 +83,17 @@ data class CelestialTier(
     val isDesignated: Boolean get() = designation >= 0
 
     /**
+     * The German name, which is also this body's identity.
+     *
+     * [name] is not renamed the way every other catalogue's text was, because it is the key that
+     * `Tiers.byName`, the challenge goals and the achievements all look bodies up by. Renaming it
+     * would have meant renaming the thing that identifies a tier in order to translate the thing
+     * that displays it, which are two different jobs on the same field. So the field stays, and
+     * this alias exists purely so the translation collector can name it like the others.
+     */
+    val germanName: String get() = name
+
+    /**
      * The name as the player reads it. Everything on screen uses this; nothing keys off it.
      *
      * The designation is appended rather than translated with the body, because a catalogue number

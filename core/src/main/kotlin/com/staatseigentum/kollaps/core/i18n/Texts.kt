@@ -74,7 +74,10 @@ object Texts {
     private val content: List<String>
         get() = buildList {
             // ---- the ladder
-            for (tier in Tiers.all) add(tier.germanFlavor)
+            for (tier in Tiers.all) {
+                add(tier.germanName)
+                add(tier.germanFlavor)
+            }
 
             // ---- the fleet and the shop
             for (collector in Collectors.all) {
@@ -84,16 +87,29 @@ object Texts {
             for (upgrade in Upgrades.all) {
                 add(upgrade.germanName)
                 add(upgrade.germanFlavor)
+                add(upgrade.effectText)
             }
             for (role in Role.entries) {
                 add(role.germanLabel)
                 add(role.germanFlavor)
+                add(role.effectText)
             }
 
             // ---- prestige, in all three currencies
+            for (upgrade in PrestigeUpgrades.all) {
+                add(upgrade.germanName)
+                add(upgrade.germanFlavor)
+                add(upgrade.effectText)
+            }
             for (investment in Investments.all) {
                 add(investment.germanName)
                 add(investment.germanFlavor)
+                add(investment.effectText)
+            }
+            for (upgrade in AeonUpgrades.all) {
+                add(upgrade.germanName)
+                add(upgrade.germanFlavor)
+                add(upgrade.effectText)
             }
             for (path in Path.entries) {
                 add(path.germanLabel)
@@ -102,6 +118,7 @@ object Texts {
             for (node in PathTrees.all) {
                 add(node.germanName)
                 add(node.germanFlavor)
+                add(node.effectText)
             }
 
             // ---- the systems that unlock one after another
@@ -121,10 +138,12 @@ object Texts {
             for (alloy in Alloy.entries) {
                 add(alloy.germanLabel)
                 add(alloy.germanFlavor)
+                add(alloy.effectText)
             }
             for (project in ResearchTree.all) {
                 add(project.germanName)
                 add(project.germanFlavor)
+                add(project.effectText)
             }
             for (rule in AutomationRule.entries) {
                 add(rule.germanLabel)
@@ -172,7 +191,14 @@ object Texts {
             }
 
             // ---- what the game asks of you
+            for (challenge in Challenge.entries) {
+                add(challenge.germanTitle)
+                add(challenge.germanFlavor)
+                add(challenge.ruleText)
+                add(challenge.goalText)
+            }
             for (contract in Contract.all) add(contract.germanTitle)
+            addAll(Lore.allLines)
             for (achievement in Achievements.all) {
                 add(achievement.germanName)
                 add(achievement.germanFlavor)
@@ -228,13 +254,5 @@ object Texts {
      *
      * Every one of them is a text the player can read today, in German, in both languages.
      */
-    val PENDING: List<String> = listOf(
-        "CelestialTier.name — the twenty-five body names",
-        "PrestigeUpgrade / AeonUpgrade — name, flavor",
-        "Challenge — title, flavor, ruleText, goalText",
-        "Lore — the twenty-five ladder lines and the reset lines",
-        "PrestigeEffect.text — every effect sentence, and the templates in them",
-        "Upgrade / Role / PathNode / Alloy / Research effectText",
-        "Contract — the status line and its units",
-    )
+    val PENDING: List<String> = emptyList()
 }

@@ -349,7 +349,7 @@ class CatalogueGateTest {
     fun `the cards do not promise what the rules refuse`() {
         // The one that was wrong: "Jeder Kollektor startet mit N Stück", while five of them do not.
         val texts = PrestigeUpgrades.all.map { it.effect.text } +
-            Investments.all.map { it.perLevel } +
+            Investments.all.map { it.effectText } +
             AeonUpgrades.all.map { it.effect.text }
 
         for (text in texts) {
