@@ -108,13 +108,13 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
             GalaxyRing(parked)
 
             Spacer(Modifier.height(12.dp))
-            SkyStat("Produktion", Numbers.formatMultiplier(Multiverse.multiplier(state)))
+            SkyStat(Lang.t("Produktion"), Numbers.formatMultiplier(Multiverse.multiplier(state)))
             SkyStat(
                 Lang.t("Äonen"),
                 // Per day rather than per second, because per second is a row of zeroes. A galaxy
                 // earns on the scale of days, and a number nobody can watch move is a number that
                 // reads as broken.
-                if (perSecond > 0.0) "${Numbers.format(perSecond * 86_400.0)} pro Tag" else "—",
+                if (perSecond > 0.0) Lang.t("%s pro Tag", Numbers.format(perSecond * 86_400.0)) else "—",
             )
             if (state.aeonFraction > 0.0) {
                 SkyStat(Lang.t("Nächstes Äon"), Numbers.formatPercent(state.aeonFraction.coerceIn(0.0, 1.0)))
@@ -294,7 +294,7 @@ private fun GalaxyRow(
             // because a list of eight rows each carrying four chips and a weld strip is a wall.
             Spacer(Modifier.height(4.dp))
             PixelLabel(
-                if (universe.isRamping) "Stellt um · tippen" else "${universe.job.label} · tippen",
+                if (universe.isRamping) Lang.t("Stellt um · tippen") else Lang.t("%s · tippen", universe.job.label),
                 color = Muted,
                 size = 10,
             )
@@ -389,8 +389,8 @@ private fun GalaxyVisit(
     val finished = cost == null
 
     Column(modifier = modifier.fillMaxWidth()) {
-        SkyStat("Tiefste Sprosse", Tiers.byIndex(universe.bestTier).label)
-        SkyStat("Kollapse", universe.collapses.toString())
+        SkyStat(Lang.t("Tiefste Sprosse"), Tiers.byIndex(universe.bestTier).label)
+        SkyStat(Lang.t("Kollapse"), universe.collapses.toString())
         SkyStat(Lang.t("Singularitäten"), Numbers.format(universe.singularities))
         if (Multiverse.orbitBonusFor(state, universe) > 0.0) {
             SkyStat(

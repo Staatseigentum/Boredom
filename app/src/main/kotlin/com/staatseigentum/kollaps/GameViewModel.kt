@@ -436,7 +436,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val stats = GameEngine.stats(state)
         val gained = stats.massPerSecond * stats.offlineCapSeconds * stats.offlineEfficiency
         if (gained <= 0.0) return null
-        return "${Numbers.formatMass(gained)} liegen bereit — mehr passt nicht in den Speicher."
+        return Lang.t("%s liegen bereit — mehr passt nicht in den Speicher.", Numbers.formatMass(gained))
     }
 
     /** The player's offline cap, which is when the collectors stop earning. */
@@ -460,10 +460,10 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         return StatusLine(
             headline = "${Numbers.formatMass(stats.massPerSecond)}/s · ${stats.tier.label}",
             detail = when {
-                project != null -> "Labor: ${project.name}"
+                project != null -> Lang.t("Labor: %s", project.name)
                 // Said once, plainly, rather than left blank: the number above is a snapshot and
                 // the shade has no way of showing that on its own.
-                else -> "Stand beim Schließen"
+                else -> Lang.t("Stand beim Schließen")
             },
             researchDoneAtMillis = state.researchDoneAt.takeIf { project != null && it > 0 },
         )
@@ -555,12 +555,12 @@ data class StatusLine(
 
 /** One line saying what is in a slot, or that there is nothing in it. */
 private fun describe(state: GameState?): String {
-    if (state == null) return "Leer — hier fängt ein neues Spiel an."
+    if (state == null) return Lang.t("Leer — hier fängt ein neues Spiel an.")
     val tier = com.staatseigentum.kollaps.core.Tiers.forMass(state.runMass)
     val parts = buildList {
         add(tier.label)
-        if (state.collapses > 0) add("${state.collapses} Kollapse")
-        if (state.bigBangs > 0) add("${state.bigBangs} Urknalle")
+        if (state.collapses > 0) add(Lang.t("%s Kollapse", state.collapses))
+        if (state.bigBangs > 0) add(Lang.t("%s Urknalle", state.bigBangs))
     }
     return parts.joinToString(" · ")
 }

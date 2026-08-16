@@ -58,12 +58,15 @@ sealed interface UnlockCondition {
  * opinion about something the effect already answers, and the one this replaced had drifted:
  * it was filled in on seventeen of a hundred and twenty-eight upgrades and read by nobody.
  */
-enum class UpgradeGroup(val label: String) {
+enum class UpgradeGroup(private val germanLabel: String) {
     TAP("Tippen"),
     COLLECTORS("Kollektoren"),
     SYNERGY("Synergien"),
     GLOBAL("Global"),
     OFFLINE("Offline"),
+    ;
+
+    val label: String get() = Lang.t(germanLabel)
 }
 
 data class Upgrade(

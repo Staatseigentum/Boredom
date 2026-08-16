@@ -1956,6 +1956,114 @@ internal object Translations {
         "Update-Prüfung fehlgeschlagen" to "The update check failed",
     )
 
+    /**
+     * The last German on the screens, and what it says about how the rest was found.
+     *
+     * These are not late additions. They were on screen the whole time, in 5.0.0, in English
+     * builds, in the tab strips and the settings toggles and the PC's update card — and every test
+     * this translation has was green over them. Two blind spots put them there, both now closed:
+     *
+     * - a display label frozen into an `enum` constructor argument is read once at class load, so
+     *   it is whatever the language was at startup and stays that. `UiTextTest` only ever looks at
+     *   `Lang.t(...)` calls and structurally cannot see one. Five enums were like this — the two
+     *   tab strips, the upgrade groups, the buy amounts, the tutorial spots — and they are now
+     *   `germanX` plus a getter, the same shape every catalogue uses.
+     * - anything outside `app/.../ui`, which is where the list of interface texts was gathered
+     *   from. The view model and both update cards live elsewhere, so "Installiert: %s" and
+     *   "Alles aktuell." were never asked for. That scan now walks both modules whole.
+     */
+    private val OVERLOOKED: Map<String, String> = mapOf(
+        // ---- the tab strips and the buy amounts, freed from their enum constructors
+        "Flotte" to "Fleet",
+        "Kollabieren" to "Collapse",
+        "Max" to "Max",
+        "Upgrades %s" to "Upgrades %s",
+
+        // ---- the phone's bottom bar
+        "Himmel" to "Sky",
+
+        // ---- the settings toggles
+        "An" to "On",
+        "Aus" to "Off",
+        "Berechtigung erteilen" to "Grant permission",
+
+        // ---- the statistics list, which is mostly two words per row
+        "Beste Stufe" to "Best tier",
+        "Dieser Durchlauf" to "This run",
+        "Gesammelt" to "Collected",
+        "Offline-Ertrag" to "Offline yield",
+        "Offline-Grenze" to "Offline cap",
+        "Pro Tipp" to "Per tap",
+        "Tiefste Sprosse" to "Deepest rung",
+
+        // ---- the bars and marks that carry a number
+        " · heute %s/%s" to " · today %s/%s",
+        "%s Kollapse" to "%s collapses",
+        "%s Sing." to "%s sing.",
+        "%s Urknalle" to "%s big bangs",
+        "%s pro Tag" to "%s per day",
+        "%s · Katalog ab %s Galaxien (%s)" to "%s · catalogue from %s galaxies (%s)",
+        "%s · tippen" to "%s · tap",
+        "+%s Produktion" to "+%s production",
+        "Chronik %s/%s" to "Chronicle %s/%s",
+        "Katalog %s" to "Catalogue %s",
+        "Kollapse" to "Collapses",
+        "Labor · %s" to "Lab · %s",
+        "Stellt um · tippen" to "Switching · tap",
+        "Stufe %s/%s" to "Tier %s/%s",
+
+        // ---- what a panel says about something you cannot have yet
+        "Ab %s Erfolgen. Du hast %s." to "At %s achievements. You have %s.",
+        "Ab %s Kollapsen. Du bist bei %s." to "At %s collapses. You are at %s.",
+        "Braucht den Erfolg: %s." to "Needs the achievement: %s.",
+        "Gerade: %s — %s" to "Currently: %s — %s",
+
+        // ---- the two confirmations and the two headlines over a new body
+        "ENDGAME" to "ENDGAME",
+        "NEUE STUFE" to "NEW TIER",
+        "Sicher?" to "Sure?",
+        "Wirklich kollabieren?" to "Really collapse?",
+
+        // ---- the save file and the shade, which are the desktop's and the phone's own words
+        "%s liegen bereit — mehr passt nicht in den Speicher." to
+            "%s is waiting — no more will fit in storage.",
+        "Spielstand geladen." to "Save loaded.",
+        "Spielstand: %s" to "Save file: %s",
+        "Stand beim Schließen" to "As it stood when you closed",
+
+        // ---- the update card, in both shells
+        "%.1f MB" to "%.1f MB",
+        "Aus dem Quelltext gestartet — kein Update möglich." to
+            "Started from source — no update possible.",
+        "Fertig geladen. Der Installer ersetzt die vorhandene Fassung; das Spiel schließt sich dafür." to
+            "Download complete. The installer replaces the version you have; the game closes for it.",
+        "Installiert: %s" to "Installed: %s",
+        "Lade %s …" to "Downloading %s …",
+        "Lädt … %s %" to "Downloading … %s %",
+        "Nach Updates suchen" to "Check for updates",
+        "Nochmal versuchen" to "Try again",
+
+        // ---- the PC's launch screen, which is the first thing a new version says
+        "%s Ein großes Update ändert, was im Spielstand steht — zwei Fassungen nebeneinander vertragen sich dabei nicht." to
+            "%s A major update changes what a save file holds, and two versions side by side do " +
+                "not get along.",
+        "Danach schließt sich das Spiel und der Installer übernimmt." to
+            "The game then closes and the installer takes over.",
+        "Der Download ist fehlgeschlagen." to "The download failed.",
+        "Der Installer ließ sich nicht starten." to "The installer would not start.",
+        "Download fehlgeschlagen" to "Download failed",
+        "Download fehlgeschlagen (HTTP %s)" to "Download failed (HTTP %s)",
+        "Noch einmal versuchen" to "Try once more",
+        "Seite im Browser öffnen" to "Open the page in a browser",
+        "Server antwortete mit HTTP %s" to "The server answered with HTTP %s",
+        "Suche nach Updates …" to "Looking for updates …",
+        "Trotzdem spielen" to "Play anyway",
+        "Version %s wird geladen" to "Downloading version %s",
+
+        // ---- an orbit with nothing on it
+        "leer" to "empty",
+    )
+
     private val SCREENS_MORE: Map<String, String> = mapOf(
         // ---- pure layout
         "%s" to "%s",
@@ -2068,5 +2176,6 @@ internal object Translations {
         putAll(SCREENS)
         putAll(SCREENS_MORE)
         putAll(PLUMBING)
+        putAll(OVERLOOKED)
     }
 }

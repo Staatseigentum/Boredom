@@ -198,14 +198,14 @@ private fun OrbitRow(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (occupied) tier.label else "leer",
+                    text = if (occupied) tier.label else Lang.t("leer"),
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (occupied) Color(tier.glowColor) else Muted,
                 )
                 Text(
                     text = if (occupied) {
                         "${Numbers.formatMass(mass)} · " +
-                            "+${Numbers.formatPercent(Orbits.totalYieldOf(state, orbit))} Produktion"
+                            Lang.t("+%s Produktion", Numbers.formatPercent(Orbits.totalYieldOf(state, orbit)))
                     } else {
                         settlement(orbit, perSecond)
                     },

@@ -14,7 +14,7 @@ import com.staatseigentum.kollaps.core.i18n.Lang
  * Deliberately coarse. These are the four places the opening ever needs; the systems that unlock
  * later are introduced by [Unlocks] instead, each naming its own spot in words.
  */
-enum class TutorialSpot(val label: String) {
+enum class TutorialSpot(private val germanLabel: String) {
     /** The body itself: the tap area, and what the phone opens on. */
     BODY("Körper"),
 
@@ -26,6 +26,9 @@ enum class TutorialSpot(val label: String) {
 
     /** Everything that is not buying something: the collapse, the lab, the rules, the settings. */
     KOSMOS("Kosmos"),
+    ;
+
+    val label: String get() = Lang.t(germanLabel)
 }
 
 /**

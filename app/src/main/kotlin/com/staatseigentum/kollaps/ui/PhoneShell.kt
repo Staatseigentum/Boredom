@@ -409,7 +409,7 @@ fun climbLine(state: GameState, stats: Stats): String {
         // sixteen thousand rungs over this one — and saying "das Ende der Leiter" to somebody
         // fifty orders of magnitude past it is the interface calling a locked door a wall.
         !Designations.isUnlocked(state) ->
-            "${stats.tier.label} · Katalog ab ${Multiverse.SLOTS} Galaxien (${Multiverse.count(state)})"
+            Lang.t("%s · Katalog ab %s Galaxien (%s)", stats.tier.label, Multiverse.SLOTS, Multiverse.count(state))
 
         else -> Lang.t("%s — das Ende der Leiter", stats.tier.label)
     }
@@ -446,7 +446,7 @@ fun StatusMarks(state: GameState, stats: Stats, size: Int = 10, modifier: Modifi
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (state.singularities > 0) {
-            Mark("${Numbers.format(state.singularities)} Sing.", Ember, size)
+            Mark(Lang.t("%s Sing.", Numbers.format(state.singularities)), Ember, size)
         }
         stats.buff?.let { buff ->
             Mark(
@@ -458,7 +458,10 @@ fun StatusMarks(state: GameState, stats: Stats, size: Int = 10, modifier: Modifi
         if (running != null) {
             val left = ResearchTree.secondsLeft(state, now)
             Mark(
-                "Labor · " + if (left <= 0.0) "fertig" else Numbers.formatDuration(left.toLong()),
+                Lang.t(
+                    "Labor · %s",
+                    if (left <= 0.0) Lang.t("fertig") else Numbers.formatDuration(left.toLong()),
+                ),
                 Muted,
                 size,
             )

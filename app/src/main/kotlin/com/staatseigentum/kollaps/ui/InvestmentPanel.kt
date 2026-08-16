@@ -42,7 +42,7 @@ import com.staatseigentum.kollaps.ui.theme.Starlight
 /** How many levels one tap buys. Zero stands for "as many as are affordable". */
 private val STEPS = listOf(1, 5, 25, 0)
 
-private fun stepLabel(step: Int): String = if (step <= 0) "Max" else "×$step"
+private fun stepLabel(step: Int): String = if (step <= 0) Lang.t("Max") else "×$step"
 
 /**
  * The bottomless end of the prestige shop.

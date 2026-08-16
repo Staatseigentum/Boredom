@@ -71,7 +71,7 @@ class UpdateService(private val context: Context) {
             val connection = open(update.downloadUrl)
             try {
                 val code = connection.responseCode
-                if (code !in 200..299) throw IOException("Download fehlgeschlagen (HTTP $code)")
+                if (code !in 200..299) throw IOException(Lang.t("Download fehlgeschlagen (HTTP %s)", code))
 
                 val declared = connection.contentLengthLong
                 val total = if (update.sizeBytes > 0) update.sizeBytes else declared
@@ -155,7 +155,7 @@ class UpdateService(private val context: Context) {
                 )
 
                 403 -> throw IOException(Lang.t("GitHub hat die Anfrage abgelehnt. Später nochmal versuchen."))
-                else -> throw IOException("Server antwortete mit HTTP $code")
+                else -> throw IOException(Lang.t("Server antwortete mit HTTP %s", code))
             }
             return connection.inputStream.bufferedReader().use { it.readText() }
         } finally {

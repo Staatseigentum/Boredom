@@ -163,7 +163,7 @@ fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = if (tier.isFinal) "ENDGAME" else "NEUE STUFE",
+                text = if (tier.isFinal) Lang.t("ENDGAME") else Lang.t("NEUE STUFE"),
                 style = MaterialTheme.typography.labelLarge,
                 color = Muted,
             )

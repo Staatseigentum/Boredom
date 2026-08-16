@@ -472,7 +472,7 @@ private fun CollapseFooter(state: GameState, stats: Stats, onCollapse: () -> Uni
         }
         Spacer(Modifier.width(12.dp))
         PixelButton(
-            label = if (confirming) "Sicher?" else "Kollabieren",
+            label = if (confirming) Lang.t("Sicher?") else Lang.t("Kollabieren"),
             onClick = {
                 if (confirming) {
                     onCollapse()
@@ -488,13 +488,16 @@ private fun CollapseFooter(state: GameState, stats: Stats, onCollapse: () -> Uni
 }
 
 /** The four places the lower panel can be. See [WideShop] for why the fleet is not among them. */
-private enum class WideTab(val title: String) {
+private enum class WideTab(private val germanTitle: String) {
     UPGRADES("Upgrades"),
     AUFBAU("Aufbau"),
     ORBITS("Bahnen"),
     FUSION("Fusion"),
     COSMOS("Kosmos"),
     ;
+
+    /** Read every time the strip is drawn. A constructor argument would freeze the language. */
+    val title: String get() = Lang.t(germanTitle)
 
     fun availableIn(state: GameState): Boolean = when (this) {
         AUFBAU -> aufbauAvailable(state)

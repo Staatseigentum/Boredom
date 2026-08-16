@@ -189,9 +189,9 @@ private fun ChallengeRow(
         }
         Text(challenge.flavor, style = MaterialTheme.typography.bodySmall, color = Muted)
         Spacer(Modifier.height(6.dp))
-        Line("Regel", challenge.ruleText, if (blocked) Muted else Ember)
-        Line("Ziel", challenge.goalText, if (blocked) Muted else Starlight)
-        Line("Belohnung", challenge.reward.text, if (blocked) Muted else Positive)
+        Line(Lang.t("Regel"), challenge.ruleText, if (blocked) Muted else Ember)
+        Line(Lang.t("Ziel"), challenge.goalText, if (blocked) Muted else Starlight)
+        Line(Lang.t("Belohnung"), challenge.reward.text, if (blocked) Muted else Positive)
         if (blocked) {
             Spacer(Modifier.height(4.dp))
             Text(
@@ -220,7 +220,7 @@ private fun RunningChallenges(
         border = if (stats.challengeLost) Ember else Nebula,
     ) {
         PixelLabel(
-            text = if (duo) "Zwei Herausforderungen laufen" else Lang.t("Herausforderung läuft"),
+            text = if (duo) Lang.t("Zwei Herausforderungen laufen") else Lang.t("Herausforderung läuft"),
             color = Nebula,
             size = 15,
         )
@@ -241,7 +241,7 @@ private fun RunningChallenges(
                 if (duo) {
                     val met = challenge.isMetBy(state)
                     PixelLabel(
-                        text = if (met) Lang.t("erfüllt") else "offen",
+                        text = if (met) Lang.t("erfüllt") else Lang.t("offen"),
                         color = if (met) Positive else Muted,
                         size = 12,
                     )
@@ -249,20 +249,20 @@ private fun RunningChallenges(
             }
             Text(challenge.flavor, style = MaterialTheme.typography.bodySmall, color = Muted)
             Spacer(Modifier.height(6.dp))
-            Line("Regel", challenge.ruleText, Ember)
-            Line("Ziel", challenge.goalText, Starlight)
-            Line("Belohnung", challenge.reward.text, Positive)
+            Line(Lang.t("Regel"), challenge.ruleText, Ember)
+            Line(Lang.t("Ziel"), challenge.goalText, Starlight)
+            Line(Lang.t("Belohnung"), challenge.reward.text, Positive)
             Spacer(Modifier.height(8.dp))
         }
 
         if (duo) {
             Line(
-                "Bonus",
+                Lang.t("Bonus"),
                 Lang.t("%s zusätzlich, dauerhaft", Numbers.formatMultiplier(Challenge.DUO_BONUS)),
                 Positive,
             )
         }
-        Line("Gespielt", Numbers.formatDuration(state.challengeSeconds.toLong()), Muted)
+        Line(Lang.t("Gespielt"), Numbers.formatDuration(state.challengeSeconds.toLong()), Muted)
 
         Spacer(Modifier.height(10.dp))
         when {
@@ -307,7 +307,7 @@ private fun RunningChallenges(
                 )
                 Spacer(Modifier.height(8.dp))
                 PixelButton(
-                    label = if (confirming) "Wirklich aufgeben?" else "Aufgeben",
+                    label = if (confirming) Lang.t("Wirklich aufgeben?") else Lang.t("Aufgeben"),
                     onClick = { if (confirming) onAbort() else confirming = true },
                     modifier = Modifier.fillMaxWidth(),
                     accent = Outline,

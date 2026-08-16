@@ -193,7 +193,7 @@ fun LazyListScope.achievementItems(
             item {
                 PixelPanel(modifier = Modifier.fillMaxWidth(), border = Nebula) {
                     PixelLabel(
-                        "Chronik ${fragments.size}/${Lore.total}",
+                        Lang.t("Chronik %s/%s", fragments.size, Lore.total),
                         color = Nebula,
                         size = 15,
                     )
@@ -360,9 +360,9 @@ fun SettingsSection(
             color = Muted,
         )
         Spacer(Modifier.height(6.dp))
-        Toggle("Vibration", state.hapticsOn) { onHaptics(!state.hapticsOn) }
+        Toggle(Lang.t("Vibration"), state.hapticsOn) { onHaptics(!state.hapticsOn) }
         Spacer(Modifier.height(6.dp))
-        Toggle("Musik", state.musicOn) { onMusic(!state.musicOn) }
+        Toggle(Lang.t("Musik"), state.musicOn) { onMusic(!state.musicOn) }
         Text(
             text = Lang.t("Ein Klangteppich, der sich ändert, sobald aus dem Gestein eine Welt, aus der Welt ein Gasriese und aus dem Gasriesen ein Stern wird."),
             style = MaterialTheme.typography.bodySmall,
@@ -514,7 +514,7 @@ fun SettingsSection(
             onConfirm = { block ->
                 importing = false
                 note = if (onImport(block)) {
-                    "Spielstand geladen."
+                    Lang.t("Spielstand geladen.")
                 } else {
                     Lang.t("Das war kein Kollaps-Spielstand.")
                 }
@@ -532,7 +532,7 @@ private fun Toggle(label: String, on: Boolean, onToggle: () -> Unit) {
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = Starlight)
         PixelButton(
-            label = if (on) "An" else "Aus",
+            label = if (on) Lang.t("An") else Lang.t("Aus"),
             onClick = onToggle,
             accent = if (on) Positive else Outline,
         )
@@ -707,12 +707,17 @@ private fun SkinPicker(state: GameState, onPick: (String) -> Unit) {
                             text = when {
                                 unlocked -> skin.flavor
                                 needs != null ->
-                                    "Braucht den Erfolg: " +
-                                        (Achievements.byId(needs)?.name ?: Lang.t("noch unbekannt")) + "."
+                                    Lang.t(
+                                        "Braucht den Erfolg: %s.",
+                                        Achievements.byId(needs)?.name ?: Lang.t("noch unbekannt"),
+                                    )
 
                                 else ->
-                                    "Ab ${skin.requiredAchievements} Erfolgen. " +
-                                        "Du hast ${earned.size}."
+                                    Lang.t(
+                                        "Ab %s Erfolgen. Du hast %s.",
+                                        skin.requiredAchievements,
+                                        earned.size,
+                                    )
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = Muted,

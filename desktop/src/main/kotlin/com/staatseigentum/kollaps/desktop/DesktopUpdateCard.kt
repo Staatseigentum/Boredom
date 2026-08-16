@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.desktop
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -66,11 +67,11 @@ fun DesktopUpdateCard(onBeforeExit: () -> Unit = {}) {
     }
 
     PixelPanel(modifier = Modifier.fillMaxWidth(), padding = 12) {
-        PixelLabel("Version", size = 14)
+        PixelLabel(Lang.t("Version"), size = 14)
         Spacer(Modifier.height(6.dp))
         Text(
-            text = installed?.let { "Installiert: ${it.canonical()}" }
-                ?: "Aus dem Quelltext gestartet — kein Update möglich.",
+            text = installed?.let { Lang.t("Installiert: %s", it.canonical()) }
+                ?: Lang.t("Aus dem Quelltext gestartet — kein Update möglich."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -78,26 +79,26 @@ fun DesktopUpdateCard(onBeforeExit: () -> Unit = {}) {
 
         when (val current = phase) {
             Phase.Looking -> Text(
-                text = "Suche nach einer neueren Version …",
+                text = Lang.t("Suche nach einer neueren Version …"),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
             )
 
             Phase.UpToDate -> Text(
-                text = "Alles aktuell.",
+                text = Lang.t("Alles aktuell."),
                 style = MaterialTheme.typography.bodySmall,
                 color = Positive,
             )
 
             Phase.Failed -> Row {
                 Text(
-                    text = "Nicht erreichbar.",
+                    text = Lang.t("Nicht erreichbar."),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
                 Spacer(Modifier.width(10.dp))
                 PixelButton(
-                    label = "Seite öffnen",
+                    label = Lang.t("Seite öffnen"),
                     onClick = { DesktopUpdater.openReleasesPage() },
                 )
             }
@@ -116,14 +117,14 @@ fun DesktopUpdateCard(onBeforeExit: () -> Unit = {}) {
                 Spacer(Modifier.height(10.dp))
                 if (DesktopUpdater.canInstall) {
                     PixelButton(
-                        label = "Herunterladen",
+                        label = Lang.t("Herunterladen"),
                         accent = Ember,
                         onClick = { phase = Phase.Downloading(current.update) },
                     )
                 } else {
                     // Only Windows gets an installer built, so anywhere else this is a link.
                     PixelButton(
-                        label = "Seite öffnen",
+                        label = Lang.t("Seite öffnen"),
                         onClick = { DesktopUpdater.openReleasesPage() },
                     )
                 }
@@ -131,7 +132,7 @@ fun DesktopUpdateCard(onBeforeExit: () -> Unit = {}) {
 
             is Phase.Downloading -> {
                 Text(
-                    text = "Lädt … ${(progress * 100).toInt()} %",
+                    text = Lang.t("Lädt … %s %", (progress * 100).toInt()),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
@@ -152,14 +153,16 @@ fun DesktopUpdateCard(onBeforeExit: () -> Unit = {}) {
 
             is Phase.Ready -> Column {
                 Text(
-                    text = "Fertig geladen. Der Installer ersetzt die vorhandene Fassung; " +
-                        "das Spiel schließt sich dafür.",
+                    text = Lang.t(
+                        "Fertig geladen. Der Installer ersetzt die vorhandene Fassung; " +
+                            "das Spiel schließt sich dafür.",
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
                 Spacer(Modifier.height(10.dp))
                 PixelButton(
-                    label = "Installieren und beenden",
+                    label = Lang.t("Installieren und beenden"),
                     accent = Ember,
                     onClick = {
                         // The save is written first: the process is about to end on purpose, and
@@ -179,4 +182,4 @@ fun DesktopUpdateCard(onBeforeExit: () -> Unit = {}) {
 }
 
 private fun megabytes(bytes: Long): String =
-    if (bytes <= 0) "" else "%.1f MB".format(bytes / 1_048_576.0)
+    if (bytes <= 0) "" else Lang.t("%.1f MB").format(bytes / 1_048_576.0)

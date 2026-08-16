@@ -262,7 +262,7 @@ private fun FleetPanel(state: GameState, buyAmount: BuyAmount, actions: GameActi
 
     Column {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
-            listOf(false to "Flotte", true to "Upgrades ${offers.count { it.affordable }}")
+            listOf(false to Lang.t("Flotte"), true to Lang.t("Upgrades %s", offers.count { it.affordable }))
                 .forEach { (isUpgrades, title) ->
                     val selected = upgrades == isUpgrades
                     Box(
@@ -418,7 +418,7 @@ private fun CollectorRow(
                 Text(
                     text = if (offer.owned > 0) {
                         buildString {
-                            append("liefert ${Numbers.formatRate(offer.output)}")
+                            append(Lang.t("liefert %s", Numbers.formatRate(offer.output)))
                             if (offer.milestones > 0) {
                                 append(" · ")
                                 append(Numbers.formatMultiplier(Milestones.factor(offer.owned)))
@@ -683,13 +683,16 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
  * question: what do I do with a finished run, what is the lab doing, what runs without me, and
  * how is the app set up.
  */
-internal enum class CosmosSection(val title: String) {
+internal enum class CosmosSection(private val germanTitle: String) {
     COLLAPSE("Kollaps"),
     SKY("Himmel"),
     LAB("Labor"),
     RULES("Regeln"),
     ACHIEVEMENTS("Erfolge"),
     SYSTEM("System"),
+    ;
+
+    val title: String get() = Lang.t(germanTitle)
 }
 
 /** Sections worth offering for this state. Empty ones would be a tab onto a blank page. */
@@ -831,16 +834,16 @@ internal fun CosmosPanel(
                 }
 
                 CosmosSection.SYSTEM -> {
-                    item { SectionTitle("Dieser Durchlauf") }
-                    item { StatRow("Gesammelt", Numbers.formatMass(state.runMass)) }
-                    item { StatRow("Produktion", Numbers.formatRate(stats.massPerSecond)) }
-                    item { StatRow("Pro Tipp", Numbers.formatMass(stats.massPerTap)) }
-                    item { StatRow("Kollektoren", state.collectors.values.sum().toString()) }
-                    item { StatRow("Upgrades", Lang.t("%s von %s", state.upgrades.size, Upgrades.all.size)) }
+                    item { SectionTitle(Lang.t("Dieser Durchlauf")) }
+                    item { StatRow(Lang.t("Gesammelt"), Numbers.formatMass(state.runMass)) }
+                    item { StatRow(Lang.t("Produktion"), Numbers.formatRate(stats.massPerSecond)) }
+                    item { StatRow(Lang.t("Pro Tipp"), Numbers.formatMass(stats.massPerTap)) }
+                    item { StatRow(Lang.t("Kollektoren"), state.collectors.values.sum().toString()) }
+                    item { StatRow(Lang.t("Upgrades"), Lang.t("%s von %s", state.upgrades.size, Upgrades.all.size)) }
                     // `label` and not `name`: on the catalogue ladder the name is the bare body and
                     // the designation is the whole of what distinguishes one rung from the six
                     // hundred and seventy-five others that share it.
-                    item { StatRow("Beste Stufe", Tiers.byIndex(state.bestTier).label) }
+                    item { StatRow(Lang.t("Beste Stufe"), Tiers.byIndex(state.bestTier).label) }
                     item {
                         StatRow(
                             Lang.t("Bonus aus Singularitäten"),
@@ -849,9 +852,9 @@ internal fun CosmosPanel(
                     }
 
                     item { SectionTitle(Lang.t("Wenn du weg bist")) }
-                    item { StatRow("Offline-Ertrag", Numbers.formatPercent(stats.offlineEfficiency)) }
+                    item { StatRow(Lang.t("Offline-Ertrag"), Numbers.formatPercent(stats.offlineEfficiency)) }
                     item {
-                        StatRow("Offline-Grenze", Numbers.formatDuration(stats.offlineCapSeconds))
+                        StatRow(Lang.t("Offline-Grenze"), Numbers.formatDuration(stats.offlineCapSeconds))
                     }
 
                     item { Spacer(Modifier.height(8.dp)) }
@@ -1015,7 +1018,7 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
 
         Spacer(Modifier.height(12.dp))
         PixelButton(
-            label = if (confirming) "Wirklich kollabieren?" else "Kollabieren",
+            label = if (confirming) Lang.t("Wirklich kollabieren?") else Lang.t("Kollabieren"),
             onClick = {
                 if (confirming) {
                     onCollapse()

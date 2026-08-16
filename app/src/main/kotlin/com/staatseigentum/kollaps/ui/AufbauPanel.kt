@@ -262,7 +262,7 @@ private fun WorldRecord(state: GameState) {
             text = if (current == null) {
                 Lang.t("Noch nichts Bestimmtes. Ab %s Schichten bekommt der Körper einen Namen — und der bleibt eingetragen, auch nach dem Kollaps.", Depth.JUNG.atLeast)
             } else {
-                "Gerade: ${current.label} — ${current.flavor}"
+                Lang.t("Gerade: %s — %s", current.label, current.flavor)
             },
             style = MaterialTheme.typography.bodySmall,
             color = if (current == null) Muted else Ember,

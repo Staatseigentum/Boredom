@@ -705,6 +705,35 @@ fun GameScreen(
                 }
             }
 
+            /*
+             * The achievement card, at the top of the whole screen.
+             *
+             * It used to sit inside the tap area, one composable down from the body, and that is
+             * where it stopped working when the phone got five screens. The tap area is composed
+             * only while the body screen is showing — and an achievement is almost always earned
+             * somewhere else, buying the tenth collector or collapsing from the Kosmos panel. So
+             * nothing was in the composition to notice, and worse, coming back to the body reran
+             * `remember { mutableStateOf(earned) }` and seeded it with the set that already
+             * contained the new one. Every achievement earned off the body screen was silently
+             * marked as seen. The wide window never showed the fault, because there the body is
+             * always on screen.
+             *
+             * Here it outlives the switch, which is the whole requirement: this is above the
+             * layout branch and composed for as long as the game is.
+             */
+            AchievementToast(
+                // The live state rather than the one on screen: during a collapse the picture is
+                // the run that just ended, and the achievements that collapse just earned belong
+                // to the queue immediately. [quiet] is what keeps them off the screen until the
+                // sequence is over — collected as normal, shown afterwards.
+                earned = state.achievements,
+                hold = quiet,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .safeDrawingPadding()
+                    .padding(top = 10.dp),
+            )
+
             // Over everything, including the dialogs: the blast is the loudest thing that can
             // happen, and something covering half of it would read as a glitch.
             blast?.let { (trigger, kind) ->
@@ -828,9 +857,9 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
                 // On the catalogue ladder the fraction is meaningless — "Stufe 3471/16925" is a
                 // number, not a position — so the designation stands in its place.
                 text = if (stats.tier.isDesignated) {
-                    "Katalog ${stats.tier.label}"
+                    Lang.t("Katalog %s", stats.tier.label)
                 } else {
-                    "Stufe ${stats.tier.index + 1}/${Tiers.all.size}"
+                    Lang.t("Stufe %s/%s", stats.tier.index + 1, Tiers.all.size)
                 },
                 style = MaterialTheme.typography.labelLarge,
                 color = Muted,
@@ -908,8 +937,12 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
             // fifty orders of magnitude past it is the interface calling a locked door a wall. The
             // line names what is missing instead, because that is the one thing worth knowing here.
             !Designations.isUnlocked(state) ->
-                "${stats.tier.label} · Katalog ab ${Multiverse.SLOTS} Galaxien " +
-                    "(${Multiverse.count(state)})"
+                Lang.t(
+                    "%s · Katalog ab %s Galaxien (%s)",
+                    stats.tier.label,
+                    Multiverse.SLOTS,
+                    Multiverse.count(state),
+                )
 
             else -> Lang.t("%s — das Ende der Leiter", stats.tier.label)
         }
@@ -1006,7 +1039,7 @@ private fun ResearchTicker(state: GameState) {
             color = Muted,
         )
         Text(
-            text = if (left <= 0.0) "fertig" else Numbers.formatDuration(left.toLong()),
+            text = if (left <= 0.0) Lang.t("fertig") else Numbers.formatDuration(left.toLong()),
             style = MaterialTheme.typography.bodySmall,
             color = Ember,
         )
@@ -1224,6 +1257,11 @@ private fun TapArea(
         }
 
         // Along the top, where nothing else is: the band sits above this box, not in it.
+        //
+        // The achievement card used to be in this column and is now at the top of the whole
+        // screen — see the call in [GameScreen]. It cannot live in here: this area is composed
+        // only while the phone is on the body screen, and an achievement is almost always earned
+        // somewhere else.
         Column(
             modifier = Modifier.align(Alignment.TopCenter).padding(top = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -1233,14 +1271,7 @@ private fun TapArea(
             // go — a chip that is absent costs nothing, a row that is empty costs a row.
             if (phone) {
                 StatusMarks(state = state, stats = stats, size = 9)
-                Spacer(Modifier.height(6.dp))
             }
-            AchievementToast(
-                earned = state.achievements,
-                // Collected as normal, shown afterwards: a collapse earns two or three of these at
-                // once and a card sliding in over the explosion is the same mistake as a dialog.
-                hold = collapse?.running == true || bigBang?.running == true,
-            )
         }
 
         // Along the bottom of the body, out of the way of the thumb that is tapping it. Both in

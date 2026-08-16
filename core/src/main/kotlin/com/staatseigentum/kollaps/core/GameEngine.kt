@@ -124,11 +124,21 @@ data class OfflineReport(
 }
 
 /** How many collectors to buy at once. */
-enum class BuyAmount(val label: String, val count: Int) {
+enum class BuyAmount(private val germanLabel: String, val count: Int) {
     ONE("×1", 1),
     TEN("×10", 10),
     HUNDRED("×100", 100),
     MAX("Max", -1),
+    ;
+
+    /**
+     * Three of these are numerals and translate to themselves; the fourth is a word.
+     *
+     * All four go through the translator all the same, because the alternative is a rule saying
+     * "this one is a word and those three are not", and a rule like that is one somebody has to
+     * remember. Going through costs a map lookup.
+     */
+    val label: String get() = Lang.t(germanLabel)
 }
 
 /**

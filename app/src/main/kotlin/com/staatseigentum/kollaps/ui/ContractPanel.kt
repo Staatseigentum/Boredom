@@ -118,7 +118,7 @@ private fun ContractRow(
                 // Only where there is one. Printing "0 von unbegrenzt" on the six contracts that
                 // finish themselves would invent a rule the player then has to unlearn.
                 contract.dailyLimit?.let { limit ->
-                    append(" · heute ${Contract.doneToday(state, contract)}/$limit")
+                    append(Lang.t(" · heute %s/%s", Contract.doneToday(state, contract), limit))
                 }
             },
             style = MaterialTheme.typography.bodySmall,

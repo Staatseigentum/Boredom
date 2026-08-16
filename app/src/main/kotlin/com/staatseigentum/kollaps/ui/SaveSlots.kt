@@ -101,7 +101,7 @@ fun SaveSlotPanel(
                         PixelLabel(Lang.t("hier"), color = Nebula, size = 12)
                     } else {
                         PixelLabel(
-                            text = if (slot.isEmpty) "neu" else "wechseln",
+                            text = if (slot.isEmpty) Lang.t("neu") else Lang.t("wechseln"),
                             color = Ember,
                             size = 12,
                         )

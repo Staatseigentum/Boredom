@@ -140,9 +140,9 @@ fun HudBand(state: GameState, stats: Stats, modifier: Modifier = Modifier) {
 /** Where on the ladder, in the form that means something at that height. */
 private fun rungLine(state: GameState, stats: Stats): String {
     val next = stats.nextTier ?: return if (stats.tier.isDesignated) {
-        "Katalog ${stats.tier.label}"
+        Lang.t("Katalog %s", stats.tier.label)
     } else {
-        "Stufe ${stats.tier.index + 1}/${Tiers.all.size}"
+        Lang.t("Stufe %s/%s", stats.tier.index + 1, Tiers.all.size)
     }
     return Lang.t(
         "Stufe %s/%s · noch %s",

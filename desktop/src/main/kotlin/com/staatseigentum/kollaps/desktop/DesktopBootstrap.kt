@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.desktop
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -127,7 +128,7 @@ fun DesktopBootstrap(
         }
         if (file == null) {
             // A patch nobody could fetch is not worth a word. A big step is.
-            stage = if (required) Stage.Stuck(found, "Der Download ist fehlgeschlagen.") else Stage.Done
+            stage = if (required) Stage.Stuck(found, Lang.t("Der Download ist fehlgeschlagen.")) else Stage.Done
             return@LaunchedEffect
         }
 
@@ -136,7 +137,7 @@ fun DesktopBootstrap(
         // cannot replace a file this process is holding open.
         withContext(Dispatchers.IO) { DesktopUpdater.install(file) }
         stage = if (required) {
-            Stage.Stuck(found, "Der Installer ließ sich nicht starten.")
+            Stage.Stuck(found, Lang.t("Der Installer ließ sich nicht starten."))
         } else {
             Stage.Done
         }
@@ -144,10 +145,14 @@ fun DesktopBootstrap(
 
     when (val current = stage) {
         Stage.Done -> content()
-        Stage.Looking -> Curtain { PixelLabel("Suche nach Updates …", color = Muted, size = 13) }
+        Stage.Looking -> Curtain { PixelLabel(Lang.t("Suche nach Updates …"), color = Muted, size = 13) }
 
         is Stage.Fetching -> Curtain {
-            PixelLabel("Version ${current.update.version.canonical()} wird geladen", color = Ember, size = 13)
+            PixelLabel(
+                Lang.t("Version %s wird geladen", current.update.version.canonical()),
+                color = Ember,
+                size = 13,
+            )
             Spacer(Modifier.height(12.dp))
             PixelBar(
                 progress = progress,
@@ -156,7 +161,7 @@ fun DesktopBootstrap(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Danach schließt sich das Spiel und der Installer übernimmt.",
+                text = Lang.t("Danach schließt sich das Spiel und der Installer übernimmt."),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
                 textAlign = TextAlign.Center,
@@ -164,7 +169,7 @@ fun DesktopBootstrap(
         }
 
         is Stage.Stuck -> Curtain {
-            PixelLabel("Diese Version musst du installieren", color = Ember, size = 14)
+            PixelLabel(Lang.t("Diese Version musst du installieren"), color = Ember, size = 14)
             Spacer(Modifier.height(8.dp))
             Text(
                 text = current.update.title,
@@ -173,15 +178,18 @@ fun DesktopBootstrap(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = current.reason + " Ein großes Update ändert, was im Spielstand steht — " +
-                    "zwei Fassungen nebeneinander vertragen sich dabei nicht.",
+                text = Lang.t(
+                    "%s Ein großes Update ändert, was im Spielstand steht — zwei Fassungen " +
+                        "nebeneinander vertragen sich dabei nicht.",
+                    current.reason,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(16.dp))
             PixelButton(
-                label = "Noch einmal versuchen",
+                label = Lang.t("Noch einmal versuchen"),
                 onClick = {
                     stage = Stage.Looking
                     attempt++
@@ -191,7 +199,7 @@ fun DesktopBootstrap(
             )
             Spacer(Modifier.height(8.dp))
             PixelButton(
-                label = "Seite im Browser öffnen",
+                label = Lang.t("Seite im Browser öffnen"),
                 onClick = { DesktopUpdater.openReleasesPage() },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -199,7 +207,7 @@ fun DesktopBootstrap(
             // Only here, on a screen that is already reporting a failure. Being one version behind
             // is a far better outcome than being locked out of a game because a server was down.
             PixelButton(
-                label = "Trotzdem spielen",
+                label = Lang.t("Trotzdem spielen"),
                 onClick = { stage = Stage.Done },
                 modifier = Modifier.fillMaxWidth(),
             )

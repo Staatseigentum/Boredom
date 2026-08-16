@@ -57,7 +57,7 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
             when (val current = state) {
                 UpdateState.Idle -> {
                     Description(Lang.t("Noch nicht nachgesehen, ob es eine neuere Version gibt."))
-                    Action("Nach Updates suchen") { model.check() }
+                    Action(Lang.t("Nach Updates suchen")) { model.check() }
                 }
 
                 UpdateState.Checking -> {
@@ -68,7 +68,7 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
                             color = Ember,
                         )
                         Spacer(Modifier.size(10.dp))
-                        Description("Suche nach einer neueren Version …")
+                        Description(Lang.t("Suche nach einer neueren Version …"))
                     }
                 }
 
@@ -85,11 +85,11 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
                         Spacer(Modifier.height(6.dp))
                         Notes(current.update.notes)
                     }
-                    Action("Herunterladen") { model.download() }
+                    Action(Lang.t("Herunterladen")) { model.download() }
                 }
 
                 is UpdateState.Downloading -> {
-                    Description("Lade ${current.update.title} …")
+                    Description(Lang.t("Lade %s …", current.update.title))
                     Spacer(Modifier.height(10.dp))
                     PixelBar(
                         progress = current.progress,
@@ -108,14 +108,14 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
 
                 is UpdateState.Ready -> {
                     Description(Lang.t("%s ist geladen und wartet auf die Installation.", current.update.title))
-                    Action("Installieren") { model.install() }
+                    Action(Lang.t("Installieren")) { model.install() }
                 }
 
                 is UpdateState.NeedsPermission -> {
                     Description(
                         Lang.t("Damit die neue Version installiert werden kann, muss Kollaps in den Systemeinstellungen als Quelle erlaubt werden."),
                     )
-                    Action("Berechtigung erteilen") { model.install() }
+                    Action(Lang.t("Berechtigung erteilen")) { model.install() }
                 }
 
                 is UpdateState.Failed -> {
@@ -124,7 +124,7 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
-                    Action("Nochmal versuchen") { model.check() }
+                    Action(Lang.t("Nochmal versuchen")) { model.check() }
                 }
             }
         }

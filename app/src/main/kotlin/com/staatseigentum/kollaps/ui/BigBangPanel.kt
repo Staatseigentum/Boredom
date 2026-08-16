@@ -110,7 +110,7 @@ fun BigBangPanel(
                     // constant for ever, so after one big bang it read "Ab 10 Kollapsen. Du bist
                     // bei 12" next to a button that refused — the card said yes and the rules said
                     // no, and the rules were right.
-                    "Ab ${BigBang.requiredNow(state)} Kollapsen. Du bist bei ${state.collapses}."
+                    Lang.t("Ab %s Kollapsen. Du bist bei %s.", BigBang.requiredNow(state), state.collapses)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (stats.canBigBang) Positive else Muted,

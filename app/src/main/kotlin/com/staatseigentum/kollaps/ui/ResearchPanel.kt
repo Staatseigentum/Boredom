@@ -119,7 +119,7 @@ private fun RunningProject(
                 color = Starlight,
             )
             Text(
-                text = if (done) "fertig" else Lang.t("noch %s", Numbers.formatDuration(left.toLong())),
+                text = if (done) Lang.t("fertig") else Lang.t("noch %s", Numbers.formatDuration(left.toLong())),
                 style = MaterialTheme.typography.bodySmall,
                 color = if (done) Positive else Muted,
             )

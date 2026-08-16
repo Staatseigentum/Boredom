@@ -39,22 +39,67 @@ class UiTextTest {
 
     private val literal = Regex(""""((?:[^"\\]|\\.)*)"""")
 
+    /**
+     * Everywhere a text can be written, which is more than the screens.
+     *
+     * This used to be the one directory `app/.../ui`, and that was the reason the PC's update card
+     * shipped German into 5.0.0: it says "Installiert: %s" and "Alles aktuell." from the desktop
+     * module, the list never saw those, [Texts] therefore never asked for them, and the coverage
+     * test was a clean green over a card nobody had translated. The view model and the two update
+     * services were outside for the same reason and had the same hole.
+     *
+     * So the rule is now the honest one — anywhere in this repository that calls `Lang.t` with a
+     * literal is somewhere a player can read that literal.
+     */
     private fun screens(): List<File> {
-        // Tests run with the module directory as the working directory, so the app module is one
-        // level up. Asserted rather than skipped: in this repository it is always there, and a
-        // test that quietly passes when it cannot find its subject is worse than no test.
-        val root = File("../app/src/main/kotlin/com/staatseigentum/kollaps/ui")
-        assertTrue(root.isDirectory, "Die Oberflächenquellen liegen nicht unter ${root.absolutePath}")
-        return root.listFiles { f -> f.extension == "kt" }?.sortedBy { it.name } ?: emptyList()
+        // Tests run with the module directory as the working directory, so the other modules are
+        // one level up. Asserted rather than skipped: in this repository they are always there,
+        // and a test that quietly passes when it cannot find its subject is worse than no test.
+        val roots = listOf(
+            File("../app/src/main/kotlin/com/staatseigentum/kollaps"),
+            File("../desktop/src/main/kotlin/com/staatseigentum/kollaps"),
+        )
+        return roots.flatMap { root ->
+            assertTrue(root.isDirectory, "Die Quellen liegen nicht unter ${root.absolutePath}")
+            root.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+        }.sortedBy { it.path }
     }
 
-    /** Every text a screen asks for, exactly as it will ask for it at runtime. */
+    /**
+     * An `enum class` whose primary constructor takes a `german…` string — the display-label shape.
+     *
+     * Captures the entries block, which is everything from the opening brace to the `;` that ends
+     * it. Enums written this way always have that semicolon, because they always have the getter
+     * underneath that the whole convention exists for.
+     */
+    private val labelledEnum =
+        Regex("""enum class \w+\([^)]*german\w*: String[^)]*\)\s*\{(.*?)\n\s*;""", RegexOption.DOT_MATCHES_ALL)
+
+    /** One entry of such an enum: `COLLECTORS("Flotte"),`. */
+    private val entry = Regex("""\n\s*[A-Z][A-Z_0-9]*\(([^)]*)\)""")
+
+    /**
+     * Every text a screen asks for, exactly as it will ask for it at runtime.
+     *
+     * Two shapes, because the interface says things two ways. `Lang.t("…")` at the point of use is
+     * the common one. The other is a display label on an `enum` — `germanTitle` handed to the
+     * constructor and read back through a getter that translates — and the literal there is just
+     * as much a text on a screen, while looking nothing like a `Lang.t` call. The tab strips, both
+     * of them, are that shape, and they are what shipped German tabs into 5.0.0.
+     */
     private fun asked(): Set<String> = buildSet {
         for (file in screens()) {
             val source = file.readText()
             for (match in call.findAll(source)) {
                 val parts = literal.findAll(match.groupValues[1]).map { it.groupValues[1] }
                 add(parts.joinToString("").unescape())
+            }
+            for (block in labelledEnum.findAll(source)) {
+                for (line in entry.findAll(block.groupValues[1])) {
+                    for (text in literal.findAll(line.groupValues[1])) {
+                        add(text.groupValues[1].unescape())
+                    }
+                }
             }
         }
     }
@@ -80,6 +125,38 @@ class UiTextTest {
         assertTrue(
             stale.isEmpty(),
             "${stale.size} Einträge in UiTexts sagt kein Bildschirm mehr: ${stale.take(5)}",
+        )
+    }
+
+    /**
+     * The one thing about this codebase that is wrong even when it looks right.
+     *
+     * `BODY(Lang.t("Körper"))` reads correctly and is a bug: an enum's constructor arguments are
+     * evaluated once, when the class is loaded, so that label is whatever language the game
+     * started in and stays that for the rest of the session. Switching to English relabels the
+     * whole interface and leaves those in German, which is worse than never translating them —
+     * a text that is German on a German screen is a gap, and one German tab in an English strip
+     * is a fault.
+     *
+     * It is also invisible to every other check here: it *is* a `Lang.t` call with a literal, so
+     * the list has the text and the coverage test has the translation. Only the moment it runs is
+     * wrong. Hence a rule about where the call may appear rather than about what it says: never
+     * inside an enum entry, always in the getter underneath.
+     */
+    @Test
+    fun `no enum freezes its label into a constructor argument`() {
+        val frozen = buildList {
+            for (file in screens()) {
+                // `NAME(` at the start of a line, with a Lang.t somewhere in its arguments. Enum
+                // entries are the only thing in this codebase written in that shape.
+                val bad = Regex("""\n\s*[A-Z][A-Z_0-9]*\([^)\n]*Lang\.t\(""").findAll(file.readText())
+                for (match in bad) add("${file.name}: ${match.value.trim()}…")
+            }
+        }
+        assertTrue(
+            frozen.isEmpty(),
+            "${frozen.size} Enum-Einträge übersetzen im Konstruktor und frieren damit die " +
+                "Startsprache ein — stattdessen `private val germanX` plus Getter: $frozen",
         )
     }
 

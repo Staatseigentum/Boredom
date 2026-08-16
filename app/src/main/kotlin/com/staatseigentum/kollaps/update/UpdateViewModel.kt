@@ -160,7 +160,7 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
                 .onSuccess { file -> _state.value = readyState(update, file) }
                 .onFailure { failure ->
                     _state.value = UpdateState.Failed(
-                        failure.message ?: "Download fehlgeschlagen",
+                        failure.message ?: Lang.t("Download fehlgeschlagen"),
                     )
                 }
         }

@@ -71,7 +71,7 @@ private fun window(args: Array<String>) = application {
         }
     }
 
-    if (!ignoreSave) println("Spielstand: ${DesktopSave.location()}")
+    if (!ignoreSave) println(Lang.t("Spielstand: %s", DesktopSave.location()))
 
     Window(
         onCloseRequest = {
@@ -200,9 +200,9 @@ private fun DesktopSlots(game: DesktopGame) {
 private fun describeSlot(state: GameState?): String {
     if (state == null) return Lang.t("Leer — hier fängt ein neues Spiel an.")
     val parts = buildList {
-        add(Tiers.forMass(state.runMass).name)
-        if (state.collapses > 0) add("${state.collapses} Kollapse")
-        if (state.bigBangs > 0) add("${state.bigBangs} Urknalle")
+        add(Tiers.forMass(state.runMass).label)
+        if (state.collapses > 0) add(Lang.t("%s Kollapse", state.collapses))
+        if (state.bigBangs > 0) add(Lang.t("%s Urknalle", state.bigBangs))
     }
     return parts.joinToString(" · ")
 }
