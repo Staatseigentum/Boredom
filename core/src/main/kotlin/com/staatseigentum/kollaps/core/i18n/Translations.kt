@@ -821,8 +821,8 @@ internal object Translations {
         "Forschung anstoßen" to "Start research",
         "Lässt die Bank nie leer stehen." to "Never lets the bench stand empty.",
         "Kollabieren lassen" to "Collapse automatically",
-        "Kollabiert, sobald Warten kaum noch etwas bringt — und hört danach von selbst auf." to
-            "Collapses once waiting barely pays any more — and stops on its own afterwards.",
+        "Kollabiert sofort, sobald es geht — und hört nach den bestellten Läufen von selbst auf." to
+            "Collapses the moment it can — and stops on its own after the runs you ordered.",
         "Rücklage" to "Reserve",
         "die Hälfte" to "half",
         "ein Zehntel" to "a tenth",

@@ -9,9 +9,14 @@ import kotlin.test.assertTrue
 /**
  * The rule that ends runs, and the two promises that make it allowed to exist.
  *
- * It must not fire early — a collapse the moment it becomes possible is worth one singularity and
- * throws the run away — and it must stop by itself after exactly the number of runs that were
- * ordered. Everything else about it is a detail; these two are the feature.
+ * It must fire the moment it can, and it must stop by itself after exactly the number of runs that
+ * were ordered. Everything else about it is a detail; these two are the feature.
+ *
+ * The first promise used to be the opposite one — it held back until a further minute of the run's
+ * production would no longer move the payout, so that arming it could not throw a run away. That
+ * protection is now a single line in [GameEngine.canCollapse], which refuses below one whole
+ * singularity, and the waiting is gone: the rule is armed deliberately, for a number of runs, by
+ * somebody who has the fleet to cross the threshold in seconds and wants those runs now.
  */
 class AutoCollapseTest {
 
@@ -66,29 +71,57 @@ class AutoCollapseTest {
         assertEquals(0, Automation.set(bigger, AutomationRule.COLLAPSE, null).collapseBudget)
     }
 
+    /**
+     * The rule fires on the first pass it is allowed to, and not one later.
+     *
+     * This used to be the opposite test: it held while another minute of production would still
+     * add more than two per cent to the payout, on the reasoning that collapsing straight away
+     * throws a run away. The rule is now instant on purpose — whoever arms it has a fleet that
+     * crosses the threshold in seconds and wants the runs, not a minute of waiting each time.
+     *
+     * A run that is *still climbing hard* is the sharp case, so that is what this uses: barely
+     * over the line, producing at full tilt, exactly the state the old rule would have sat on.
+     */
     @Test
-    fun `it waits while the run is still going somewhere`() {
-        // Barely over the line and producing hard: another minute is worth a great deal here.
+    fun `it fires the moment it can, even on a run that is still climbing`() {
         val climbing = armed(ready(Tiers.last.threshold * 1.05, running = true))
         assertTrue(GameEngine.canCollapse(climbing), "Der Aufbau taugt nicht für den Test")
         assertTrue(
             GameEngine.singularitiesIn(climbing, 60.0) > GameEngine.pendingSingularities(climbing),
-            "Eine Minute bringt hier nichts mehr — der Test misst das Falsche",
+            "Der Lauf trägt hier nichts mehr — dann prüft der Test nicht, was er soll",
         )
 
-        assertEquals(1, GameEngine.onWallClock(climbing, now).collapses, "Zu früh kollabiert")
+        val after = GameEngine.onWallClock(climbing, now)
+        assertEquals(2, after.collapses, "Es wurde nicht sofort kollabiert")
+        assertEquals(climbing.collapseBudget - 1, after.collapseBudget)
     }
 
     @Test
-    fun `it fires once the run has stopped paying`() {
-        // Deep, and nothing left running: a further minute adds exactly nothing.
-        val stalled = armed(ready(Tiers.last.threshold * 1e6))
-        assertTrue(GameEngine.canCollapse(stalled))
+    fun `it pays out and books the run`() {
+        val deep = armed(ready(Tiers.last.threshold * 1e6))
+        assertTrue(GameEngine.canCollapse(deep))
 
-        val after = GameEngine.onWallClock(stalled, now)
+        val after = GameEngine.onWallClock(deep, now)
         assertEquals(2, after.collapses, "Es wurde nicht kollabiert")
         assertTrue(after.singularities > 0.0)
-        assertEquals(stalled.collapseBudget - 1, after.collapseBudget)
+        assertEquals(deep.collapseBudget - 1, after.collapseBudget)
+    }
+
+    /**
+     * And "as soon as it can" still never means "for nothing".
+     *
+     * [GameEngine.canCollapse] refuses below one whole singularity, and that guard is the only
+     * thing left between the rule and a run thrown away for no payout. It was previously backed up
+     * by the look-ahead; now it stands alone, so it gets its own test.
+     */
+    @Test
+    fun `it does not collapse a run that would pay nothing`() {
+        val short = armed(ready(Tiers.last.threshold * 0.99))
+        assertFalse(GameEngine.canCollapse(short), "Der Aufbau taugt nicht für den Test")
+
+        val after = GameEngine.onWallClock(short, now)
+        assertEquals(1, after.collapses, "Ein Lauf wurde für nichts weggeworfen")
+        assertEquals(short.collapseBudget, after.collapseBudget, "Der Auftrag wurde trotzdem verbraucht")
     }
 
     @Test

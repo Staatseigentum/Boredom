@@ -545,18 +545,23 @@ object GameEngine {
      *
      * ## When
      *
-     * Not the moment collapsing becomes possible — that is worth one singularity and would turn
-     * the rule into a machine for wasting runs. It waits until waiting has stopped paying: a
-     * further [COLLAPSE_WINDOW_SECONDS] of the run's own production would add less than
-     * [COLLAPSE_GAIN_FLOOR] to what the collapse is worth. Because the payout goes as the square
-     * root of the run's mass, that share falls on its own as a run matures, so the test finds the
-     * knee of the curve at any scale rather than at a number that would have to be re-tuned every
-     * time the game grew.
+     * The first moment it can, which is the whole of the rule: [canCollapse] is true and there is
+     * budget left.
+     *
+     * It used to wait for the knee of the curve — it looked a minute ahead and held on while
+     * another minute of the run's own production would still add more than two per cent to the
+     * payout. The reasoning was that collapsing the instant it becomes possible is worth one
+     * singularity and throws a run away, and that is true of a run that got there slowly. It is
+     * not what this rule is for. Somebody who orders fifty runs has a fleet that crosses the
+     * threshold in seconds and wants fifty of them now, and the look-ahead turned each of those
+     * into a minute of watching a full bar. The judgement of whether a run is worth continuing
+     * belongs to the player, who makes it by not arming this.
      *
      * ## And when not
      *
      * [canCollapse] already refuses inside a challenge, which is the important one — a challenge is
-     * a run you are supposed to finish under its rules, not one a background loop cuts short.
+     * a run you are supposed to finish under its rules, not one a background loop cuts short. It
+     * also refuses below one whole singularity, so "as soon as it can" is never "for nothing".
      */
     private fun autoCollapse(state: GameState, nowMillis: Long): GameState {
         if (!Automation.isAvailable(state, AutomationRule.COLLAPSE)) return state
@@ -564,22 +569,12 @@ object GameEngine {
         if (state.collapseBudget <= 0) return Automation.set(state, AutomationRule.COLLAPSE, null)
         if (!canCollapse(state)) return state
 
-        val now = pendingSingularities(state)
-        val soon = singularitiesIn(state, COLLAPSE_WINDOW_SECONDS)
-        if (now <= 0.0 || soon > now * (1.0 + COLLAPSE_GAIN_FLOOR)) return state
-
         val left = state.collapseBudget - 1
         val collapsed = collapse(state, nowMillis).copy(collapseBudget = left)
         // Spent, so the order is over and the button belongs to the player again. Switched off here
         // rather than on the next pass so that the panel reads "aus" the moment the last run ends.
         return if (left > 0) collapsed else Automation.set(collapsed, AutomationRule.COLLAPSE, null)
     }
-
-    /** How far ahead the collapse rule looks to decide whether the run is still going anywhere. */
-    private const val COLLAPSE_WINDOW_SECONDS = 60.0
-
-    /** And how little that has to be worth before it pulls the trigger. */
-    private const val COLLAPSE_GAIN_FLOOR = 0.02
 
     /**
      * Empties the day's contract allowances when the day has turned.

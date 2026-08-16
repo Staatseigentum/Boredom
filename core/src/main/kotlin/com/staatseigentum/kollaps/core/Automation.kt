@@ -101,7 +101,7 @@ enum class AutomationRule(
     COLLAPSE(
         id = "au_collapse_counted",
         germanLabel = "Kollabieren lassen",
-        germanFlavor = "Kollabiert, sobald Warten kaum noch etwas bringt — und hört danach von selbst auf.",
+        germanFlavor = "Kollabiert sofort, sobald es geht — und hört nach den bestellten Läufen von selbst auf.",
         germanSetting = "Läufe",
         options = listOf(
             AutomationOption("5", 5.0),
