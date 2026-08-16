@@ -263,3 +263,75 @@ jobs:
             dist/* \
             --title "Kollaps ${{ needs.version.outputs.tag }}" \
             --generate-notes
+
+  # Dieselben Dateien noch einmal, nur nach itch.io.
+  #
+  # Ein eigener Job und nicht ein Schritt in `publish`: itch.io ist die Zweitverwertung, und ein
+  # abgelaufener API-Schlüssel dort darf das GitHub-Release nicht mit sich reißen — der Updater in
+  # der App liest das Release-Feed und nichts sonst.
+  itch:
+    name: itch.io aktualisieren
+    needs: [version, android, windows, ios]
+    if: >
+      always()
+      && needs.android.result == 'success'
+      && needs.windows.result == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Dateien einsammeln
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Hochladen
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          # Wer die Seite gehört und wie sie heißt, als Repository-Variable: der Name der Seite
+          # ist keine Geheimnis, aber er ist auch nichts, was im Workflow festbetoniert gehören
+          # würde. Ohne die Variable wird der offensichtliche Name versucht.
+          TARGET: ${{ vars.ITCH_TARGET || 'staatseigentum/kollaps' }}
+          VERSION: ${{ needs.version.outputs.name }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${BUTLER_API_KEY:-}" ]; then
+            echo "::notice::Kein BUTLER_API_KEY hinterlegt — itch.io bleibt, wie es ist." \
+                 "Schlüssel anlegen unter https://itch.io/user/settings/api-keys und als" \
+                 "Repository-Secret BUTLER_API_KEY eintragen."
+            exit 0
+          fi
+
+          curl -sSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip
+          chmod +x butler
+          ./butler -V
+
+          # Ein Kanal je Fassung, und jeder trägt dieselbe Versionsnummer wie das Release.
+          # `--if-changed` heißt: was gleich geblieben ist, wird nicht noch einmal als neuer
+          # Build gezählt. Die tragbare Fassung geht als .zip hoch — butler packt sie selbst aus,
+          # damit die itch-App sie starten kann statt sie nur herunterzuladen.
+          #
+          # Über ein Muster statt über den ausgeschriebenen Namen: die vier Dateien werden an vier
+          # verschiedenen Stellen benannt — zwei davon in einem PowerShell-Schritt und eine in
+          # `ios/paket.sh` — und ein Name, der hier ein viertes Mal steht, ist ein Name, der beim
+          # nächsten Umbenennen still danebenliegt. Fehlt eine Datei ganz, sagt es das laut.
+          push() {
+            channel="$1"
+            pattern="$2"
+            file=$(ls -1 $pattern 2>/dev/null | head -n 1 || true)
+            if [ -z "$file" ]; then
+              echo "::warning::Nichts für $pattern gefunden — Kanal $channel bleibt, wie er ist."
+              return 0
+            fi
+            echo "$channel <- $file"
+            ./butler push "$file" "$TARGET:$channel" --userversion "$VERSION" --if-changed
+          }
+
+          push android 'dist/*.apk'
+          push windows 'dist/*-windows-portabel.zip'
+          push windows-installer 'dist/*-setup.msi'
+          push ios 'dist/*.ipa'
+
+          ./butler status "$TARGET"

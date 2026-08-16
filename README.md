@@ -370,6 +370,24 @@ kann jeder auslesen. Alternative, falls das Repo privat bleiben soll: die Releas
 hosten und die Konstante `LATEST_RELEASE_URL` in `UpdateService.kt` dorthin zeigen lassen. Außer
 dieser einen Konstante weiß nichts in der App etwas von GitHub.
 
+### itch.io mitversorgen
+
+Dasselbe Release schiebt seine vier Dateien auch nach itch.io, sofern ein Schlüssel hinterlegt
+ist. Der Job heißt `itch` und hängt hinter dem GitHub-Release, ohne es aufhalten zu können: läuft
+er nicht, bleibt die itch-Seite auf dem alten Stand und sonst ändert sich nichts.
+
+Zwei Einträge unter *Settings → Secrets and variables → Actions*:
+
+- Secret `BUTLER_API_KEY` — ein Schlüssel von <https://itch.io/user/settings/api-keys>.
+- Variable `ITCH_TARGET` — `benutzer/spiel`, so wie die Seite in der Adresszeile heißt. Ohne die
+  Variable wird `staatseigentum/kollaps` versucht.
+
+Vier Kanäle, damit itch die richtige Schaltfläche je Gerät anbietet: `android` (APK), `windows`
+(die tragbare Fassung, von butler ausgepackt, damit die itch-App sie starten kann),
+`windows-installer` (MSI) und `ios` (die unsignierte IPA). Fehlt eine der Dateien, bleibt genau
+ihr Kanal stehen und der Rest geht trotzdem hoch. Ohne `BUTLER_API_KEY` überspringt der Job sich
+selbst mit einem Hinweis im Protokoll.
+
 ### Grenzen
 
 Der Updater ersetzt nur **Release-Builds**. Das Debug-APK aus dem normalen CI-Lauf hat eine
