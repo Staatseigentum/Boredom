@@ -193,6 +193,7 @@ internal object UiTexts {
         "Jetzt zu holen: %s Singularitäten (%s extra)",
         "Jetzt zu holen: %s Äonen",
         "Katalog %s",
+        "Katalog %s · noch %s",
         "Katalogfund",
         "Kein Feuer im Kern",
         "Keine Veröffentlichungen gefunden. Ist das Repository öffentlich?",

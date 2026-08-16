@@ -4,6 +4,7 @@ import com.staatseigentum.kollaps.core.i18n.Lang
 import com.staatseigentum.kollaps.core.i18n.Language
 import com.staatseigentum.kollaps.core.pixel.Skins
 import kotlin.concurrent.Volatile
+import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.min
@@ -13,8 +14,15 @@ import kotlin.math.sqrt
 data class Stats(
     val tier: CelestialTier,
     val nextTier: CelestialTier?,
-    /** Progress towards [nextTier] in `0f..1f`; `1f` once the black hole is reached. */
+    /** Progress towards [nextTier] in `0f..1f`; `1f` once there is nothing above. */
     val tierProgress: Float,
+    /**
+     * What the run is still short of before [nextTier] — kilograms, or seconds where the rung is
+     * priced in time. Zero when there is nothing above. See [tierRemainingLabel].
+     */
+    val tierRemaining: Double,
+    /** Whether [tierRemaining] is a wait rather than a mass. True on the catalogue ladder. */
+    val tierRemainingIsTime: Boolean,
     val massPerSecond: Double,
     val massPerTap: Double,
     val globalMultiplier: Double,
@@ -52,7 +60,21 @@ data class Stats(
     /** Whether the body is hot enough to fuse, and what the elements are worth together. */
     val fusionUnlocked: Boolean = false,
     val fusionMultiplier: Double = 1.0,
-)
+) {
+    /**
+     * [tierRemaining] written out, in whichever unit it is actually in.
+     *
+     * A property rather than a string held in the record, because the record is cached — by the
+     * desktop harness and by the tick — and a formatted string carries the language it was built
+     * in. Read here it is always in the language the frame is being drawn in.
+     */
+    val tierRemainingLabel: String
+        get() = if (tierRemainingIsTime) {
+            Numbers.formatDuration(ceil(tierRemaining).toLong())
+        } else {
+            Numbers.formatMass(tierRemaining)
+        }
+}
 
 /** A collector row in the shop. */
 data class CollectorOffer(
@@ -175,11 +197,14 @@ object GameEngine {
         val tier = Tiers.forState(state)
         val perSecond = massPerSecond(state, mods, tier)
         val next = Tiers.next(tier, Designations.isUnlocked(state))
+        val gap = tierGap(state, tier, next)
 
         return Stats(
             tier = tier,
             nextTier = next,
-            tierProgress = tierProgress(state.runMass, tier, next),
+            tierProgress = gap.progress,
+            tierRemaining = gap.remaining,
+            tierRemainingIsTime = gap.isTime,
             massPerSecond = perSecond,
             massPerTap = massPerTap(state, mods, tier, perSecond),
             globalMultiplier = mods.global,
@@ -2141,15 +2166,48 @@ object GameEngine {
         return base + perSecond * mods.tapFraction
     }
 
-    private fun tierProgress(
-        runMass: Double,
-        tier: CelestialTier,
-        next: CelestialTier?,
-    ): Float {
-        if (next == null) return 1f
-        val span = next.threshold - tier.threshold
-        if (span <= 0.0) return 1f
-        return (((runMass - tier.threshold) / span).coerceIn(0.0, 1.0)).toFloat()
+    /** How far along the current rung a run is, and what it is still short of. */
+    private data class TierGap(val progress: Float, val remaining: Double, val isTime: Boolean)
+
+    /**
+     * The gap to [next]: how much of it is behind the run, and what the run still owes.
+     *
+     * Below the black hole this is one division — a rung is a mass, and the bar is how much of the
+     * span between two masses has been collected.
+     *
+     * Above it a rung has *two* gates, time and mass ([Designations.forRun]), and a bar drawn from
+     * either alone lies. The mass gate is the one that lies loudest: a collapse resets the run
+     * clock but hands back a head start, so the first moment of a new run already holds far more
+     * mass than the next designation asks for. The bar stood full at "noch 0 kg" and nothing
+     * happened for a minute, which is exactly what it looked like — a broken screen.
+     *
+     * So above the black hole this reads both and reports the lower, which is the gate that is
+     * actually holding, in the unit that gate is measured in. That is also the honest answer to
+     * "what am I waiting for": on the catalogue ladder it is nearly always the clock.
+     */
+    private fun tierGap(state: GameState, tier: CelestialTier, next: CelestialTier?): TierGap {
+        if (next == null) return TierGap(1f, 0.0, isTime = false)
+
+        val byMass = run {
+            val span = next.threshold - tier.threshold
+            if (span <= 0.0) 1.0 else ((state.runMass - tier.threshold) / span).coerceIn(0.0, 1.0)
+        }
+        val massLeft = (next.threshold - state.runMass).coerceAtLeast(0.0)
+        if (!next.isDesignated) return TierGap(byMass.toFloat(), massLeft, isTime = false)
+
+        val step = next.index - Designations.FIRST_INDEX + 1
+        val from = Designations.secondsFor(step - 1)
+        val until = Designations.secondsFor(step)
+        val byTime = if (until <= from) 1.0 else {
+            ((state.runSeconds - from) / (until - from)).coerceIn(0.0, 1.0)
+        }
+        val timeLeft = (until - state.runSeconds).coerceAtLeast(0.0)
+
+        return if (byTime <= byMass) {
+            TierGap(byTime.toFloat(), timeLeft, isTime = true)
+        } else {
+            TierGap(byMass.toFloat(), massLeft, isTime = false)
+        }
     }
 
     /**

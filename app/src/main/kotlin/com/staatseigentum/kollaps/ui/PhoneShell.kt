@@ -348,12 +348,19 @@ fun StatusBand(state: GameState, stats: Stats, modifier: Modifier = Modifier) {
             val remaining = stats.nextTier?.let {
                 // One template rather than a translated prefix glued to a number: "noch 4 Mkg"
                 // and "4 Mkg to go" put the words on opposite sides of the figure.
-                Lang.t(
-                    "%s/%s · noch %s",
-                    stats.tier.index + 1,
-                    Tiers.all.size,
-                    Numbers.formatMass(it.threshold - state.runMass),
-                )
+                //
+                // Two of them, because the counter stops counting on the catalogue ladder — there
+                // are sixteen thousand rungs over the twenty-five, so "700/25" is not a position.
+                if (stats.tier.isDesignated) {
+                    Lang.t("Katalog %s · noch %s", stats.tier.label, stats.tierRemainingLabel)
+                } else {
+                    Lang.t(
+                        "%s/%s · noch %s",
+                        stats.tier.index + 1,
+                        Tiers.all.size,
+                        stats.tierRemainingLabel,
+                    )
+                }
             }
             if (remaining != null) {
                 Spacer(Modifier.width(8.dp))

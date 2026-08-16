@@ -230,6 +230,64 @@ class DesignationTest {
             "Eine volle AA-ZZ-Runde dauert %.1f Tage — das ist keine Leiter mehr".format(days),
         )
     }
+
+    /**
+     * A run on a full sky, holding plenty of mass, with the clock wherever the test wants it.
+     *
+     * Which is what a save looks like the second after a collapse: the head start hands the mass
+     * straight back and only the clock actually starts over.
+     */
+    private fun afterCollapse(seconds: Double): GameState = GameState.new(0).copy(
+        bigBangs = Multiverse.SLOTS,
+        universes = fullSky(),
+        collectors = mapOf("dust" to 100),
+        runMass = Designations.massFor(500),
+        runSeconds = seconds,
+    )
+
+    /**
+     * The bar reads the gate that is actually holding, and says so in that gate's unit.
+     *
+     * This is the screen it fixes. Collapse on the catalogue ladder and the head start puts the
+     * run's mass hundreds of rungs past what the next designation asks for while the clock is back
+     * at zero. Drawn from mass alone the bar stood full at "noch 0 kg" and stayed there for a
+     * minute — an interface reporting that nothing is happening while something is.
+     */
+    @Test
+    fun `after a collapse the catalogue bar counts the wait, not the mass`() {
+        val stats = GameEngine.stats(afterCollapse(0.0))
+
+        assertEquals(Tiers.last.index, stats.tier.index, "Ohne Laufzeit steht der Lauf am Loch")
+        assertTrue(stats.tierRemainingIsTime, "Der Rest steht in Kilogramm statt in Sekunden")
+        assertEquals(Designations.ENTRY_SECONDS, stats.tierRemaining, 1.0)
+        assertEquals(0f, stats.tierProgress, 0.001f)
+    }
+
+    /** And it fills as the wait is served, which is the whole point of a bar. */
+    @Test
+    fun `the catalogue bar fills as the wait is served`() {
+        assertEquals(
+            0.5f,
+            GameEngine.stats(afterCollapse(Designations.ENTRY_SECONDS / 2.0)).tierProgress,
+            0.01f,
+        )
+    }
+
+    /**
+     * The mass gate still gets to hold, and still gets to say so in kilograms.
+     *
+     * Time is what binds for anybody climbing, but a run that has sat at the black hole for a year
+     * without the mass to go on is held by the other gate, and the line has to name that one.
+     */
+    @Test
+    fun `a run short of mass is told about mass`() {
+        val patient = afterCollapse(365.0 * 86_400.0).copy(runMass = Tiers.last.threshold)
+        val stats = GameEngine.stats(patient)
+
+        assertFalse(stats.tierRemainingIsTime, "Es fehlt Masse, angezeigt wird eine Wartezeit")
+        assertEquals(0f, stats.tierProgress, 0.001f)
+        assertTrue(stats.tierRemaining > 0.0)
+    }
 }
 
 /** The road to a full sky, which is what the catalogue ladder waits behind. */

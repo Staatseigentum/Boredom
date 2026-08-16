@@ -113,7 +113,7 @@ fun HudBand(state: GameState, stats: Stats, modifier: Modifier = Modifier) {
                     )
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        text = rungLine(state, stats),
+                        text = rungLine(stats),
                         style = MaterialTheme.typography.bodySmall,
                         color = Muted,
                     )
@@ -138,18 +138,26 @@ fun HudBand(state: GameState, stats: Stats, modifier: Modifier = Modifier) {
 }
 
 /** Where on the ladder, in the form that means something at that height. */
-private fun rungLine(state: GameState, stats: Stats): String {
-    val next = stats.nextTier ?: return if (stats.tier.isDesignated) {
-        Lang.t("Katalog %s", stats.tier.label)
-    } else {
-        Lang.t("Stufe %s/%s", stats.tier.index + 1, Tiers.all.size)
+private fun rungLine(stats: Stats): String {
+    if (stats.nextTier == null) {
+        return if (stats.tier.isDesignated) {
+            Lang.t("Katalog %s", stats.tier.label)
+        } else {
+            Lang.t("Stufe %s/%s", stats.tier.index + 1, Tiers.all.size)
+        }
     }
-    return Lang.t(
-        "Stufe %s/%s · noch %s",
-        stats.tier.index + 1,
-        Tiers.all.size,
-        Numbers.formatMass(next.threshold - state.runMass),
-    )
+    // A rung counter is only a counter while the ladder has an end. On the catalogue it would read
+    // "Stufe 700/25", so up there the designation itself says where you are.
+    return if (stats.tier.isDesignated) {
+        Lang.t("Katalog %s · noch %s", stats.tier.label, stats.tierRemainingLabel)
+    } else {
+        Lang.t(
+            "Stufe %s/%s · noch %s",
+            stats.tier.index + 1,
+            Tiers.all.size,
+            stats.tierRemainingLabel,
+        )
+    }
 }
 
 @Composable

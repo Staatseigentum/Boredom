@@ -984,7 +984,9 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
 
             else -> Lang.t("%s — das Ende der Leiter", stats.tier.label)
         }
-        val remaining = next?.let { Lang.t("noch %s", Numbers.formatMass(it.threshold - state.runMass)) }
+        // What the rung is short of, in the unit that rung is priced in — kilograms below the
+        // black hole, a wait on the catalogue ladder. See [Stats.tierRemainingLabel].
+        val remaining = next?.let { Lang.t("noch %s", stats.tierRemainingLabel) }
 
         if (compact) {
             // Where you are and how far to the next one, on one line with the bar under it.

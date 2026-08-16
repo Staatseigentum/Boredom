@@ -2041,6 +2041,7 @@ internal object Translations {
         "+%s Produktion" to "+%s production",
         "Chronik %s/%s" to "Chronicle %s/%s",
         "Katalog %s" to "Catalogue %s",
+        "Katalog %s · noch %s" to "Catalogue %s · %s to go",
         "Kollapse" to "Collapses",
         "Labor · %s" to "Lab · %s",
         "Stellt um · tippen" to "Switching · tap",
