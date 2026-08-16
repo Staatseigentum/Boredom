@@ -33,15 +33,6 @@ class LanguageCoverageTest {
         Lang.current = Language.DE
     }
 
-    /**
-     * The floor, raised as translation batches land. Never lowered.
-     *
-     * Lowering it would mean a text stopped being translated — which happens exactly one way, by
-     * somebody changing a German string and not its English side. That is the failure this number
-     * is here to catch, and it is silent in every other way: the fallback quietly serves the German.
-     */
-    private val LEAST_TRANSLATED = 570
-
     @Test
     fun `the catalogues are actually being read`() {
         // A collector that returned nothing would make every other test in this file pass.
@@ -55,14 +46,26 @@ class LanguageCoverageTest {
         assertEquals(Texts.all.size, Texts.all.toSet().size, "Doppelte Texte im Sammler")
     }
 
+    /**
+     * Everything, or red.
+     *
+     * This was a floor that ratcheted up while the work was being done, because a test that failed
+     * on the first untranslated string would have been red from the moment the catalogue existed
+     * and would have taught everyone to ignore it. The moment the last text landed, the floor
+     * became a ceiling: from here a missing translation is a broken build.
+     *
+     * It fails exactly one way — somebody changes a German string and not its English side. That
+     * is silent in every other respect, because the fallback quietly serves the German, which is
+     * precisely why it needs a test rather than an eye.
+     */
     @Test
-    fun `the translation only ever grows`() {
-        val translated = Texts.all.size - Texts.missing.size
+    fun `every text the game can show is translated`() {
+        val missing = Texts.missing
         assertTrue(
-            translated >= LEAST_TRANSLATED,
-            "Übersetzt sind $translated von ${Texts.all.size}; die Untergrenze ist " +
-                "$LEAST_TRANSLATED. Wenn das nach einer Änderung fällt, wurde ein deutscher " +
-                "Text angefasst und seine englische Seite nicht.",
+            missing.isEmpty(),
+            "${missing.size} von ${Texts.all.size} Texten haben keine englische Seite. " +
+                "Wahrscheinlich wurde ein deutscher Text geändert und Translations.EN nicht. " +
+                "Fehlend: ${missing.take(5)}",
         )
     }
 

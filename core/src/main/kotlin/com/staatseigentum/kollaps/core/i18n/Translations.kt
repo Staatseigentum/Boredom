@@ -1032,6 +1032,671 @@ internal object Translations {
             "Identical to the decimal place. Things like this do not form, they are divided.",
     )
 
+
+    /** The rest of the catalogue finds, and the three answers each one offers. */
+    private val FINDS_MORE: Map<String, String> = mapOf(
+        "Ein kalter Fleck" to "A cold spot",
+        "Ein Gebiet, in dem die Hintergrundstrahlung fehlt. Nicht schwächer — sie fehlt." to
+            "A region where the background radiation is absent. Not weaker — absent.",
+        "Dahinter ist nichts. Nicht Dunkelheit, sondern die Abwesenheit von Dahinter." to
+            "There is nothing behind it. Not darkness — the absence of behind.",
+        "Etwas, das zu langsam fällt" to "Something falling too slowly",
+        "Ein Brocken auf einer Bahn, die er bei seiner Masse nicht halten dürfte." to
+            "A rock on an orbit it has no business holding at that mass.",
+        "Entweder ist die Masse falsch oder die Gravitation. Beides wäre unangenehm." to
+            "Either the mass is wrong or gravity is. Both would be awkward.",
+        "Ein Katalogeintrag, den es schon gibt" to "A catalogue entry that already exists",
+        "Dieselbe Kennung, dieselben Werte, zweimal vergeben. Einer davon ist neu." to
+            "The same designation, the same figures, issued twice. One of them is new.",
+        "Der Katalog hat sich nicht geirrt. Es sind zwei." to
+            "The catalogue did not make a mistake. There are two.",
+        "Älter als es sein dürfte" to "Older than it ought to be",
+        "Die Zusammensetzung passt zu einem Universum, das es noch nicht gegeben hat." to
+            "The composition matches a universe that has not existed yet.",
+        "Es ist nicht von hier. Es ist von vorher." to
+            "It is not from here. It is from before.",
+        "Der stille Bereich" to "The quiet stretch",
+        "Vierhundert Sprossen ohne einen einzigen Fund. Statistisch beinahe unmöglich." to
+            "Four hundred rungs without a single find. Statistically all but impossible.",
+        "Nichts zu finden ist auch ein Befund. Jemand hat hier aufgeräumt." to
+            "Finding nothing is a finding too. Somebody tidied up here.",
+        "Auswerten" to "Analyse it",
+        "Zerlegen, vermessen, aufschreiben. Zahlt ein Äon." to
+            "Take it apart, measure it, write it down. Pays one Aeon.",
+        "Anzapfen" to "Tap it",
+        "Nehmen, was drin ist. Wirkt bis zum nächsten Kollaps und nicht darüber hinaus." to
+            "Take what is inside. Lasts until the next collapse and no further.",
+        "Notieren und weiterziehen. Bringt nichts außer dem Eintrag." to
+            "Note it down and move on. Brings nothing but the entry.",
+    )
+
+    /** What the game asks of you: the runs under a rule, and the rotating contracts. */
+    private val CHALLENGES: Map<String, String> = mapOf(
+        "Handarbeit" to "By Hand",
+        "Die ganze Flotte steht still. Was du willst, holst du dir selbst." to
+            "The whole fleet stands idle. What you want, you fetch yourself.",
+        "Nichtstun" to "Doing Nothing",
+        "Nimm die Hände weg. Einen Staubfänger kriegst du geschenkt — der Rest wächst ohne dich." to
+            "Hands off. You get one Dust Catcher for free — the rest grows without you.",
+        "Sprint" to "Sprint",
+        "Bis zum Saturn, in fünfundvierzig Minuten. Die Uhr läuft nur, wenn du spielst." to
+            "To Saturn, in forty-five minutes. The clock only runs while you play.",
+        "Halbe Kraft" to "Half Power",
+        "Alles bringt die Hälfte. Bis zum Schwarzen Loch trotzdem." to
+            "Everything yields half. To the Black Hole all the same.",
+        "Rohbau" to "Shell and Core",
+        "Der Upgrade-Laden ist zu. Mehr Maschinen ja, bessere nein." to
+            "The upgrade shop is shut. More machines yes, better ones no.",
+        "Allein" to "Alone",
+        "Nichts bleibt auf einer Bahn. Was du schaffst, schaffst du ohne Trabanten." to
+            "Nothing stays in orbit. What you manage, you manage without satellites.",
+        "Eile" to "Haste",
+        "Bis zur Sonne, in neunzig Minuten. Die Uhr läuft nur, wenn du spielst." to
+            "To the Sun, in ninety minutes. The clock only runs while you play.",
+        "Askese" to "Austerity",
+        "Kein einziges Upgrade, den ganzen Weg bis zur Sonne. Nur Maschinen und Geduld." to
+            "Not one upgrade, the whole way to the Sun. Machines and patience only.",
+        "Serienstopp" to "Line Stoppage",
+        "Jede Maschine zählt einzeln. Die Fertigungsstraßen haben Betriebsferien." to
+            "Every machine counts on its own. The assembly lines are on holiday.",
+        "Wachdienst" to "Night Watch",
+        "Zugeklappt läuft nichts weiter. Was du willst, musst du sehen." to
+            "Nothing runs while it is shut. What you want, you have to watch.",
+        "Kalte Kette" to "Cold Chain",
+        "Kein Ofen brennt. Schwere Kerne musst du diesmal woanders herbekommen." to
+            "No furnace is lit. You will have to get heavy nuclei elsewhere this time.",
+        "Einsames Universum" to "Lonely Universe",
+        "Die anderen Galaxien schweigen. Dieses hier schafft es allein oder gar nicht." to
+            "The other galaxies are silent. This one manages alone or not at all.",
+        "Handbetrieb" to "Manual Operation",
+        "Noch einmal ohne Flotte, und diesmal bis zur Sonne." to
+            "Once more without a fleet, and this time to the Sun.",
+        "Viertelkraft" to "Quarter Power",
+        "Alles bringt ein Viertel. Bis zum Schwarzen Loch trotzdem." to
+            "Everything yields a quarter. To the Black Hole all the same.",
+        "Hetze" to "Chase",
+        "Bis zum Schwarzen Loch, in zwei Stunden. Die Uhr läuft nur, wenn du spielst." to
+            "To the Black Hole, in two hours. The clock only runs while you play.",
+        "Rohbau II" to "Shell and Core II",
+        "Der Laden bleibt zu, den ganzen Weg bis zum Schwarzen Loch." to
+            "The shop stays shut, the whole way to the Black Hole.",
+
+        // ---- the contract table
+        "Fünfzig Sprossen über dem Tor" to "Fifty rungs above the gate",
+        "Zwei Legierungen schmieden" to "Forge two alloys",
+        "Fünf Kollapse" to "Five collapses",
+        "Tausend Maschinen gleichzeitig" to "A thousand machines at once",
+        "Drei Katalogfunde beantworten" to "Answer three catalogue finds",
+        "Vier Galaxien gleichzeitig am Rechnen" to "Four galaxies computing at once",
+        "Eine Herausforderung bestehen" to "Beat one challenge",
+        "Sechs Bahnen gleichzeitig besetzt" to "Six orbits occupied at once",
+        "Drei Projekte durchziehen" to "See three projects through",
+        "Fünfhundert Gramm Gold im Lager" to "Five hundred grams of gold in store",
+    )
+
+    /** The chronicle: one line per rung, and a handful for each kind of reset. */
+    private val LORE: Map<String, String> = mapOf(
+        "%s. Kollaps" to "Collapse %s",
+        "%s. Urknall" to "Big Bang %s",
+        "Es fängt mit einem Stein an, der niemandem gehört. Du legst die Hand darauf." to
+            "It starts with a stone that belongs to nobody. You put your hand on it.",
+        "Groß genug, dass ihn jemand aufschreibt. Ein Name, eine Nummer, ein Eintrag." to
+            "Big enough for somebody to write down. A name, a number, an entry.",
+        "Rund. Nicht weil es jemand so wollte, sondern weil Schwerkraft keine Ecken mag." to
+            "Round. Not because anybody wanted it that way, but because gravity dislikes corners.",
+        "Grau und still. Und trotzdem hebt unten jemand den Kopf und sieht hinauf." to
+            "Grey and silent. And still somebody down there lifts their head and looks up.",
+        "Ein Planet, offiziell. Verbrannt auf der einen Seite, erfroren auf der anderen." to
+            "A planet, officially. Burnt on one side, frozen on the other.",
+        "Es regnet. Nicht Wasser, aber es regnet, und das ist mehr, als die meisten haben." to
+            "It rains. Not water, but it rains, which is more than most have.",
+        "Rost, soweit man sehen kann. Irgendwo darin ein Rover, der aufgehört hat zu funken." to
+            "Rust as far as you can see. Somewhere in it a rover that stopped transmitting.",
+        "Von weitem der schönste Punkt am Morgenhimmel. Von nahem 460 Grad und Schwefelsäure." to
+            "From afar the loveliest point in the morning sky. Close up, 460 degrees and sulphuric acid.",
+        "Blau. Der einzige Ort, von dem irgendjemand je zurückkommen wollte." to
+            "Blue. The only place anybody ever wanted to come back from.",
+        "Doppelt so schwer. Wer hier aufsteht, meint es ernst." to
+            "Twice as heavy. Anybody who stands up here means it.",
+        "Kein Boden mehr. Nur noch Wetter, das nach unten immer dichter wird." to
+            "No ground any more. Only weather, getting denser the further down you go.",
+        "Er liegt auf der Seite. Irgendetwas hat ihn getroffen, vor sehr langer Zeit." to
+            "It lies on its side. Something hit it, a very long time ago.",
+    )
+
+
+    /** The rest of the chronicle: the upper ladder, the collapses and the big bangs. */
+    private val LORE_MORE: Map<String, String> = mapOf(
+        "Die Ringe sind jünger als die Dinosaurier und werden sie nicht lange überleben." to
+            "The rings are younger than the dinosaurs and will not outlast them by much.",
+        "Ein Sturm, in den die Erde zweimal hineinpasst, und er dreht sich seit Jahrhunderten." to
+            "A storm you could fit Earth into twice, and it has been turning for centuries.",
+        "So nah an seinem Stern, dass er von unten glüht. Jahre dauern hier ein paar Tage." to
+            "So close to its star that it glows from below. Years here last a few days.",
+        "Fast ein Stern. Es fehlt nicht viel, und es wird nie reichen." to
+            "Almost a star. Not much is missing, and it will never be enough.",
+        "Jetzt brennt es. Sparsam, aber es brennt, und es wird länger brennen als alles andere." to
+            "Now it burns. Frugally, but it burns, and it will burn longer than anything else.",
+        "Ein ganz gewöhnlicher gelber Zwerg. Acht Planeten halten ihn für den Mittelpunkt." to
+            "A perfectly ordinary yellow dwarf. Eight planets take it for the centre.",
+        "Zu heiß, zu hell, zu schnell. Wer so brennt, hat es in einer Million Jahren hinter sich." to
+            "Too hot, too bright, too fast. Burn like that and it is over in a million years.",
+        "Die Erdbahn passt bequem hinein. Was darin war, ist längst nicht mehr da." to
+            "Earth's orbit fits comfortably inside. Whatever was in it is long gone.",
+        "Größer geht nicht. Was jetzt noch dazukommt, bläst er wieder ab." to
+            "It cannot get bigger. Anything added now gets blown straight off again.",
+        "Der Rest. Erdgroß, weiß, und er kühlt aus — für länger, als das Universum alt ist." to
+            "What is left. Earth-sized, white, and cooling — for longer than the universe is old.",
+        "Ein Teelöffel wiegt ein Gebirge. Die Oberfläche ist einen Zentimeter hoch und aus Eisen." to
+            "A teaspoon weighs a mountain range. The surface is a centimetre tall and made of iron.",
+        "Sein Feld würde dich aus tausend Kilometern in deine Atome zerlegen. Es ist nicht böse." to
+            "Its field would take you apart into atoms from a thousand kilometres. It means nothing by it.",
+        "Ab hier kommt nichts zurück. Nicht Licht, nicht Information, nicht du." to
+            "Nothing comes back from here. Not light, not information, not you.",
+        "Alles, was du gesammelt hast, fällt in sich zusammen. Übrig bleibt ein Punkt." to
+            "Everything you gathered falls in on itself. What is left is a point.",
+        "Beim zweiten Mal weißt du schon, was kommt. Es hilft nicht besonders." to
+            "The second time you already know what is coming. It does not help much.",
+        "Du fängst an, den Weg zu kennen. Die Steine liegen jedes Mal woanders." to
+            "You are starting to know the way. The stones lie somewhere else every time.",
+        "Irgendwann hört es auf, ein Verlust zu sein, und wird ein Handgriff." to
+            "At some point it stops being a loss and becomes a movement of the hand.",
+        "Ein Punkt ist keine Größe. Er ist eine Stelle, an der die Frage aufhört." to
+            "A point is not a size. It is a place where the question stops.",
+        "Was am Rand bleibt, lässt sich zählen. Mehr weiß niemand darüber." to
+            "What stays at the edge can be counted. Nobody knows more about it than that.",
+        "Du hast das jetzt oft genug gemacht, dass die Zahl selbst dir egal geworden ist." to
+            "You have done this often enough that the number itself has stopped mattering.",
+        "Und wieder von vorn. Es ist immer noch dasselbe Universum." to
+            "And from the beginning again. It is still the same universe.",
+        "Dieses Mal nicht der Körper. Das Universum. Alles davon, auf einmal." to
+            "Not the body this time. The universe. All of it, at once.",
+        "Ein zweites, aus denselben Regeln. Es kommt anders heraus, und das ist der Punkt." to
+            "A second one, from the same rules. It comes out different, and that is the point.",
+        "Du legst inzwischen fest, wie es wird, bevor es losgeht. Das ist kein kleiner Schritt." to
+            "By now you decide how it turns out before it starts. That is not a small step.",
+        "Irgendwann bleibt nur die Frage, warum überhaupt etwas ist und nicht nichts." to
+            "In the end only one question is left: why there is anything at all rather than nothing.",
+    )
+
+    /** Achievements: what you did, and the dry line under it. */
+    private val ACHIEVEMENTS: Map<String, String> = mapOf(
+        "Erster Blick nach oben" to "First Look Up",
+        "Grau, still, voller Krater." to "Grey, silent, full of craters.",
+        "Blauer Punkt" to "Blue Dot",
+        "Der einzige Ort mit Kaffee." to "The only place with coffee.",
+        "Schwerer Boden" to "Heavy Ground",
+        "Doppelt so schwer wie zuhause." to "Twice as heavy as home.",
+        "Beringt" to "Ringed",
+        "Der einzige Planet mit gutem Schmuck." to "The only planet with decent jewellery.",
+        "Hauptreihe" to "Main Sequence",
+        "Ganz normal, und trotzdem alles." to "Perfectly ordinary, and still everything.",
+        "So groß es geht" to "As Big As It Gets",
+        "Größer wird ein Stern nicht." to "A star does not get bigger than this.",
+        "Heiße Asche" to "Hot Ash",
+        "Was übrig bleibt, wenn ein Stern fertig ist." to
+            "What is left when a star has finished.",
+        "Ein Teelöffel" to "One Teaspoon",
+        "Wiegt so viel wie ein Gebirge." to "Weighs as much as a mountain range.",
+        "Unter Spannung" to "Under Tension",
+        "Ein Feld, das dich aus tausend Kilometern zerlegt." to
+            "A field that takes you apart from a thousand kilometres.",
+        "Ende der Leiter" to "End of the Ladder",
+        "Ab hier kommt nichts mehr zurück." to "Nothing comes back from here.",
+        // The one achievement for doing nothing at all, which is the joke. It is written in
+        // Ruhrgebiet dialect, so the English is written in something with the same shrug in it.
+        "Was war dat jetze?" to "The 'ell was that?",
+        "Das war genau so wenig wert wie eh und je" to
+            "Worth exactly as little as it has always been",
+        "Angefasst" to "Touched",
+        "Hundert Mal auf einen Stein." to "A hundred times on a rock.",
+        "Hartnäckig" to "Persistent",
+        "Tausend Mal. Der Stein merkt nichts." to "A thousand times. The rock notices nothing.",
+        "Zwanghaft" to "Compulsive",
+        "Zehntausend. Vielleicht mal Pause?" to "Ten thousand. Maybe take a break?",
+        "Der Finger" to "The Finger",
+        "Fünfzigtausend Mal. Respekt und Sorge." to "Fifty thousand times. Respect, and concern.",
+        "Erste Million" to "First Million",
+        "Eine Million Kilogramm, zusammengekratzt." to "A million kilograms, scraped together.",
+        "Milliardenschwer" to "Billion Heavy",
+        "Reicht für einen kleinen Mond." to "Enough for a small moon.",
+        "Billionär" to "Trillionaire",
+        "Die Zahl hat aufgehört, etwas zu bedeuten." to "The number has stopped meaning anything.",
+        "Jenseits" to "Beyond",
+        "Niemand kann sich das noch vorstellen." to "Nobody can picture this any more.",
+        "Staubsammlung" to "Dust Collection",
+        "Fünfundzwanzig Netze im Vakuum." to "Twenty-five nets in vacuum.",
+        "Staubfabrik" to "Dust Factory",
+        "Hundert Netze. Es fängt an, sich zu lohnen." to
+            "A hundred nets. It is starting to pay off.",
+        "Schwarm" to "Swarm",
+        "Fünfzig Drohnen, die nie schlafen." to "Fifty drones that never sleep.",
+        "Halber Ring" to "Half a Ring",
+        "Zehn Spiegel um einen Stern." to "Ten mirrors around a star.",
+        "Der erste Augenblick, eingefangen." to "The first moment, captured.",
+        "Ausgebaut" to "Fully Built",
+        "Jede Sorte 2500 Mal. Es passt buchstäblich nichts mehr rein." to
+            "Two and a half thousand of every kind. Literally nothing else fits.",
+        "Verwoben" to "Interwoven",
+        "Fünf Weber an derselben Kausalkette." to "Five weavers on the same causal chain.",
+        "Das letzte Gerät" to "The Last Device",
+        "Sammelt ein, was übrig sein wird." to "Collects what will be left.",
+        "Rückwärts gemahlen" to "Milled Backwards",
+        "Zehn Mühlen, die die Unordnung zurückdrehen." to
+            "Ten mills turning the disorder back.",
+        "Aus dem Nichts gepresst" to "Pressed Out of Nothing",
+        "Fünf Pressen am leersten Vakuum, das es gibt." to
+            "Five presses on the emptiest vacuum there is.",
+        "Vor dem Anfang" to "Before the Beginning",
+        "Einmal zurückgegriffen bis vor den ersten Augenblick." to
+            "Reached back once, past the first moment.",
+        "Ausverkauft" to "Sold Out",
+        "Jedes Prestige-Upgrade gekauft und jedes Konto voll. Der Laden hat nichts mehr." to
+            "Every prestige upgrade bought and every account full. The shop has nothing left.",
+        "Jenseits der Währung" to "Past the Currency",
+        "Jedes Äonen-Upgrade gekauft. Die Galaxien zahlen jetzt auf ein volles Konto ein." to
+            "Every Aeon upgrade bought. The galaxies now pay into a full account.",
+        "Es ging weiter" to "It Carried On",
+        "Ein Universum überlebt seinen eigenen Urknall und arbeitet weiter." to
+            "A universe survives its own Big Bang and keeps working.",
+        "Halber Himmel" to "Half a Sky",
+        "Vier Galaxien am Laufen. Die Hälfte der Arbeit macht schon jemand anders." to
+            "Four galaxies running. Somebody else is already doing half the work.",
+        "Voller Himmel" to "Full Sky",
+        "Acht Galaxien, alle besetzt. Über dem Schwarzen Loch geht es jetzt weiter." to
+            "Eight galaxies, all occupied. Above the Black Hole it carries on.",
+        "Vier Ausrichtungen" to "Four Leanings",
+        "Von jedem Pfad eine Galaxie. Der Himmel tut vier Dinge gleichzeitig." to
+            "One galaxy of every path. The sky does four things at once.",
+        "Katalogisiert" to "Catalogued",
+        "Die erste Sprosse über dem Schwarzen Loch. Ab hier haben die Körper Nummern." to
+            "The first rung above the Black Hole. From here the bodies have numbers.",
+        "Hundert Nummern weiter" to "A Hundred Numbers On",
+        "Hundert Katalogsprossen. Der Meteorit sieht aus wie am Anfang und wiegt es nicht." to
+            "A hundred catalogue rungs. The meteoroid looks the same as at the start and does not weigh it.",
+        "Durchgezählt" to "Counted Through",
+        "Einen ganzen Körper durch alle Kennungen von AA bis ZZ getrieben." to
+            "Drove one whole body through every designation from AA to ZZ.",
+        "Zusammengeschweißt" to "Welded Together",
+        "Die erste Legierung. Das Metall aus dem Kollaps ist endlich für etwas gut." to
+            "The first alloy. The metal from the collapse is finally good for something.",
+        "Vollständige Schmiede" to "Complete Forge",
+        "Jede Legierung geschmiedet. Es gibt nichts mehr zu verschweißen." to
+            "Every alloy forged. There is nothing left to weld.",
+        "Auftragslage" to "Order Book",
+        "Zwanzig Aufträge abgegeben. Es gab immer etwas zu tun." to
+            "Twenty contracts handed in. There was always something to do.",
+        "Zwei Galaxien zu einer gemacht. Sie trägt jetzt beide Ausrichtungen." to
+            "Made two galaxies into one. It now carries both leanings.",
+    )
+
+
+    /** The rest of the achievement shelf. */
+    private val ACHIEVEMENTS_MORE: Map<String, String> = mapOf(
+        "Vollbeschäftigung" to "Full Employment",
+        "Jede der vier Aufgaben läuft irgendwo am Himmel." to
+            "All four jobs are running somewhere in the sky.",
+        "Vermessen" to "Surveyed",
+        "Zehn Katalogfunde beantwortet. Der Katalog wird länger als die Leiter." to
+            "Ten catalogue finds answered. The catalogue is getting longer than the ladder.",
+        "Eine Galaxie vollständig ausgebaut. Sie ist besser als an dem Tag, an dem sie endete." to
+            "One galaxy built out completely. It is better than on the day it ended.",
+        "Nicht angerührt" to "Left Untouched",
+        "Fünf Funde in Ruhe gelassen. Manches ist mehr wert, wenn man es stehen lässt." to
+            "Five finds left alone. Some things are worth more if you leave them standing.",
+        "Katalogflotte" to "Catalogue Fleet",
+        "Von jeder Maschine der Katalogleiter mindestens eine." to
+            "At least one of every machine on the catalogue ladder.",
+        "Vollständig" to "Complete",
+        "Von jedem Kollektor mindestens einen." to "At least one of every collector.",
+        "Aufgerüstet" to "Upgraded",
+        "Zehn Verbesserungen gekauft." to "Ten improvements bought.",
+        "Durchoptimiert" to "Fully Optimised",
+        "Vierzig Verbesserungen in einem Lauf." to "Forty improvements in a single run.",
+        "Erwischt" to "Caught",
+        "Der erste Komet, rechtzeitig getippt." to "The first comet, tapped in time.",
+        "Geübtes Auge" to "Practised Eye",
+        "Fünfundzwanzig davon." to "Twenty-five of them.",
+        "Kometenjäger" to "Comet Hunter",
+        "Hundert. Du wartest inzwischen darauf." to "A hundred. By now you are waiting for them.",
+        "Erster Kollaps" to "First Collapse",
+        "Alles hergegeben für einen Neuanfang." to "Gave up everything for a fresh start.",
+        "Wiederholungstäter" to "Repeat Offender",
+        "Fünf Universen später." to "Five universes later.",
+        "Gesammelte Enden" to "Collected Endings",
+        "Fünfzig Singularitäten besessen." to "Held fifty singularities.",
+        "Vorbereitet" to "Prepared",
+        "Fünf Prestige-Upgrades gekauft." to "Five prestige upgrades bought.",
+        "Angelegt" to "Invested",
+        "Zehn Stufen in Investitionen gesteckt." to "Ten levels put into investments.",
+        "Vermögensverwaltung" to "Asset Management",
+        "Fünfzig Stufen. Die Singularitäten arbeiten für dich." to
+            "Fifty levels. The singularities are working for you.",
+        "Freiwillig schwerer" to "Harder on Purpose",
+        "Eine Herausforderung bestanden." to "One challenge beaten.",
+        "Alles mitgenommen" to "Took the Lot",
+        "Jede Herausforderung bestanden." to "Every challenge beaten.",
+        "Von vorn, wirklich" to "From the Start, Really",
+        "Ein ganzes Universum weggeworfen." to "Threw away a whole universe.",
+        "Serientäter" to "Serial Offender",
+        "Fünf Universen. Keines davon vermisst." to "Five universes. None of them missed.",
+        "Zeitlos" to "Timeless",
+        "Jedes Äonen-Upgrade gekauft." to "Every Aeon upgrade bought.",
+        "Aufgestellt" to "Set Up",
+        "Jeder freie Platz mit einer Ausrichtung belegt." to
+            "Every free slot filled with a role.",
+        "Koordiniert" to "Coordinated",
+        "Ein Kollektor, der nicht mehr selbst arbeitet, sondern alle anderen antreibt." to
+            "One collector that no longer works itself but drives all the others.",
+        "Erste Bahn" to "First Orbit",
+        "Etwas kreist um dich." to "Something is circling you.",
+        "Vollbesetzt" to "Fully Occupied",
+        "Auf jeder Bahn steht ein Körper." to "There is a body on every orbit.",
+        "Im Gleichschritt" to "In Step",
+        "Zwei Trabanten in Resonanz — dieselbe Kraft an derselben Stelle, jedes Mal." to
+            "Two satellites in resonance — the same pull at the same place, every time.",
+        "Gezündet" to "Ignited",
+        "Die erste Protonenkette läuft." to "The first proton chain is running.",
+        "Aus Sternen gemacht" to "Made of Stars",
+        "Kohlenstoff im Kern. Wie du." to "Carbon in the core. Like you.",
+        "Eisenkern" to "Iron Core",
+        "Weiter geht es nicht. Genau darum geht es." to
+            "It goes no further. That is exactly the point.",
+        "Ganze Kette" to "Whole Chain",
+        "Jede Stufe der Fusion läuft gleichzeitig." to "Every fusion stage running at once.",
+        "Sternenstaub" to "Stardust",
+        "Das erste Gold, aus dem Eisen eines gestorbenen Kerns." to
+            "The first gold, out of the iron of a dead core.",
+        "Das schwerste von selbst" to "The Heaviest Unaided",
+        "Uran. Schwerer geht es ohne fremde Hilfe nicht." to
+            "Uranium. It gets no heavier without help.",
+        "Schatzkammer" to "Treasury",
+        "Tausend Einheiten schwerer Elemente, über alle Universen hinweg." to
+            "A thousand units of heavy elements, across every universe.",
+        "Erste Erkenntnis" to "First Finding",
+        "Ein Projekt zu Ende gewartet." to "Waited one project out.",
+        "Laborbetrieb" to "Lab Running",
+        "Fünf Projekte abgeschlossen." to "Five projects finished.",
+        "Ausgeforscht" to "Fully Researched",
+        "Der ganze Baum steht." to "The whole tree is standing.",
+        "Erster Meilenstein" to "First Milestone",
+        "Fünfundzwanzig Stück von einer Sorte." to "Twenty-five of one kind.",
+        "Zweihundert Stück von einer Sorte — acht Meilensteine auf einem Kollektor." to
+            "Two hundred of one kind — eight milestones on a single collector.",
+        "Mit bloßen Händen" to "With Bare Hands",
+        "Erreiche den Merkur, ohne einen einzigen Kollektor zu besitzen." to
+            "Reach Mercury without owning a single collector.",
+        "Geduldig" to "Patient",
+        "Eine Stunde Spielzeit auf der Uhr." to "One hour of play time on the clock.",
+        "Marathon" to "Marathon",
+        "Sechs Stunden Spielzeit." to "Six hours of play time.",
+    )
+
+    /** The accretion update: what falls in, what it builds, and what that makes you. */
+    private val ACCRETION: Map<String, String> = mapOf(
+        "Eis" to "Ice",
+        "Silikat" to "Silicate",
+        "Metall" to "Metal",
+        "Staubschwade" to "Dust Plume",
+        "Eisscherbe" to "Ice Shard",
+        "Metallklumpen" to "Metal Nugget",
+        "Teerbrocken" to "Tar Lump",
+        "Felsbrocken" to "Boulder",
+        "Kernfragment" to "Core Fragment",
+        "Kern" to "Core",
+        "Produktion, und die Fusion startet heißer" to
+            "Production, and fusion starts hotter",
+        "Mantel" to "Mantle",
+        "Tippwert und Gravitation" to "Tap value and gravity",
+        "Kruste" to "Crust",
+        "Offline-Anteil und Materialausbeute" to "Offline share and material yield",
+        "Geschichtet" to "Layered",
+        "jung" to "young",
+        "gereift" to "grown",
+        "vollendet" to "whole",
+        "Eisenkiesel" to "Iron Pebble",
+        "Schwer für seine Größe. Ein Magnet würde es merken." to
+            "Heavy for its size. A magnet would notice.",
+        "Metallwelt" to "Metal World",
+        "Der Kern ist größer als alles, was darauf liegt." to
+            "The core is bigger than everything lying on it.",
+        "Eisenherz" to "Iron Heart",
+        "Fast nur Kern. Es klingt, wenn etwas darauf fällt." to
+            "Almost all core. It rings when something falls on it.",
+        "Geröllhaufen" to "Rubble Pile",
+        "Lose zusammengehalten, aber es hält." to "Loosely held together, but it holds.",
+        "Gesteinswelt" to "Rock World",
+        "Ein Mantel, dick genug, um sich selbst zu tragen." to
+            "A mantle thick enough to carry itself.",
+        "Titanenfels" to "Titan Rock",
+        "Stein bis fast nach unten. Nichts hier bewegt sich schnell." to
+            "Stone almost all the way down. Nothing here moves quickly.",
+        "Frostklumpen" to "Frost Clump",
+        "Außen hart, innen noch nicht entschieden." to
+            "Hard on the outside, undecided within.",
+        "Eiswelt" to "Ice World",
+        "Eine Kruste, unter der es sehr lange dunkel bleibt." to
+            "A crust under which it stays dark for a very long time.",
+        "Gletscherleib" to "Glacier Body",
+        "Ein Panzer aus Eis, und darunter beinahe nichts." to
+            "An armour of ice, and almost nothing underneath.",
+        "Mischling" to "Mongrel",
+        "Von allem ein bisschen. Noch keine Entscheidung getroffen." to
+            "A little of everything. No decision made yet.",
+        "Schichtwelt" to "Layered World",
+        "Drei Schichten, keine davon im Weg." to "Three layers, none of them in the way.",
+        "Dreiklang" to "Triad",
+        "Kern, Mantel, Kruste — und keine davon zu knapp." to
+            "Core, mantle, crust — and none of them scarce.",
+    )
+
+
+    /** The first five minutes, and the card that arrives with each new system. */
+    private val GUIDE: Map<String, String> = mapOf(
+        "Tipp den Körper an" to "Tap the body",
+        "Jeder Tipp bringt Masse. Am Anfang ist das die einzige Quelle — und die Zahl oben zählt mit, was du hast." to
+            "Every tap brings in mass. At the start it is the only source there is — and the number at the top keeps count of what you have.",
+        "Kauf deinen ersten Kollektor" to "Buy your first collector",
+        "Kollektoren sammeln Masse, ohne dass du etwas tust — auch dann, wenn die App zu ist. Ab hier läuft das Spiel auch ohne dich weiter." to
+            "Collectors gather mass without you doing anything — even while the app is shut. From here the game keeps running without you.",
+        "Und noch ein paar davon" to "And a few more of them",
+        "Alle zehn Stück wird ein Kollektor dauerhaft besser. Der Knopf oben in der Flotte kauft gleich zehn oder hundert auf einmal, statt hundertmal zu tippen." to
+            "Every ten copies a collector gets permanently better. The button at the top of the fleet buys ten or a hundred at once, so you do not have to tap a hundred times.",
+        "Nimm eine zweite Sorte dazu" to "Add a second kind",
+        "Weiter unten in der Flotte stehen teurere Maschinen. Eine neue Sorte bringt fast immer mehr als die zehnte Kopie der alten — und schaltet später eigene Upgrades frei." to
+            "Further down the fleet there are dearer machines. A new kind is almost always worth more than a tenth copy of the old one — and unlocks upgrades of its own later.",
+        "Kauf ein Upgrade" to "Buy an upgrade",
+        "Kollektoren machen mehr Masse, Upgrades machen jede davon mehr wert — und sie sind es, die über einen Lauf den Unterschied ausmachen." to
+            "Collectors make more mass; upgrades make each of them worth more — and it is the upgrades that decide how a run goes.",
+        "Werde größer" to "Grow",
+        "Genug Masse, und aus dem Gestein wird ein größerer Körper. Der Balken oben zeigt, wie weit es noch ist." to
+            "Enough mass and the rock becomes a larger body. The bar at the top shows how far there is to go.",
+        "Deine Flotte fliegt mit" to "Your fleet flies with you",
+        "Was du kaufst, siehst du: die Maschinen kreisen um deinen Körper, eine Bahn je Sorte. Wer viel besitzt, sieht es, ohne in den Laden zu gehen." to
+            "What you buy, you can see: the machines circle your body, one ring per kind. Own a lot and you can tell without opening the shop.",
+        "Es läuft auch ohne dich" to "It runs without you",
+        "Leg das Spiel ruhig weg. Beim Öffnen bekommst du die Zeit gutgeschrieben — ein Bericht sagt dir dann, was in der Zwischenzeit angefallen ist." to
+            "Feel free to put the game down. You are credited for the time when you open it again — a report tells you what came in while you were away.",
+        "Sieh dir den Kosmos an" to "Have a look at the Cosmos",
+        "Dort steht alles, was nicht gekauft wird: der Kollaps, das Labor, die Automatik, deine Erfolge und die Einstellungen. Kein Grund zur Eile — aber gut zu wissen, wo es liegt." to
+            "That is where everything you do not buy lives: the collapse, the lab, the automation, your achievements and the settings. No hurry — but worth knowing where it is.",
+        "Der Kollaps kommt noch" to "The collapse is still to come",
+        "Irgendwann ist dein Körper schwer genug, um zusammenzufallen. Das setzt den Lauf zurück und macht dich dauerhaft schneller. Es meldet sich von selbst, wenn es so weit ist." to
+            "At some point your body will be heavy enough to fall in on itself. That resets the run and makes you permanently faster. It will say so when the time comes.",
+
+        // ---- the card each system arrives with
+        "Einschläge" to "Impacts",
+        "Aufbau" to "Build",
+        "Du bist ein Brocken, und du wächst, weil andere Brocken auf dich fallen. Tippe sie an, bevor sie aufschlagen: das bringt sofort Masse — und Material, das liegen bleibt. Was du damit anfängst, steht unter Aufbau." to
+            "You are a rock, and you grow because other rocks fall on you. Tap them before they land: that brings mass straight away — and material, which stays behind. What to do with it is under Build.",
+        "Schichten" to "Layers",
+        "Aus Material baust du Kern, Mantel und Kruste. Der Kern erhöht die Produktion, der Mantel Tippwert und Anziehung, die Kruste Offline-Ertrag und Ausbeute. Ab sechs Schichten bekommt dein Körper einen Typ — und der bleibt eingetragen, auch wenn der Kollaps alles andere mitnimmt." to
+            "Out of material you build core, mantle and crust. The core raises production, the mantle tap value and pull, the crust offline yield and material yield. At six layers your body gets a type — and that stays on the record even when the collapse takes everything else.",
+        "Der Kollaps" to "The Collapse",
+        "Kosmos · Kollaps" to "Cosmos · Collapse",
+        "Dein Körper ist schwer genug, um in sich zusammenzufallen. Das setzt den Lauf zurück — Masse, Kollektoren, Upgrades, alles — und du bekommst Singularitäten dafür, die dauerhaft bleiben und alles Folgende schneller machen. Es ist kein Verlust, es ist die zweite Hälfte des Spiels." to
+            "Your body is heavy enough to fall in on itself. That resets the run — mass, collectors, upgrades, all of it — and pays you singularities, which are permanent and make everything after them faster. It is not a loss, it is the second half of the game.",
+        "Rollen" to "Roles",
+        "Flotte · auf einen Kollektor tippen" to "Fleet · tap a collector",
+        "Jeder Kollektor kann eine Aufgabe bekommen. Eine erhöht seinen eigenen Ausstoß, eine andere den seiner Nachbarn — es lohnt sich, nicht überall dasselbe einzustellen." to
+            "Every collector can be given a job. One raises its own output, another raises its neighbours' — it pays not to set them all the same.",
+        "Um deinen Körper lassen sich Bahnen öffnen und mit Trabanten besetzen. Zwei Trabanten derselben Stufe verschmelzen zu einer höheren. Und Bahnen, deren Umlaufzeiten glatt zueinander passen, verstärken sich gegenseitig." to
+            "Orbits can be opened around your body and filled with satellites. Two satellites of the same tier merge into a higher one. And orbits whose periods fit neatly together reinforce each other.",
+        "Dein Körper brennt jetzt. Aus Wasserstoff wird Helium, daraus Kohlenstoff, und so weiter bis zum Eisen — jedes Element multipliziert, was du ohnehin produzierst. Fusoren kaufst du wie Kollektoren." to
+            "Your body is burning now. Hydrogen becomes helium, that becomes carbon, and so on up to iron — every element multiplies what you already produce. Fusers are bought like collectors.",
+        "Kosmos · Labor" to "Cosmos · Lab",
+        "Ein Projekt läuft auf der echten Uhr — auch wenn das Spiel zu ist. Es gibt nur eine Bank, also läuft immer nur eines. Vor dem Weglegen etwas anzuschieben ist darum fast immer richtig." to
+            "A project runs on the real clock — even while the game is shut. There is only one bench, so only one runs at a time. Starting something before you put the game down is therefore almost always right.",
+        "Automatik" to "Automation",
+        "Kosmos · Regeln" to "Cosmos · Rules",
+        "Regeln nehmen dir ab, was du sonst von Hand machst: Kollektoren nachkaufen, Bahnen ausbauen, Projekte anschieben. Jede lässt sich einzeln einstellen und einzeln wieder ausschalten." to
+            "Rules take over what you would otherwise do by hand: restocking collectors, extending orbits, starting projects. Each one is set and switched off on its own.",
+        "Aufträge" to "Contracts",
+        "Drei Ziele liegen auf dem Tisch und werden nachgelegt. Bezahlt wird in Äonen — der Währung des Urknalls. Ein Balken unter jedem sagt, wie weit du bist." to
+            "Three goals lie on the table and are replaced as they are met. They pay in Aeons — the currency of the Big Bang. A bar under each says how far along you are.",
+        "Ein Lauf unter erschwerten Regeln — kein Tippen, keine Upgrades, halbe Produktion. Wer ihn schafft, behält einen dauerhaften Bonus. Mehrere lassen sich kombinieren, und das zahlt sich überproportional aus." to
+            "A run under a harder rule — no tapping, no upgrades, half production. Beat it and you keep a permanent bonus. Several can be combined, and that pays more than the sum of its parts.",
+        "Schwere Elemente" to "Heavy Elements",
+        "Jenseits von Eisen geht es nicht mehr durch Brennen weiter — nur der Kollaps selbst schmiedet diese Elemente. Sie bleiben über den Lauf hinaus und heben an, was deine Fusionskette wert ist." to
+            "Past iron, burning gets you no further — only the collapse itself forges these. They outlast the run and raise what your fusion chain is worth.",
+        "Der Urknall" to "The Big Bang",
+        "Die dritte Ebene. Der Urknall räumt auch die Singularitäten ab und gibt Äonen dafür — und du wählst eine von vier Ausrichtungen, die den ganzen nächsten Durchgang prägt. Dein altes Universum geht dabei nicht verloren." to
+            "The third layer. The Big Bang clears the singularities too and pays Aeons for them — and you choose one of four leanings that shapes the whole next run. Your old universe is not lost in the process.",
+        "Der Himmel" to "The Sky",
+        "Kosmos · Himmel" to "Cosmos · Sky",
+        "Jedes Universum, das du hinter dir lässt, bleibt als Galaxie am Himmel stehen und arbeitet weiter. Du kannst ihnen Aufgaben geben, sie ausbauen, zwei verschmelzen — und alte wieder besuchen." to
+            "Every universe you leave behind stays in the sky as a galaxy and keeps working. You can give them jobs, build them up, merge two — and visit the old ones again.",
+        "Legierungen" to "Alloys",
+        "Zwei schwere Elemente lassen sich zu einer Legierung schmieden. Die kostet beide dauerhaft und gibt dafür einen Bonus, den kein einzelnes Element hat." to
+            "Two heavy elements can be forged into an alloy. It costs both of them permanently and gives a bonus no single element has.",
+        "Die Kennungsleiter" to "The Designation Ladder",
+        "Leiter · links am Rand" to "Ladder · down the left edge",
+        "Über dem Schwarzen Loch hört die Leiter nicht auf. Jeder Körper kommt sechshundertsechsundsiebzig Mal wieder, mit einer Kennung von AA bis ZZ — sechzehntausend Sprossen. Manche davon sind Funde und wollen bestimmt werden." to
+            "The ladder does not stop at the Black Hole. Every body comes round six hundred and seventy-six more times, with a designation from AA to ZZ — sixteen thousand rungs. Some of them are finds, and want identifying.",
+    )
+
+    /** The palettes the bodies can be drawn in. */
+    private val SKINS: Map<String, String> = mapOf(
+        "Wie es ist" to "As It Is",
+        "Die Farben, die die Körper ohnehin haben." to
+            "The colours the bodies have anyway.",
+        "Kaltlicht" to "Cold Light",
+        "Alles zwei Kelvin zu blau. So sieht es aus, wenn niemand zusieht." to
+            "Everything two kelvin too blue. This is how it looks when nobody is watching.",
+        "Rost" to "Rust",
+        "Eisen, überall, seit sehr langer Zeit." to "Iron, everywhere, for a very long time.",
+        "Grünstich" to "Green Cast",
+        "Ein Himmel, unter dem man besser nicht länger stehen bleibt." to
+            "A sky you would rather not stand under for long.",
+        "Asche" to "Ash",
+        "Was übrig bleibt, wenn die Farbe als Erstes geht." to
+            "What is left when the colour goes first.",
+        "Vollzählig" to "All Present",
+        "Als hätte jemand jeden einzelnen Fänger vergolden lassen. Hat auch jemand." to
+            "As though somebody had every last catcher gilded. Somebody did.",
+        "Acht Universen, die alle noch da sind. Man sieht sie einander leuchten." to
+            "Eight universes, all still there. You can see them lighting each other.",
+        "Katalog" to "Catalogue",
+        "Die Farben einer Übersichtskarte. Kein Körper mehr, nur noch ein Eintrag." to
+            "The colours of a survey chart. Not a body any more, just an entry.",
+        "Ein Kanal" to "One Channel",
+        "Ein Bildschirm, der nur eine Farbe konnte, und es hat gereicht." to
+            "A screen that could only do one colour, and it was enough.",
+    )
+
+    /**
+     * The sentences the game builds around a number.
+     *
+     * Whole sentences, never pieces. `"Erreiche %s in %s"` is "Reach %s within %s" — word order is
+     * exactly what differs between the two languages, and a sentence glued together from separately
+     * translated fragments can only ever have German word order with English words in it.
+     */
+    private val TEMPLATES: Map<String, String> = mapOf(
+        "+%s kg pro Tipp" to "+%s kg per tap",
+        "%s Masse pro Tipp" to "%s mass per tap",
+        // A multiplier in front of a machine's name: "×2 Dust Catcher". The same in both.
+        "%s %s" to "%s %s",
+        "Jeder %s gibt %s +%s" to "Every %s gives %s +%s",
+        "Jeder %s gibt allen Kollektoren +%s" to "Every %s gives all collectors +%s",
+        "%s auf alles" to "%s to everything",
+        "Tippen gibt zusätzlich %s deiner Produktion" to
+            "Tapping also gives %s of your production",
+        "Offline-Ertrag auf %s" to "Offline yield to %s",
+        "Offline-Zeit zählt bis zu %s Stunden" to "Offline time counts for up to %s hours",
+        "Offline-Ertrag mindestens %s" to "Offline yield at least %s",
+        "Jeder freigeschaltete Kollektor startet mit %s Stück" to
+            "Every unlocked collector starts with %s",
+        "Start mit %s" to "Start with %s",
+        "Kometen kommen %s so oft" to "Comets arrive %s as often",
+        "%s auf alles, dauerhaft" to "%s to everything, permanently",
+        "%s Singularitäten je Kollaps" to "%s singularities per collapse",
+        "%s Masse pro Tipp, dauerhaft" to "%s mass per tap, permanently",
+        "Tippt %s× pro Sekunde von allein" to "Taps %s× per second on its own",
+        "Jede Singularität gibt %s statt %s" to "Every singularity gives %s instead of %s",
+        "Kauft Kollektoren von allein, sobald du das Vierfache übrig hast" to
+            "Buys collectors on its own once you have four times the price to spare",
+        "Jeder Meilenstein gibt %s statt %s" to "Every milestone gives %s instead of %s",
+        "Jede Fusionsstufe läuft %s so schnell" to "Every fusion stage runs %s as fast",
+        "Forschung dauert nur noch %s der Zeit" to "Research takes only %s of the time",
+        "Galaxien wiegen %s so schwer" to "Galaxies weigh %s as much",
+        "Trabanten liefern %s" to "Satellites deliver %s",
+        "Der Kollaps schmiedet %s Metall" to "The collapse forges %s metal",
+        "Jeder Auftrag zahlt %s Äonen extra" to "Every contract pays %s Aeons extra",
+        "Erreiche %s" to "Reach %s",
+        "Erreiche %s in %s" to "Reach %s within %s",
+        "Kollektoren produzieren nichts" to "Collectors produce nothing",
+        "Tippen bringt nichts, Kollektoren nur %s" to "Tapping gives nothing, collectors only %s",
+        "Keine Einschränkung" to "No restriction",
+        "Alles bringt nur %s" to "Everything gives only %s",
+        "Der Upgrade-Laden bleibt zu" to "The upgrade shop stays shut",
+        "Nichts hält sich auf einer Bahn" to "Nothing stays in orbit",
+        "Keine Meilenstein-Boni" to "No milestone bonuses",
+        "Geschlossen zählt nicht" to "Closed does not count",
+        "Die Fusionskette bleibt kalt" to "The fusion chain stays cold",
+        "Die Galaxien tragen nichts bei" to "The galaxies contribute nothing",
+    )
+
+
+    /** The five machines above the black hole, which the first pass over the fleet missed. */
+    private val COLLECTORS_LATE: Map<String, String> = mapOf(
+        "Entropiemühle" to "Entropy Mill",
+        "Mahlt Unordnung zurück zu Ordnung. Läuft rückwärts und beschwert sich nicht." to
+            "Grinds disorder back into order. Runs backwards and does not complain.",
+        "Horizontpflug" to "Horizon Plough",
+        "Zieht Furchen in den Ereignishorizont und erntet, was dabei hochkommt." to
+            "Cuts furrows into the event horizon and harvests whatever comes up.",
+        "Nullpunktpresse" to "Zero-Point Press",
+        "Presst das leerste Vakuum, bis unten Zahlen herauslaufen." to
+            "Presses the emptiest vacuum until numbers run out of the bottom.",
+        "Ewigkeitsschleuse" to "Eternity Lock",
+        "Öffnet sich einmal pro Ewigkeit. Die Ewigkeiten sind kürzer geworden." to
+            "Opens once per eternity. The eternities have been getting shorter.",
+        "Alpha-Rückgriff" to "Alpha Retrieval",
+        "Greift zurück bis vor den Anfang und nimmt mit, was dort noch liegt." to
+            "Reaches back past the beginning and takes whatever is still lying there.",
+    )
+
+    /**
+     * The settings that are numerals rather than words.
+     *
+     * Listed rather than filtered out of the collector, because "this needs no translation" is a
+     * decision somebody made and the map is where decisions are written down. Filtering them would
+     * mean the same judgement lived in a regular expression, where the next reader cannot see it.
+     */
+    private val NUMERALS: Map<String, String> = mapOf(
+        "×2" to "×2",
+        "×4" to "×4",
+        "×5" to "×5",
+        "×10" to "×10",
+        "×20" to "×20",
+        "×50" to "×50",
+        "×100" to "×100",
+        "5" to "5",
+        "10" to "10",
+        "25" to "25",
+        "50" to "50",
+    )
+
     /** Everything, in one map. Areas are added here as each one is finished. */
     val EN: Map<String, String> = buildMap {
         putAll(UI)
@@ -1049,5 +1714,17 @@ internal object Translations {
         putAll(EVENTS)
         putAll(CHAINS)
         putAll(FINDS)
+        putAll(FINDS_MORE)
+        putAll(CHALLENGES)
+        putAll(LORE)
+        putAll(LORE_MORE)
+        putAll(ACHIEVEMENTS)
+        putAll(ACHIEVEMENTS_MORE)
+        putAll(ACCRETION)
+        putAll(GUIDE)
+        putAll(SKINS)
+        putAll(TEMPLATES)
+        putAll(COLLECTORS_LATE)
+        putAll(NUMERALS)
     }
 }
