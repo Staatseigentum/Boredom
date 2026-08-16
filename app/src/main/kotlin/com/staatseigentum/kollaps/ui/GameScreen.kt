@@ -510,6 +510,16 @@ fun GameScreen(
                  */
                 var goTo by remember { mutableStateOf<TutorialSpot?>(null) }
 
+                /*
+                 * When the next fragment is due.
+                 *
+                 * Remembered *here*, above the `when` that swaps the phone's six screens, because
+                 * anything remembered below it is thrown away every time the player looks at
+                 * something else — and the wait is longer than the average visit. Held up here it
+                 * simply carries on. See [ImpactSchedule].
+                 */
+                val impacts = remember { ImpactSchedule() }
+
                 val body = @Composable { modifier: Modifier, phone: Boolean ->
                     // The hint lives three composables down inside the tap area; this is how it
                     // reaches back out to say where it would like the player taken.
@@ -519,6 +529,7 @@ fun GameScreen(
                         stats = shownStats,
                         actions = actions,
                         buyAmount = buyAmount,
+                        impacts = impacts,
                         // On a phone this area carries what the status band above it gave up: the
                         // running chips along the top, and the one purchase worth not switching
                         // screens for along the bottom. The wide layout has a HUD for the first
@@ -1105,6 +1116,8 @@ private fun TapArea(
     stats: Stats,
     actions: GameActions,
     buyAmount: BuyAmount,
+    /** The fragment schedule, owned above the phone's screen switch. See [ImpactSchedule]. */
+    impacts: ImpactSchedule,
     /** Whether this is the phone's body screen, which carries two things the wide one does not. */
     phone: Boolean,
     modifier: Modifier = Modifier,
@@ -1342,6 +1355,7 @@ private fun TapArea(
         // costs a quarter of an hour.
         ImpactOverlay(
             state = state,
+            schedule = impacts,
             onAbsorb = actions::absorbImpact,
             onMiss = actions::missImpact,
             modifier = Modifier.fillMaxSize(),

@@ -220,6 +220,33 @@ class AccretionTest {
         )
     }
 
+    /**
+     * Past Mars a fragment has to be on screen often enough to be seen at all.
+     *
+     * "Rare" and "absent" are the same thing to a player, and the thinned rain had crossed from one
+     * to the other without anybody noticing: a fall is [Accretion.APPROACH_SECONDS] long and the
+     * gap was thirty-three, so the body screen showed a fragment about a tenth of the time. Paired
+     * with a schedule that restarted on every screen switch, a phone could go a whole session
+     * without one.
+     *
+     * A share rather than a number of seconds, because the two constants that decide it live apart
+     * and either can be changed on its own.
+     */
+    @Test
+    fun `past Mars a fragment is on screen often enough to notice`() {
+        val gap = Accretion.interval(GameState(runMass = Tiers.last.threshold))
+        val onScreen = Accretion.APPROACH_SECONDS / gap
+
+        assertTrue(
+            onScreen > 0.2,
+            "Über Mars ist nur %.0f%% der Zeit etwas zu sehen — das liest sich wie „aus\"".format(onScreen * 100),
+        )
+        assertTrue(
+            gap > Accretion.APPROACH_SECONDS * 2.0,
+            "Die Brocken überholen sich gegenseitig: alle %.1fs bei %.1fs Fallzeit".format(gap, Accretion.APPROACH_SECONDS),
+        )
+    }
+
     @Test
     fun `arrivals come sooner as the body grows, down to a floor`() {
         val early = Accretion.interval(GameState())

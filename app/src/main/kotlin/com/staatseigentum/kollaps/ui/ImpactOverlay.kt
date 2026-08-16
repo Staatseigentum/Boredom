@@ -39,6 +39,30 @@ import kotlin.random.Random
 private class Fall(val impact: Impact, val angle: Float, val spin: Float)
 
 /**
+ * How long until the next fragment — held *outside* the screen that draws it.
+ *
+ * This exists because of where the phone puts the body. The six phone screens are a `when`, so
+ * leaving the body throws the whole subtree away, [ImpactOverlay] with it, and coming back builds
+ * a fresh one whose wait starts at zero again. Past Mars that wait is some twenty seconds, and the
+ * building panel is a *different screen* — so the ordinary loop of the feature it belongs to
+ * (look at the shells, go back to the body, wait) reset the clock every single time. Fragments
+ * were not rare on a phone, they were unreachable.
+ *
+ * Remembered above the `when` in [GameScreen] and handed down, so the wait carries on across a
+ * screen switch instead of starting over. Exactly the shape of the achievement card in 5.0.1, and
+ * the wide layout never showed either fault, because there the body is always up.
+ *
+ * The wait *pauses* while the body is off screen rather than running on. That is deliberate: a
+ * fragment that fell into an unwatched screen would have to be counted as missed, and a missed
+ * heavy one costs mass — taken behind the player's back, for a thing they were never shown.
+ */
+class ImpactSchedule {
+    /** Seconds still to wait. Negative means "roll a fresh one". Not Compose state: only the
+     *  scheduling coroutine ever reads it, and a per-frame write would recompose the screen. */
+    internal var dueIn: Double = -1.0
+}
+
+/**
  * The things that hit you, and the first hour finally having something in it.
  *
  * The comets and this look alike and are opposites. A comet *crosses* the sky every few minutes,
@@ -54,6 +78,8 @@ private class Fall(val impact: Impact, val angle: Float, val spin: Float)
 @Composable
 fun ImpactOverlay(
     state: GameState,
+    /** The wait, kept alive across the phone's six screens. See [ImpactSchedule]. */
+    schedule: ImpactSchedule,
     onAbsorb: (Impact) -> Unit,
     onMiss: (Impact) -> Unit,
     modifier: Modifier = Modifier,
@@ -77,8 +103,13 @@ fun ImpactOverlay(
         while (true) {
             // Jittered around the interval rather than exactly on it. A metronome is a thing to
             // tune out; something that arrives roughly every nine seconds is a thing to watch for.
-            val wait = Accretion.interval(current) * (0.7 + random.nextDouble() * 0.6)
-            waitSeconds(wait)
+            //
+            // Rolled only when the schedule has none left over, so returning to the body screen
+            // resumes the wait it was in the middle of instead of beginning a new one.
+            if (schedule.dueIn < 0.0) {
+                schedule.dueIn = Accretion.interval(current) * (0.7 + random.nextDouble() * 0.6)
+            }
+            countDown(schedule)
 
             val landing = Fall(
                 impact = Accretion.pick(random),
@@ -102,6 +133,10 @@ fun ImpactOverlay(
                 if (landing.impact.heavy) sfx?.missed()
                 falling = null
             }
+            // Spent: the next turn of the loop rolls a fresh wait. Written here and not before the
+            // fall, so a screen switch *during* a fall leaves a zero behind and the fragment that
+            // was interrupted arrives as soon as the body is up again.
+            schedule.dueIn = -1.0
         }
     }
 
@@ -211,19 +246,32 @@ fun ImpactOverlay(
  */
 private fun headOf(fall: Fall, progress: Float, width: Float, height: Float): Offset {
     val centre = Offset(width / 2f, height / 2f)
-    val reach = maxOf(width, height) * 0.75f
+    val reach = maxOf(width, height) * START_REACH
     val from = centre + Offset(cos(fall.angle), sin(fall.angle)) * reach
     return from + (centre - from) * progress
 }
 
+/**
+ * How far outside the middle a fragment starts, as a share of the longer side.
+ *
+ * It was 0.75, and three quarters of the *longer* side from the centre is well outside the area on
+ * every phone: measured on a 360×430 field, a fragment coming in from the side spent the first
+ * forty-four per cent of its fall off screen, and one coming in diagonally a fifth. The fall was
+ * nominally four seconds and visibly two and a half.
+ *
+ * At 0.55 it starts just past the edge — still off screen, so it drifts in rather than appearing,
+ * and nearly all of the fall is now something the player can actually see and hit.
+ */
+private const val START_REACH = 0.55f
+
 private fun snap(value: Float, block: Float): Float = floor(value / block) * block
 
-private suspend fun waitSeconds(seconds: Double) {
-    var left = seconds * 1_000_000_000.0
+/** Runs [schedule] down to zero, a frame at a time. Stops dead when the screen goes away. */
+private suspend fun countDown(schedule: ImpactSchedule) {
     var previous = 0L
-    while (left > 0) {
+    while (schedule.dueIn > 0.0) {
         withFrameNanos { now ->
-            if (previous != 0L) left -= (now - previous).toDouble()
+            if (previous != 0L) schedule.dueIn -= (now - previous) / 1_000_000_000.0
             previous = now
         }
     }

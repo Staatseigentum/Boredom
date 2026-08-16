@@ -88,11 +88,19 @@ object Accretion {
     /**
      * How much longer the wait is past [DENSE_TIER].
      *
-     * Eight, measured rather than picked: at Mars they arrive every four seconds, so past it they
-     * arrive every thirty-odd — often enough that the material stock still moves while a long run
-     * plays out, rare enough that it never argues with a comet for the same thumb.
+     * Was eight, which put an arrival every thirty-three seconds. That was picked when a run above
+     * the black hole lasted minutes; since the catalogue started charging in time a run lasts days,
+     * and thirty-three seconds turned out to be less "rare" than "absent" — a fragment is on screen
+     * for a few seconds of its fall, so at that spacing the body screen showed one about eight per
+     * cent of the time and a player could sit through a whole session without seeing one.
+     *
+     * Five puts it at about twenty-one seconds. That is close to the floor a comet keeps
+     * ([Comets.MIN_GAP_SECONDS]), so on a fully built save the two will occasionally be on screen
+     * together — which is fine, because each is caught by a small box that follows its own head
+     * rather than by a sheet over the screen, and the comet is drawn on top of the fragment for
+     * exactly this case.
      */
-    const val THIN_FACTOR = 8.0
+    const val THIN_FACTOR = 5.0
 
     /** Seconds between arrivals at the bottom of the ladder. */
     const val BASE_INTERVAL = 9.0
@@ -111,12 +119,16 @@ object Accretion {
     /**
      * How long one takes to fall in, in seconds.
      *
-     * Twice as long as it needs to be to notice and half as long as it takes to be annoying. A
-     * comet crosses in eleven because it is a windfall worth chasing; this is the ordinary
-     * heartbeat of the early game, and something that has to be chased eleven seconds at a time
-     * every nine seconds would be a job.
+     * Long enough to notice and short enough not to be a job. A comet crosses in eleven because it
+     * is a windfall worth chasing; this is the ordinary heartbeat of the early game.
+     *
+     * Six rather than the original four, and that is an *honesty* fix rather than a generosity one.
+     * A fragment starts outside the drawn area and falls inward, so the first part of every fall
+     * happens off screen and the four seconds were never four seconds of anything visible — about
+     * two and a half were. Together with a nearer start (see the overlay) six seconds put roughly
+     * four and a half on screen, which is what four was always meant to mean.
      */
-    const val APPROACH_SECONDS = 4.0
+    const val APPROACH_SECONDS = 6.0
 
     val all: List<Impact> = listOf(
         Impact(
