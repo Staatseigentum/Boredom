@@ -40,7 +40,7 @@ class LanguageCoverageTest {
      * somebody changing a German string and not its English side. That is the failure this number
      * is here to catch, and it is silent in every other way: the fallback quietly serves the German.
      */
-    private val LEAST_TRANSLATED = 90
+    private val LEAST_TRANSLATED = 570
 
     @Test
     fun `the catalogues are actually being read`() {
