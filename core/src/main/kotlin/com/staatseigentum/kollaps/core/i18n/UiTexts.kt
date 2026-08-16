@@ -114,7 +114,7 @@ internal object UiTexts {
         "Der Himmel ist voll. Zwei Galaxien lassen sich verschweißen — die verschmolzene trägt beide Ausrichtungen und macht einen Platz frei.",
         "Der Installer ließ sich nicht starten.",
         "Der Installer ließ sich nicht öffnen",
-        "Der Körper ist zu groß geworden; kleine Brocken merkt er nicht mehr. Ab hier bringen die Kometen das Material des Himmels.",
+        "Der Körper ist zu groß geworden; kleine Brocken merkt er kaum noch — nur etwa alle %s Sekunden fällt eines ein. Das meiste Material bringen jetzt die Kometen, die einen Kern haben: Eiskern, Glutkern, Splitterregen.",
         "Der Spielstand liegt nur auf diesem Gerät. Kopier ihn dir irgendwohin, sonst ist er weg, wenn die App es ist.",
         "Die Ausrichtung gilt, bis du das nächste Mal alles wegwirfst.",
         "Die Offline-Grenze war voll — %s blieben liegen. Ein größerer Speicher hätte sie mitgenommen.",

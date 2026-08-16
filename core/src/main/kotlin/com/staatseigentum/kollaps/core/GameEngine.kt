@@ -1598,7 +1598,7 @@ object GameEngine {
      * meaningful at every tier instead of turning into a rounding error by the third hour.
      */
     fun catchComet(state: GameState, comet: Comet): GameState {
-        val caught = state.copy(cometsCaught = state.cometsCaught + 1)
+        val caught = spill(state.copy(cometsCaught = state.cometsCaught + 1), comet)
         return award(
             when (val reward = comet.reward) {
                 is CometReward.Windfall ->
@@ -1612,6 +1612,30 @@ object GameEngine {
                 )
             },
         )
+    }
+
+    /**
+     * What a broken-open comet leaves behind, on top of whatever it was carrying for production.
+     *
+     * The other half of [Accretion]'s income, and the half that was promised and never written:
+     * the panel has always said that past Mars the comets bring the material of the sky, and until
+     * now [GameState.materials] had exactly one writer, [absorbImpact], which stopped at Mars. A
+     * run past it could not gain a single unit for the rest of its life, and since a collapse
+     * takes the shells and the loose material with it, the deepest world types were unreachable
+     * rather than distant.
+     *
+     * Only the comets with a core to crack carry anything — see [Comet.carries] — and the load is
+     * multiplied by the crust exactly as an impact's is, so the shell that pays for yield pays for
+     * this too and there is one rule about material rather than two.
+     */
+    private fun spill(state: GameState, comet: Comet): GameState {
+        if (!Rollout.accretion || comet.carries.isEmpty()) return state
+        val factor = Shells.yieldFactor(state)
+        val stock = state.materials.toMutableMap()
+        for ((material, amount) in comet.carries) {
+            stock.combine(material.id, amount * factor) { a, b -> a + b }
+        }
+        return state.copy(materials = stock)
     }
 
     // ---------------------------------------------------------------- accretion

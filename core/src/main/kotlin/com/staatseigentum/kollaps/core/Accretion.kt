@@ -64,17 +64,35 @@ data class Impact(
  * You are a rock and you grow because things hit you. The game said that nowhere and showed it
  * never — the first hour was a shop with a picture above it.
  *
- * ## Why it stops
+ * ## Why it thins out
  *
- * Above [LAST_TIER] impacts hand over to the comets that already exist. Two systems that both
- * mean "tap the thing crossing the screen" would be two systems competing for the same gesture,
+ * Above [DENSE_TIER] the rain drops to a trickle — [THIN_FACTOR] times the wait — because two
+ * systems that both mean "tap the thing crossing the screen" would compete for the same gesture,
  * and the comets are the better one once production is large enough for a windfall to matter.
- * So this one is the early half of a single idea rather than a second copy of it.
+ *
+ * It used to stop dead there instead, and that was a real fault rather than a hard edge: a
+ * collapse takes the shells *and* the loose material with it, so the whole of building a body has
+ * to happen inside one run — and the income ended at Mars while the deepest world type needs some
+ * 1,300 units of material. The comets were supposed to take over, the panel said so in as many
+ * words, and nothing in [GameEngine.catchComet] ever wrote a single unit. Two thirds of the world
+ * grid was not hard to reach; it was walled off.
+ *
+ * Now both halves are true. This one keeps arriving for ever, rare enough not to be a job, and
+ * the comets that have to be broken open carry a load of their own — see [Comet.carries].
  */
 object Accretion {
 
-    /** The last rung on which anything still drifts in. Mars, where the comets take over. */
-    const val LAST_TIER = 6
+    /** The last rung on which they still arrive at the full early-game rate. Mars. */
+    const val DENSE_TIER = 6
+
+    /**
+     * How much longer the wait is past [DENSE_TIER].
+     *
+     * Eight, measured rather than picked: at Mars they arrive every four seconds, so past it they
+     * arrive every thirty-odd — often enough that the material stock still moves while a long run
+     * plays out, rare enough that it never argues with a comet for the same thumb.
+     */
+    const val THIN_FACTOR = 8.0
 
     /** Seconds between arrivals at the bottom of the ladder. */
     const val BASE_INTERVAL = 9.0
@@ -155,9 +173,18 @@ object Accretion {
 
     fun byId(id: String?): Impact? = all.firstOrNull { it.id == id }
 
-    /** Whether anything still drifts in at this point on the ladder. */
-    fun isActive(state: GameState): Boolean =
-        Rollout.accretion && GameEngine.tierOf(state).index <= LAST_TIER
+    /**
+     * Whether anything still drifts in — which, past the rollout switch, is always.
+     *
+     * It used to be false above [DENSE_TIER], and that one `<=` was the whole of the wall: with it
+     * false the overlay never scheduled another fragment, and with the comets carrying nothing
+     * either, a run past Mars had no way of gaining a single unit of material for the rest of its
+     * life. What changes at [DENSE_TIER] now is [interval] and nothing else.
+     */
+    fun isActive(state: GameState): Boolean = Rollout.accretion
+
+    /** Whether the body is big enough that they have thinned out to a trickle. */
+    fun isThinned(state: GameState): Boolean = GameEngine.tierOf(state).index > DENSE_TIER
 
     /**
      * Whether the panel is worth showing at all — which, once the update is live, is always.
@@ -181,9 +208,12 @@ object Accretion {
      * it and the overlay that delivers it cannot disagree.
      */
     fun interval(state: GameState): Double {
-        val rung = GameEngine.tierOf(state).index.coerceIn(0, LAST_TIER)
+        val rung = GameEngine.tierOf(state).index.coerceIn(0, DENSE_TIER)
         val pulled = BASE_INTERVAL * GRAVITY_STEP.pow(rung) * Shells.gravityFactor(state)
-        return pulled.coerceAtLeast(MIN_INTERVAL)
+        // The floor is applied before the thinning, not after: [MIN_INTERVAL] is there to stop the
+        // early rain becoming a downpour, and a trickle has no business being clamped up to it.
+        val dense = pulled.coerceAtLeast(MIN_INTERVAL)
+        return if (isThinned(state)) dense * THIN_FACTOR else dense
     }
 
     /** One of them, drawn by weight. */

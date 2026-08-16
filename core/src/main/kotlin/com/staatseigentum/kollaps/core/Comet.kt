@@ -88,6 +88,20 @@ enum class Comet(
      * different skill from spotting it, and pays accordingly.
      */
     val hits: Int = 1,
+    /**
+     * What breaking it open spills, per material, before the crust's bonus.
+     *
+     * Empty for the three that cross whole, which is the point rather than an omission: a comet
+     * you can take with one tap pays in production, and the ones that pay in *material* are the
+     * ones with a core to crack. Material is what the body is built out of and a collapse takes
+     * all of it, so a source that arrived every four minutes for one tap would make the deepest
+     * world types a formality. These arrive every quarter of an hour or so, and have to be hit
+     * two or three times while they are still moving.
+     *
+     * Each carries what it is made of, with a lesser second so that no shell can ever be blocked
+     * on a material only the other core brings.
+     */
+    val carries: Map<Material, Double> = emptyMap(),
 ) {
     WINDFALL(
         id = "windfall",
@@ -106,25 +120,30 @@ enum class Comet(
     FRENZY(
         id = "frenzy",
         germanTitle = "Splitterregen",
-        germanFlavor = "Eine Minute lang zählt jeder Tipp hundertfach.",
+        germanFlavor = "Eine Minute lang zählt jeder Tipp hundertfach. Ein paar Splitter bleiben liegen.",
         weight = 2,
         reward = CometReward.Timed(Buff.FRENZY),
+        // The name was always a promise of debris. Small, because it costs one tap like the two
+        // above it — enough that catching one is never *only* a buff.
+        carries = mapOf(Material.SILIKAT to 4.0, Material.KOHLENSTOFF to 4.0),
     ),
     ICE_CORE(
         id = "ice",
         germanTitle = "Eiskern",
-        germanFlavor = "Drei Treffer, bis die Kruste bricht. Darunter eine dreiviertel Stunde Arbeit.",
+        germanFlavor = "Drei Treffer, bis die Kruste bricht. Darunter eine dreiviertel Stunde Arbeit — und Eis.",
         weight = 2,
         reward = CometReward.Windfall(45 * 60.0),
         hits = 3,
+        carries = mapOf(Material.EIS to 30.0, Material.SILIKAT to 10.0),
     ),
     EMBER_CORE(
         id = "ember",
         germanTitle = "Glutkern",
-        germanFlavor = "Zwei Treffer, und danach brennt anderthalb Minuten lang alles fünfzehnfach.",
+        germanFlavor = "Zwei Treffer, und danach brennt anderthalb Minuten lang alles fünfzehnfach. Der Kern bleibt.",
         weight = 1,
         reward = CometReward.Timed(Buff.INFERNO),
         hits = 2,
+        carries = mapOf(Material.METALL to 30.0, Material.KOHLENSTOFF to 10.0),
     ),
     ;
 

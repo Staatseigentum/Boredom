@@ -152,23 +152,78 @@ class AccretionTest {
         assertEquals(0.0, GameEngine.missImpact(broke, heavy).mass)
     }
 
+    /**
+     * They thin out where the comets take over, and they never stop.
+     *
+     * This used to assert the opposite, and the opposite was the bug: `isActive` went false past
+     * Mars, the overlay stopped scheduling, and the comets that were supposed to take over carried
+     * nothing. Since a collapse takes the shells and the loose material with it, that left a run
+     * past Mars with no way to gain a single unit for the rest of its life.
+     */
     @Test
-    fun `they stop where the comets take over`() {
+    fun `they thin out where the comets take over, and never stop`() {
         val early = GameState(runMass = 0.0)
         assertTrue(Accretion.isActive(early), "Am Anfang fällt nichts ein")
+        assertFalse(Accretion.isThinned(early), "Am Anfang regnet es schon ausgedünnt")
 
-        val late = GameState(runMass = Tiers.all[Accretion.LAST_TIER + 1].threshold)
-        assertFalse(Accretion.isActive(late), "Es fällt immer noch etwas ein")
-        // But the panel stays — including for a save that was already far past Mars when the
-        // update arrived, which is every save that was being played when it did.
+        val late = GameState(runMass = Tiers.all[Accretion.DENSE_TIER + 1].threshold)
+        assertTrue(Accretion.isActive(late), "Über Mars fällt gar nichts mehr — das war der Fehler")
+        assertTrue(Accretion.isThinned(late), "Über Mars regnet es unvermindert weiter")
+        assertTrue(
+            Accretion.interval(late) > Accretion.interval(early),
+            "Über Mars kommt nicht seltener etwas als am Anfang",
+        )
+
+        // The panel stays — including for a save that was already far past Mars when the update
+        // arrived, which is every save that was being played when it did.
         assertTrue(Accretion.isUnlocked(late), "Ein alter Spielstand sieht vom Update nichts")
         assertTrue(Worlds.isUnlocked(late), "Und von den Weltentypen auch nichts")
+    }
+
+    /**
+     * The other source, and the promise the panel has been making since 5.0.0.
+     *
+     * Only the comets with a core carry anything, and the three that cross whole must not — the
+     * common ones arrive every few minutes for a single tap, and material that cheap would make
+     * the world grid a formality rather than a collection.
+     */
+    @Test
+    fun `only the comets with a core leave material behind`() {
+        for (comet in Comet.entries) {
+            val before = GameState(runMass = Tiers.all[Accretion.DENSE_TIER + 1].threshold)
+            val after = GameEngine.catchComet(before, comet)
+            val gained = Material.entries.sumOf { Shells.amountOf(after, it) }
+
+            if (comet.hits > 1 || comet == Comet.FRENZY) {
+                assertTrue(gained > 0.0, "${comet.id} bringt kein Material")
+            } else {
+                assertEquals(0.0, gained, "${comet.id} bringt Material, obwohl ein Tipp reicht")
+            }
+        }
+    }
+
+    /** And the crust raises that load exactly as it raises an impact's. */
+    @Test
+    fun `the crust raises what a comet spills`() {
+        val bare = GameState()
+        val crusted = GameState(shells = mapOf(Shell.KRUSTE.id to 5))
+        assertTrue(
+            Shells.yieldFactor(crusted) > Shells.yieldFactor(bare),
+            "Der Aufbau taugt nicht für den Test",
+        )
+
+        val plain = GameEngine.catchComet(bare, Comet.ICE_CORE)
+        val better = GameEngine.catchComet(crusted, Comet.ICE_CORE)
+        assertTrue(
+            Shells.amountOf(better, Material.EIS) > Shells.amountOf(plain, Material.EIS),
+            "Die Kruste erhöht die Ladung eines Kometen nicht",
+        )
     }
 
     @Test
     fun `arrivals come sooner as the body grows, down to a floor`() {
         val early = Accretion.interval(GameState())
-        val later = Accretion.interval(GameState(runMass = Tiers.all[Accretion.LAST_TIER].threshold))
+        val later = Accretion.interval(GameState(runMass = Tiers.all[Accretion.DENSE_TIER].threshold))
         assertTrue(later < early, "Die Schwerkraft holt nichts schneller herein")
         assertTrue(later >= Accretion.MIN_INTERVAL, "Der Abstand ist unter das Minimum gefallen")
 

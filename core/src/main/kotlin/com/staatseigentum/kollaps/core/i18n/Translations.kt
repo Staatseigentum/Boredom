@@ -853,14 +853,14 @@ internal object Translations {
         "Alles läuft eine halbe Minute lang siebenfach." to
             "Everything runs sevenfold for half a minute.",
         "Splitterregen" to "Shard Rain",
-        "Eine Minute lang zählt jeder Tipp hundertfach." to
-            "For one minute every tap counts a hundredfold.",
+        "Eine Minute lang zählt jeder Tipp hundertfach. Ein paar Splitter bleiben liegen." to
+            "For one minute every tap counts a hundredfold. A few splinters are left behind.",
         "Eiskern" to "Ice Core",
-        "Drei Treffer, bis die Kruste bricht. Darunter eine dreiviertel Stunde Arbeit." to
-            "Three hits to break the crust. Three quarters of an hour of work underneath.",
+        "Drei Treffer, bis die Kruste bricht. Darunter eine dreiviertel Stunde Arbeit — und Eis." to
+            "Three hits to break the crust. Three quarters of an hour of work underneath — and ice.",
         "Glutkern" to "Ember Core",
-        "Zwei Treffer, und danach brennt anderthalb Minuten lang alles fünfzehnfach." to
-            "Two hits, and then everything burns fifteenfold for a minute and a half.",
+        "Zwei Treffer, und danach brennt anderthalb Minuten lang alles fünfzehnfach. Der Kern bleibt." to
+            "Two hits, and then everything burns fifteenfold for a minute and a half. The core stays.",
         "Schub" to "Surge",
         "Klickrausch" to "Click Frenzy",
         "Feuersturm" to "Firestorm",
@@ -1842,8 +1842,10 @@ internal object Translations {
             "Before the new version can be installed, Kollaps has to be allowed as a source in the system settings.",
         "Der Himmel ist voll. Zwei Galaxien lassen sich verschweißen — die verschmolzene trägt beide Ausrichtungen und macht einen Platz frei." to
             "The sky is full. Two galaxies can be welded together — the merged one carries both leanings and frees a slot.",
-        "Der Körper ist zu groß geworden; kleine Brocken merkt er nicht mehr. Ab hier bringen die Kometen das Material des Himmels." to
-            "The body has grown too large to notice small rocks. From here the comets bring what the sky has to offer.",
+        "Der Körper ist zu groß geworden; kleine Brocken merkt er kaum noch — nur etwa alle %s Sekunden fällt eines ein. Das meiste Material bringen jetzt die Kometen, die einen Kern haben: Eiskern, Glutkern, Splitterregen." to
+            "The body has grown too large to notice small rocks — only about one every %s seconds " +
+                "still gets through. Most of the material now comes from the comets with a core: " +
+                "Ice Core, Ember Core, Splinter Shower.",
         "Der Spielstand liegt nur auf diesem Gerät. Kopier ihn dir irgendwohin, sonst ist er weg, wenn die App es ist." to
             "The save lives only on this device. Copy it somewhere, or it goes when the app does.",
         "Die Ausrichtung gilt, bis du das nächste Mal alles wegwirfst." to
@@ -1972,6 +1974,38 @@ internal object Translations {
      *   from. The view model and both update cards live elsewhere, so "Installiert: %s" and
      *   "Alles aktuell." were never asked for. That scan now walks both modules whole.
      */
+    /**
+     * The catalogue fields that were displayed but never gathered.
+     *
+     * [Texts] walks the catalogues by hand, and three fields were simply not on the walk: an
+     * investment's per-level line, an automation rule's unit, and — until it turned out to be
+     * covered elsewhere — a chronicle fragment's source. Every one of them goes through [Lang.t]
+     * at the point it is drawn, so nothing looked wrong in the code; they were just never in the
+     * list the coverage test checks, so the test was green over thirteen German lines sitting in
+     * the middle of an English prestige panel.
+     */
+    private val CATALOGUE_FIELDS: Map<String, String> = mapOf(
+        // ---- what one more level of an investment does
+        "je Stufe ×4 Startmasse" to "×4 starting mass per level",
+        "je Stufe +30 % pro Tipp" to "+30 % per tap, per level",
+        "je Stufe +12 % auf alles" to "+12 % to everything, per level",
+        "je Stufe +15 % Kometen" to "+15 % comets, per level",
+        "je Stufe +3 Stunden offline" to "+3 hours offline, per level",
+        "je Stufe +4 Punkte Offline-Ausbeute" to "+4 points of offline yield, per level",
+        "je Stufe +3 je freigeschaltetem Kollektor" to "+3 per unlocked collector, per level",
+        "je Stufe +1 Punkt je Meilenstein" to "+1 point per milestone, per level",
+        "je Stufe +20 % Fusionstempo" to "+20 % fusion speed, per level",
+        "je Stufe +15 % Forschungstempo" to "+15 % research speed, per level",
+        "je Stufe +2 Punkte je Singularität" to "+2 points per singularity, per level",
+        "je Stufe +8 % Singularitäten je Kollaps" to "+8 % singularities per collapse, per level",
+        "je Stufe +2 Tipps je Sekunde" to "+2 taps per second, per level",
+
+        // ---- what an automation rule's dial is measured in
+        "Höchstens" to "At most",
+        "Läufe" to "Runs",
+        "Nimmt" to "Takes",
+    )
+
     private val OVERLOOKED: Map<String, String> = mapOf(
         // ---- the tab strips and the buy amounts, freed from their enum constructors
         "Flotte" to "Fleet",
@@ -2177,5 +2211,6 @@ internal object Translations {
         putAll(SCREENS_MORE)
         putAll(PLUMBING)
         putAll(OVERLOOKED)
+        putAll(CATALOGUE_FIELDS)
     }
 }

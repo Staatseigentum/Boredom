@@ -102,6 +102,10 @@ object Texts {
             for (investment in Investments.all) {
                 add(investment.germanName)
                 add(investment.germanFlavor)
+                // The line under the name that says what one more level does. Displayed since the
+                // panel existed and gathered by nobody, so it was still German in an English game
+                // — see the note on [germanFields] in `TextFieldTest`.
+                add(investment.germanPerLevel)
             }
             for (upgrade in AeonUpgrades.all) {
                 add(upgrade.germanName)
@@ -141,6 +145,9 @@ object Texts {
             for (rule in AutomationRule.entries) {
                 add(rule.germanLabel)
                 add(rule.germanFlavor)
+                // What the dial is measured in — "Rücklage", "Läufe". The row's heading, and one
+                // more field that was drawn without ever being asked for.
+                add(rule.germanSetting)
                 for (option in rule.options) add(option.germanLabel)
             }
             for (job in GalaxyJob.entries) {
@@ -189,6 +196,9 @@ object Texts {
                 add(challenge.germanFlavor)
             }
             for (contract in Contract.all) add(contract.germanTitle)
+            // Includes the two source templates, which are display text as much as the lines —
+            // and a [Fragment.germanSource] is always either one of those or a body's name, both
+            // of which are already gathered, so the field needs no walk of its own.
             addAll(Lore.allLines)
             for (achievement in Achievements.all) {
                 add(achievement.germanName)

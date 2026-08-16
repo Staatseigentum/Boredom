@@ -123,20 +123,23 @@ private fun MaterialStock(state: GameState) {
 }
 
 /**
- * One line saying whether anything is still coming, and how often.
+ * One line saying what is still coming, and how often.
  *
  * Written as a sentence rather than a statistic because it answers a question a player actually
- * asks — "is this over?" — at the one moment the answer changes, which is when the impacts stop
- * and the comets take over.
+ * asks — "is this over?" — at the one moment the answer changes, which is when the rain thins out
+ * and the comets start carrying their share.
+ *
+ * Both sentences are read off [Accretion.interval] rather than written from memory. The second one
+ * used to say the impacts had stopped and the comets had taken over, and only the first half of
+ * that was ever true; a line that promises an income the rules do not pay is worse than no line.
  */
 @Composable
 private fun ArrivalNote(state: GameState) {
-    val active = Accretion.isActive(state)
-    val text = if (active) {
-        val every = Accretion.interval(state)
+    val every = Accretion.interval(state)
+    val text = if (!Accretion.isThinned(state)) {
         Lang.t("Etwa alle %s Sekunden fällt etwas ein. Tippe es an, bevor es aufschlägt — sonst prallt das meiste davon wieder ab.", Numbers.format(every))
     } else {
-        Lang.t("Der Körper ist zu groß geworden; kleine Brocken merkt er nicht mehr. Ab hier bringen die Kometen das Material des Himmels.")
+        Lang.t("Der Körper ist zu groß geworden; kleine Brocken merkt er kaum noch — nur etwa alle %s Sekunden fällt eines ein. Das meiste Material bringen jetzt die Kometen, die einen Kern haben: Eiskern, Glutkern, Splitterregen.", Numbers.format(every))
     }
     Text(
         text = text,
