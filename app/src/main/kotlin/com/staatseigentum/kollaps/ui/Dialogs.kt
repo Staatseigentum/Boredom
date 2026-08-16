@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -46,7 +47,7 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         containerColor = SpaceElevated,
         shape = RectangleShape,
-        title = { PixelLabel("Willkommen zurück", color = Starlight, size = 16) },
+        title = { PixelLabel(Lang.t("Willkommen zurück"), color = Starlight, size = 16) },
         text = {
             Column {
                 Text(
@@ -62,7 +63,7 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "${Numbers.formatDuration(report.seconds)} angerechnet, " +
-                        "zu ${Numbers.formatPercent(report.efficiency)}.",
+                        Lang.t("zu %s.", Numbers.formatPercent(report.efficiency)),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
@@ -73,7 +74,7 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
                     Spacer(Modifier.height(6.dp))
                     Text(
                         text = "Die Offline-Grenze war voll — ${Numbers.formatMass(report.lostToCap)} " +
-                            "blieben liegen. Ein größerer Speicher hätte sie mitgenommen.",
+                            Lang.t("blieben liegen. Ein größerer Speicher hätte sie mitgenommen."),
                         style = MaterialTheme.typography.bodySmall,
                         color = Ember,
                     )
@@ -81,7 +82,7 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
 
                 if (report.shares.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
-                    PixelLabel("Wer geschuftet hat", size = 12, color = Muted)
+                    PixelLabel(Lang.t("Wer geschuftet hat"), size = 12, color = Muted)
                     Spacer(Modifier.height(4.dp))
                     for (share in report.shares.take(SHARES_SHOWN)) {
                         Row(
@@ -102,7 +103,7 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
                     }
                     if (report.shares.size > SHARES_SHOWN) {
                         Text(
-                            text = "… und ${report.shares.size - SHARES_SHOWN} weitere",
+                            text = Lang.t("… und %s weitere", report.shares.size - SHARES_SHOWN),
                             style = MaterialTheme.typography.bodySmall,
                             color = Muted,
                         )
@@ -215,9 +216,8 @@ fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
                     // it is discouraging. The designation itself is the progress.
                     tier.isDesignated -> "Tippen zum Weitermachen · Katalog ${tier.label}"
                     tier.isFinal ->
-                        "Du hast die Leiter zu Ende geklettert. Im Reiter Kosmos kannst du " +
-                            "kollabieren und mit Singularitäten neu anfangen."
-                    else -> "Tippen zum Weitermachen · noch ${Tiers.all.size - tier.index - 1} Stufen"
+                        Lang.t("Du hast die Leiter zu Ende geklettert. Im Reiter Kosmos kannst du kollabieren und mit Singularitäten neu anfangen.")
+                    else -> Lang.t("Tippen zum Weitermachen · noch %s Stufen", Tiers.all.size - tier.index - 1)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,

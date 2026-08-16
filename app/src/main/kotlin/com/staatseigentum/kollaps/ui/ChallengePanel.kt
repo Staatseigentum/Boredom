@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -84,11 +85,9 @@ fun ChallengePanel(
         if (offered.isEmpty()) {
             Text(
                 text = if (done == Challenge.entries.size) {
-                    "Alle bestanden. Es gibt nichts mehr, was du dir noch schwerer machen könntest."
+                    Lang.t("Alle bestanden. Es gibt nichts mehr, was du dir noch schwerer machen könntest.")
                 } else {
-                    "Herausforderungen tauchen auf, wenn du kollabiert bist. Sie starten einen " +
-                        "Lauf unter einer Regel, die dir etwas wegnimmt — dafür bleibt die " +
-                        "Belohnung für immer."
+                    Lang.t("Herausforderungen tauchen auf, wenn du kollabiert bist. Sie starten einen Lauf unter einer Regel, die dir etwas wegnimmt — dafür bleibt die Belohnung für immer.")
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
@@ -97,11 +96,7 @@ fun ChallengePanel(
         }
 
         Text(
-            text = "Jede startet den Lauf neu und nimmt dir etwas weg. Der Vorsprung aus dem " +
-                "Prestige zählt dabei nicht — die dauerhaften Multiplikatoren schon. Zwei " +
-                "gleichzeitig gehen auch: beide Regeln, beide Ziele, beide Belohnungen — und " +
-                "obendrauf ${Numbers.formatMultiplier(Challenge.DUO_BONUS)} für immer, wenn " +
-                "keine der beiden vorher schon bestanden war.",
+            text = Lang.t("Jede startet den Lauf neu und nimmt dir etwas weg. Der Vorsprung aus dem Prestige zählt dabei nicht — die dauerhaften Multiplikatoren schon. Zwei gleichzeitig gehen auch: beide Regeln, beide Ziele, beide Belohnungen — und obendrauf %s für immer, wenn keine der beiden vorher schon bestanden war.", Numbers.formatMultiplier(Challenge.DUO_BONUS)),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -141,7 +136,7 @@ fun ChallengePanel(
         val duo = picked.size == Challenge.MAX_AT_ONCE
         Text(
             text = if (duo) {
-                "${names.joinToString(" + ")} — beides gleichzeitig, beide Ziele nötig."
+                Lang.t("%s — beides gleichzeitig, beide Ziele nötig.", names.joinToString(" + "))
             } else {
                 names.first()
             },
@@ -190,7 +185,7 @@ private fun ChallengeRow(
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (blocked) Muted else Starlight,
             )
-            if (selected) PixelLabel("gewählt", color = Nebula, size = 12)
+            if (selected) PixelLabel(Lang.t("gewählt"), color = Nebula, size = 12)
         }
         Text(challenge.flavor, style = MaterialTheme.typography.bodySmall, color = Muted)
         Spacer(Modifier.height(6.dp))
@@ -200,7 +195,7 @@ private fun ChallengeRow(
         if (blocked) {
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Zusammen mit der anderen bliebe nichts übrig, was Masse macht.",
+                text = Lang.t("Zusammen mit der anderen bliebe nichts übrig, was Masse macht."),
                 style = MaterialTheme.typography.bodySmall,
                 color = Ember,
             )
@@ -225,7 +220,7 @@ private fun RunningChallenges(
         border = if (stats.challengeLost) Ember else Nebula,
     ) {
         PixelLabel(
-            text = if (duo) "Zwei Herausforderungen laufen" else "Herausforderung läuft",
+            text = if (duo) "Zwei Herausforderungen laufen" else Lang.t("Herausforderung läuft"),
             color = Nebula,
             size = 15,
         )
@@ -246,7 +241,7 @@ private fun RunningChallenges(
                 if (duo) {
                     val met = challenge.isMetBy(state)
                     PixelLabel(
-                        text = if (met) "erfüllt" else "offen",
+                        text = if (met) Lang.t("erfüllt") else "offen",
                         color = if (met) Positive else Muted,
                         size = 12,
                     )
@@ -263,7 +258,7 @@ private fun RunningChallenges(
         if (duo) {
             Line(
                 "Bonus",
-                "${Numbers.formatMultiplier(Challenge.DUO_BONUS)} zusätzlich, dauerhaft",
+                Lang.t("%s zusätzlich, dauerhaft", Numbers.formatMultiplier(Challenge.DUO_BONUS)),
                 Positive,
             )
         }
@@ -273,13 +268,13 @@ private fun RunningChallenges(
         when {
             stats.challengeMet -> {
                 Text(
-                    text = "Geschafft. Einlösen setzt den Lauf zurück und behält die Belohnung.",
+                    text = Lang.t("Geschafft. Einlösen setzt den Lauf zurück und behält die Belohnung."),
                     style = MaterialTheme.typography.bodySmall,
                     color = Positive,
                 )
                 Spacer(Modifier.height(8.dp))
                 PixelButton(
-                    label = "Belohnung einlösen",
+                    label = Lang.t("Belohnung einlösen"),
                     onClick = {
                         sfx?.success()
                         onFinish()
@@ -291,8 +286,7 @@ private fun RunningChallenges(
 
             stats.challengeLost -> {
                 Text(
-                    text = "Die Zeit ist um. Aufgeben setzt den Lauf zurück, danach kannst du " +
-                        "es noch mal versuchen.",
+                    text = Lang.t("Die Zeit ist um. Aufgeben setzt den Lauf zurück, danach kannst du es noch mal versuchen."),
                     style = MaterialTheme.typography.bodySmall,
                     color = Ember,
                 )
@@ -307,7 +301,7 @@ private fun RunningChallenges(
 
             else -> {
                 Text(
-                    text = "Kollabieren geht erst wieder, wenn das hier vorbei ist.",
+                    text = Lang.t("Kollabieren geht erst wieder, wenn das hier vorbei ist."),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )

@@ -1697,6 +1697,221 @@ internal object Translations {
         "50" to "50",
     )
 
+
+    /**
+     * The screens' own words: buttons, headings, the sentences that explain a mechanism.
+     *
+     * Whole sentences, including the ones with a value in them. "noch %s" is "%s to go" — the
+     * words end up on the other side of the figure, which is exactly why these are templates and
+     * not a translated prefix glued to a number.
+     */
+    private val SCREENS: Map<String, String> = mapOf(
+        // ---- headings and navigation
+        "Körper" to "Body",
+        "Flotte" to "Fleet",
+        "Bahnen" to "Orbits",
+        "Kosmos" to "Cosmos",
+        "Aufträge" to "Contracts",
+        "Spielstände" to "Saves",
+        "Singularitäten" to "Singularities",
+        "Äonen" to "Aeons",
+        "Geräusche" to "Sound",
+        "Singularitäten ausgeben" to "Spend singularities",
+        "Äonen ausgeben" to "Spend Aeons",
+        "Spielstand einfügen" to "Paste save",
+        "Spielstand löschen" to "Delete save",
+        "Wer die Arbeit macht" to "Who does the work",
+        "Wer geschuftet hat" to "Who did the grafting",
+        "Wenn du weg bist" to "While you are away",
+        "Willkommen zurück" to "Welcome back",
+        "Was für ein Universum?" to "What kind of universe?",
+        "Nächster Kauf" to "Next purchase",
+        "Nächstes Äon" to "Next Aeon",
+        "Bonus aus Singularitäten" to "Bonus from singularities",
+        "Neue Version verfügbar" to "New version available",
+        "Diese Version musst du installieren" to "You have to install this version",
+        "Herausforderung läuft" to "Challenge running",
+
+        // ---- buttons and short states
+        "Doch nicht" to "Never mind",
+        "Später" to "Later",
+        "Nochmal prüfen" to "Check again",
+        "Einfügen" to "Paste",
+        "Urknall auslösen" to "Trigger Big Bang",
+        "Noch nicht so weit" to "Not far enough yet",
+        "Belohnung einlösen" to "Claim reward",
+        "Hierher verschweißen" to "Weld into this one",
+        "Zurück ins neueste Universum" to "Back to the newest universe",
+        "Abbrechen (Masse ist weg)" to "Cancel (the mass is gone)",
+        "Wirklich? Alles wird gelöscht" to "Really? Everything gets deleted",
+        "Lädt …" to "Loading …",
+        "aus" to "off",
+        "erfüllt" to "met",
+        "gewählt" to "chosen",
+        "hier" to "here",
+        "noch unbekannt" to "not known yet",
+        "Du spielst gerade hier" to "You are playing here",
+        "Du spielst die neueste Version." to "You are on the newest version.",
+        "Kein Feuer im Kern" to "No fire in the core",
+        "Nichts, was bleiben würde" to "Nothing that would stay",
+        "Vollständig ausgebaut. Mehr geht hier nicht." to
+            "Fully built. There is no more to be had here.",
+        "In die Zwischenablage kopiert." to "Copied to the clipboard.",
+        "Alles gelöscht. Neuer Anfang." to "All deleted. A fresh start.",
+        "Das war kein Kollaps-Spielstand." to "That was not a Kollaps save.",
+        "Überhitzt " to "Overheated ",
+
+        // ---- automation states
+        "noch nicht freigeschaltet" to "not unlocked yet",
+        "erst, wenn der Kern brennt" to "not until the core is burning",
+        "erst mit dem eigenen System" to "not until you have a system of your own",
+        "erst mit dem Labor" to "not until the lab is built",
+
+        // ---- lines with a value in them
+        "%s von %s" to "%s of %s",
+        "%s Äonen" to "%s Aeons",
+        "%s Äon · %s" to "%s Aeon · %s",
+        "%s zusätzlich, dauerhaft" to "%s extra, permanently",
+        "%s — das Ende der Leiter" to "%s — the end of the ladder",
+        "%s — beides gleichzeitig, beide Ziele nötig." to
+            "%s — both at once, and both goals are required.",
+        "%s/%s · noch %s" to "%s/%s · %s to go",
+        "Stufe %s von %s" to "Level %s of %s",
+        "Stufe %s/%s · noch %s" to "Tier %s/%s · %s to go",
+        "noch %s" to "%s to go",
+        "noch %s s" to "%s s to go",
+        " · nächster bei %s" to " · next at %s",
+        "zu %s." to "at %s.",
+        "• %s Singularitäten" to "• %s singularities",
+        "… und %s weitere" to "… and %s more",
+        "Ausbau %s von %s" to "Level %s of %s",
+        "Ausbauen · %s Äonen" to "Build up · %s Aeons",
+        "Bahn %s öffnen · %s" to "Open orbit %s · %s",
+        "Trabant auf Bahn %s" to "Satellite on orbit %s",
+        "Resonanz mit Bahn %s · %s" to "Resonance with orbit %s · %s",
+        "Hier läge Resonanz mit Bahn %s · %s" to "Resonance would sit here with orbit %s · %s",
+        "Umstellung auf %s · noch %s" to "Switching to %s · %s to go",
+        "Bisher %s× ausgelöst." to "Triggered %s× so far.",
+        "Jetzt zu holen: %s Äonen" to "Available now: %s Aeons",
+        "Jetzt zu holen: %s Singularitäten (%s extra)" to
+            "Available now: %s singularities (%s extra)",
+        "Kollaps bringt %s Singularitäten" to "Collapsing pays %s singularities",
+        "Grau: dein bester Lauf, %s" to "Grey: your best run, %s",
+        "Läuft auf %s · %s" to "Runs at %s · %s",
+        "pendelt sich bei %s ein" to "settles at %s",
+        "wartet auf %s: nur %s" to "waiting on %s: only %s",
+        "wächst ohne Grenze, dafür langsam" to "grows without limit, but slowly",
+        "Tippen zum Weitermachen · noch %s Stufen" to "Tap to carry on · %s tiers to go",
+        "%s ist verfügbar%s" to "%s is available%s",
+        "%s ist geladen und wartet auf die Installation." to
+            "%s has downloaded and is waiting to be installed.",
+        "blieben liegen. Ein größerer Speicher hätte sie mitgenommen." to
+            "were left behind. A bigger store would have taken them along.",
+
+        // ---- the longer explanations
+        "Alle %s gekauft. Von hier aus geht es nur noch durch Spielen weiter." to
+            "All %s bought. From here it only goes further by playing.",
+        "Alle Klangeffekte: Tippen, vorbeiziehende und gefangene Kometen, Käufe, Zündung, fertige Forschung, neue Erfolge und der Kollaps." to
+            "Every sound effect: tapping, comets passing and caught, purchases, ignition, finished research, new achievements and the collapse.",
+        "Alle bestanden. Es gibt nichts mehr, was du dir noch schwerer machen könntest." to
+            "All beaten. There is nothing left to make harder for yourself.",
+        "Alles gekauft. Es gibt nichts mehr, was ein Neuanfang billiger machen könnte." to
+            "Everything bought. There is nothing left for a fresh start to make cheaper.",
+        "Achtung: das ersetzt den laufenden Spielstand vollständig." to
+            "Careful: this replaces the running save completely.",
+        "Ausrichtungen: %s von %s belegt — tippe auf die Zahl links, um eine zu vergeben." to
+            "Roles: %s of %s assigned — tap the number on the left to assign one.",
+        "Bahnen, deren Nummern in einem kleinen Verhältnis stehen — 1:2, 2:3, 1:3, 3:4, 2:5 — koppeln aneinander. Jede gekoppelte Nachbarin gibt beiden %s mehr." to
+            "Orbits whose numbers stand in a small ratio — 1:2, 2:3, 1:3, 3:4, 2:5 — couple to each other. Every coupled neighbour gives both %s more.",
+        "Damit die neue Version installiert werden kann, muss Kollaps in den Systemeinstellungen als Quelle erlaubt werden." to
+            "Before the new version can be installed, Kollaps has to be allowed as a source in the system settings.",
+        "Der Himmel ist voll. Zwei Galaxien lassen sich verschweißen — die verschmolzene trägt beide Ausrichtungen und macht einen Platz frei." to
+            "The sky is full. Two galaxies can be welded together — the merged one carries both leanings and frees a slot.",
+        "Der Körper ist zu groß geworden; kleine Brocken merkt er nicht mehr. Ab hier bringen die Kometen das Material des Himmels." to
+            "The body has grown too large to notice small rocks. From here the comets bring what the sky has to offer.",
+        "Der Spielstand liegt nur auf diesem Gerät. Kopier ihn dir irgendwohin, sonst ist er weg, wenn die App es ist." to
+            "The save lives only on this device. Copy it somewhere, or it goes when the app does.",
+        "Die Ausrichtung gilt, bis du das nächste Mal alles wegwirfst." to
+            "The leaning holds until the next time you throw everything away.",
+        "Die Zeit ist um. Aufgeben setzt den Lauf zurück, danach kannst du es noch mal versuchen." to
+            "Time is up. Giving up resets the run, and then you can try again.",
+        "Drei Ziele, die sich nachlegen. Bezahlt wird in Äonen." to
+            "Three goals, replaced as they are met. They pay in Aeons.",
+        "Drei getrennte Spiele. Beim Wechseln wird der laufende Stand zuerst gespeichert — es geht nichts verloren." to
+            "Three separate games. Switching saves the running one first — nothing is lost.",
+        "Du hast die Leiter zu Ende geklettert. Im Reiter Kosmos kannst du kollabieren und mit Singularitäten neu anfangen." to
+            "You have climbed the ladder to the top. In the Cosmos tab you can collapse and start again with singularities.",
+        "Ein Klangteppich, der sich ändert, sobald aus dem Gestein eine Welt, aus der Welt ein Gasriese und aus dem Gasriesen ein Stern wird." to
+            "A bed of sound that changes as the rock becomes a world, the world a gas giant and the gas giant a star.",
+        "Ein Projekt läuft auf der echten Uhr weiter — auch wenn das Spiel zu ist. Es gibt nur eine Bank, also läuft immer nur eines." to
+            "A project keeps running on the real clock — even while the game is shut. There is only one bench, so only one runs at a time.",
+        "Ein großes Update ändert, was im Spielstand steht. Zwei Fassungen nebeneinander vertragen sich dabei nicht — deshalb geht es hier nur vorwärts." to
+            "A large update changes what is in the save. Two versions side by side do not get along — which is why this only goes forwards.",
+        "Eine stille Zeile mit Produktion und der Restzeit im Labor. Sie bleibt stehen, bis du das Spiel wieder öffnest." to
+            "A quiet line with your production and the time left in the lab. It stays until you open the game again.",
+        "Erinnerung, wenn der Speicher voll ist" to "Remind me when the store is full",
+        "Erreiche das Schwarze Loch, um zu kollabieren" to "Reach the Black Hole to collapse",
+        "Erreiche das Schwarze Loch, um zu kollabieren. Jeder Kollaps bringt Singularitäten, die jeden weiteren Durchlauf dauerhaft beschleunigen." to
+            "Reach the Black Hole to collapse. Every collapse pays singularities, which speed up every run after it, permanently.",
+        "Erst ab dem %s hält deine Schwerkraft etwas auf einer Bahn. Vorher fällt alles entweder herunter oder weg." to
+            "Not until %s is your gravity enough to hold anything in orbit. Before that, everything either falls in or falls away.",
+        "Etwa alle %s Sekunden fällt etwas ein. Tippe es an, bevor es aufschlägt — sonst prallt das meiste davon wieder ab." to
+            "Something falls in roughly every %s seconds. Tap it before it lands — otherwise most of it bounces straight off again.",
+        "Fusion beginnt erst beim %s. Vorher ist in der Mitte nichts heiß genug, um irgendetwas zu verschmelzen." to
+            "Fusion does not begin until %s. Before that, nothing in the middle is hot enough to fuse anything.",
+        "Für heute alles abgeräumt. Morgen liegen wieder welche auf dem Tisch." to
+            "Cleared for today. There will be more on the table tomorrow.",
+        "Gekauft bleibt gekauft — wirkt aber nur, solange das Universum so ausgerichtet ist. Ein anderer Urknall legt das hier schlafen, kein Urknall nimmt es weg." to
+            "Bought stays bought — but it only works while the universe leans this way. A different Big Bang puts it to sleep; no Big Bang takes it away.",
+        "Gerade nichts zu verbessern.\nKauf weitere Kollektoren, dann tauchen hier neue Upgrades auf." to
+            "Nothing to improve right now.\nBuy more collectors and new upgrades will turn up here.",
+        "Gerade nichts zu verbessern.\nKauf weitere Kollektoren, dann taucht hier Neues auf." to
+            "Nothing to improve right now.\nBuy more collectors and something new will turn up here.",
+        "Geschafft. Einlösen setzt den Lauf zurück und behält die Belohnung." to
+            "Done. Claiming resets the run and keeps the reward.",
+        "Herausforderungen tauchen auf, wenn du kollabiert bist. Sie starten einen Lauf unter einer Regel, die dir etwas wegnimmt — dafür bleibt die Belohnung für immer." to
+            "Challenges turn up once you have collapsed. They start a run under a rule that takes something away — and the reward is permanent.",
+        "Jede Regel läuft für sich. Tippen schaltet weiter — nach der letzten Einstellung wieder aus." to
+            "Every rule runs on its own. Tapping moves to the next setting — and off again after the last.",
+        "Jede Stufe bringt der Galaxie dauerhaft mehr Gewicht — auch für ihre Äonen, ihre Kometen und ihr Metall." to
+            "Every level permanently adds weight to the galaxy — for its Aeons, its comets and its metal too.",
+        "Jede Stufe kostet mehr als die davor. Es gibt kein Ende der Liste — nur einen Preis, bei dem du aufhörst." to
+            "Every level costs more than the one before. The list has no end — only a price at which you stop.",
+        "Jede startet den Lauf neu und nimmt dir etwas weg. Der Vorsprung aus dem Prestige zählt dabei nicht — die dauerhaften Multiplikatoren schon. Zwei gleichzeitig gehen auch: beide Regeln, beide Ziele, beide Belohnungen — und obendrauf %s für immer, wenn keine der beiden vorher schon bestanden war." to
+            "Each one restarts the run and takes something away. The head start from prestige does not count — the permanent multipliers do. Two at once also works: both rules, both goals, both rewards — and %s on top, for good, if neither had been beaten before.",
+        "Kollabieren geht erst wieder, wenn das hier vorbei ist." to
+            "Collapsing is not available again until this is over.",
+        "Lass dein Schwarzes Loch in sich zusammenfallen. Du verlierst Masse, Kollektoren und Upgrades — behältst aber deine Singularitäten." to
+            "Let your black hole fall in on itself. You lose mass, collectors and upgrades — but you keep your singularities.",
+        "Laufende Anzeige, solange das Spiel zu ist" to "A standing notice while the game is shut",
+        "Löscht alles: Masse, Kollektoren, Erfolge, Singularitäten, Äonen, Forschung. Es gibt kein Zurück — kopier dir vorher den Spielstand, falls du unsicher bist." to
+            "Deletes everything: mass, collectors, achievements, singularities, Aeons, research. There is no way back — copy the save first if you are unsure.",
+        "Nichts gefunden für „%s“.\nEs wird in Name, Wirkung und Beschreibung gesucht." to
+            "Nothing found for “%s”.\nThe search covers name, effect and description.",
+        "Noch leer. Der erste Urknall stellt das erste Universum hier ab, statt es wegzuwerfen." to
+            "Empty so far. The first Big Bang parks the first universe here instead of throwing it away.",
+        "Noch nicht nachgesehen, ob es eine neuere Version gibt." to
+            "Have not looked yet whether there is a newer version.",
+        "Noch nichts Bestimmtes. Ab %s Schichten bekommt der Körper einen Namen — und der bleibt eingetragen, auch nach dem Kollaps." to
+            "Nothing in particular yet. At %s layers the body gets a name — and that stays on the record, even after the collapse.",
+        "Sie wird aus ihrer Chronik aufgebaut: Sprosse, Kollapse und Singularitäten stimmen, die Masse bekommst du ungenutzt zurück — die Flotte musst du neu kaufen." to
+            "It is rebuilt from its own record: rung, collapses and singularities are right, the mass comes back unspent — the fleet you have to buy again.",
+        "Spielzeit, dann geht es zurück ins neueste Universum. Alles, was du hier tust, bleibt hier." to
+            "of play time, then it goes back to the newest universe. Everything you do here stays here.",
+        "Weitere Upgrades erscheinen, wenn du öfter kollabiert bist." to
+            "More upgrades appear once you have collapsed more often.",
+        "Wirf alles weg, was deine Kollapse aufgebaut haben: Singularitäten, Prestige-Upgrades, den Zähler selbst. Was bleibt, sind Erfolge, bestandene Herausforderungen — und Äonen." to
+            "Throw away everything your collapses built: singularities, prestige upgrades, the counter itself. What stays is achievements, beaten challenges — and Aeons.",
+        "%s von %s Galaxien. Jede davon ist ein Universum, das du zu Ende gespielt hast und das weiterläuft." to
+            "%s of %s galaxies. Each one is a universe you played to the end and that keeps running.",
+        "%s von %s offenen Bahnen besetzt. Innen wird schnell gefüttert und schnell zerrissen, außen langsam und für immer." to
+            "%s of %s open orbits occupied. Close in, they are fed fast and torn apart fast; further out, slowly and for good.",
+        "Zusammen mit der anderen bliebe nichts übrig, was Masse macht." to
+            "Together with the other one, nothing would be left that makes mass.",
+        "Zwei schwere Elemente, in einem Guss. Einmal geschmiedet und für immer behalten — auch durch den Urknall." to
+            "Two heavy elements, cast together. Forged once and kept for good — through the Big Bang too.",
+    )
+
     /** Everything, in one map. Areas are added here as each one is finished. */
     val EN: Map<String, String> = buildMap {
         putAll(UI)
@@ -1726,5 +1941,6 @@ internal object Translations {
         putAll(TEMPLATES)
         putAll(COLLECTORS_LATE)
         putAll(NUMERALS)
+        putAll(SCREENS)
     }
 }

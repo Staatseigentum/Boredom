@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,8 +80,7 @@ fun InvestmentPanel(
         }
         Spacer(Modifier.height(6.dp))
         Text(
-            text = "Jede Stufe kostet mehr als die davor. Es gibt kein Ende der Liste — nur " +
-                "einen Preis, bei dem du aufhörst.",
+            text = Lang.t("Jede Stufe kostet mehr als die davor. Es gibt kein Ende der Liste — nur einen Preis, bei dem du aufhörst."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -175,7 +175,7 @@ private fun InvestmentRow(
                 )
                 Text(
                     text = if (level > 0) {
-                        "Stufe $level von ${investment.maxLevel}"
+                        Lang.t("Stufe %s von %s", level, investment.maxLevel)
                     } else {
                         investment.flavor
                     },

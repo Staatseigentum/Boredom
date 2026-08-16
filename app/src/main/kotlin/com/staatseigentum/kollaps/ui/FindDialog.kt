@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,13 +68,13 @@ fun FindDialog(state: GameState, onAnswer: (String) -> Unit, modifier: Modifier 
                     Text(
                         text = when (answer) {
                             FindAnswer.AUSWERTEN ->
-                                "${Numbers.format(CatalogueFind.AEON_REWARD)} Äon · ${answer.flavor}"
+                                Lang.t("%s Äon · %s", Numbers.format(CatalogueFind.AEON_REWARD), answer.flavor)
                             // The live number, not the flat bonus: with the cap in play what the
                             // next tap is actually worth is the only figure worth comparing.
                             FindAnswer.ANZAPFEN ->
-                                "Läuft auf ${Numbers.formatMultiplier(
+                                Lang.t("Läuft auf %s · %s", Numbers.formatMultiplier(
                                     CatalogueFind.tapMultiplier(state.copy(findsTapped = state.findsTapped + 1)),
-                                )} · ${answer.flavor}"
+                                ), answer.flavor)
                             FindAnswer.RUHEN -> answer.flavor
                         },
                         style = MaterialTheme.typography.bodySmall,

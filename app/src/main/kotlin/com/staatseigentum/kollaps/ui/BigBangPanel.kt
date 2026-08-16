@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -68,7 +69,7 @@ fun BigBangPanel(
         ) {
             PixelLabel("Urknall", color = Nebula, size = 16)
             if (state.aeons > 0.0) {
-                PixelLabel("${Numbers.format(state.aeons)} Äonen", color = Ember, size = 13)
+                PixelLabel(Lang.t("%s Äonen", Numbers.format(state.aeons)), color = Ember, size = 13)
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -83,9 +84,7 @@ fun BigBangPanel(
          */
         if (!confirming) {
             Text(
-                text = "Wirf alles weg, was deine Kollapse aufgebaut haben: Singularitäten, " +
-                    "Prestige-Upgrades, den Zähler selbst. Was bleibt, sind Erfolge, bestandene " +
-                    "Herausforderungen — und Äonen.",
+                text = Lang.t("Wirf alles weg, was deine Kollapse aufgebaut haben: Singularitäten, Prestige-Upgrades, den Zähler selbst. Was bleibt, sind Erfolge, bestandene Herausforderungen — und Äonen."),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Muted,
                 modifier = Modifier.urknall(Muted),
@@ -94,7 +93,7 @@ fun BigBangPanel(
 
             if (state.bigBangs > 0) {
                 Text(
-                    text = "Bisher ${state.bigBangs}× ausgelöst.",
+                    text = Lang.t("Bisher %s× ausgelöst.", state.bigBangs),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                     modifier = Modifier.urknall(Muted),
@@ -104,7 +103,7 @@ fun BigBangPanel(
 
             Text(
                 text = if (stats.canBigBang) {
-                    "Jetzt zu holen: ${Numbers.format(stats.pendingAeons)} Äonen"
+                    Lang.t("Jetzt zu holen: %s Äonen", Numbers.format(stats.pendingAeons))
                 } else {
                     // `requiredNow` and not `REQUIRED_COLLAPSES`. The constant is what the *first*
                     // big bang costs; every one after it asks for three more. The card printed the
@@ -131,14 +130,14 @@ fun BigBangPanel(
             // be two dialogs for one decision, and picking a universe to live in is a better
             // second thought than a yes-or-no about a button already pressed once.
             PixelLabel(
-                "Was für ein Universum?",
+                Lang.t("Was für ein Universum?"),
                 color = Ember,
                 size = 13,
                 modifier = Modifier.urknall(Ember),
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Die Ausrichtung gilt, bis du das nächste Mal alles wegwirfst.",
+                text = Lang.t("Die Ausrichtung gilt, bis du das nächste Mal alles wegwirfst."),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
                 modifier = Modifier.urknall(Muted),
@@ -167,9 +166,9 @@ fun BigBangPanel(
         // way back out of a decision belongs where the way in was.
         PixelButton(
             label = when {
-                confirming -> "Doch nicht"
-                stats.canBigBang -> "Urknall auslösen"
-                else -> "Noch nicht so weit"
+                confirming -> Lang.t("Doch nicht")
+                stats.canBigBang -> Lang.t("Urknall auslösen")
+                else -> Lang.t("Noch nicht so weit")
             },
             onClick = { confirming = !confirming },
             modifier = Modifier.fillMaxWidth().urknall(Nebula),
@@ -217,9 +216,7 @@ private fun PathTreePanel(state: GameState, nodes: List<PathNode>, onBuy: (Strin
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Gekauft bleibt gekauft — wirkt aber nur, solange das Universum so " +
-                "ausgerichtet ist. Ein anderer Urknall legt das hier schlafen, kein Urknall " +
-                "nimmt es weg.",
+            text = Lang.t("Gekauft bleibt gekauft — wirkt aber nur, solange das Universum so ausgerichtet ist. Ein anderer Urknall legt das hier schlafen, kein Urknall nimmt es weg."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -282,13 +279,15 @@ private fun AeonShop(state: GameState, onBuy: (String) -> Unit) {
     val offered = BigBang.offered(state)
 
     PixelPanel(modifier = Modifier.fillMaxWidth()) {
-        PixelLabel("Äonen ausgeben", size = 15)
+        PixelLabel(Lang.t("Äonen ausgeben"), size = 15)
         Spacer(Modifier.height(8.dp))
 
         if (offered.isEmpty()) {
             Text(
-                text = "Alle ${AeonUpgrades.all.size} gekauft. Von hier aus geht es nur noch " +
-                    "durch Spielen weiter.",
+                text = Lang.t(
+                    "Alle %s gekauft. Von hier aus geht es nur noch durch Spielen weiter.",
+                    AeonUpgrades.all.size,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
             )

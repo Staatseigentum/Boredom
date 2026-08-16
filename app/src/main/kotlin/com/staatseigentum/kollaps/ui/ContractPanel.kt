@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,10 +40,10 @@ fun ContractPanel(state: GameState, actions: GameActions, modifier: Modifier = M
         // work finished.
         if (Contract.restingUntilTomorrow(state)) {
             PixelPanel(modifier = modifier.fillMaxWidth(), border = Positive, padding = 14) {
-                PixelLabel("Aufträge", color = Positive, size = 14)
+                PixelLabel(Lang.t("Aufträge"), color = Positive, size = 14)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "Für heute alles abgeräumt. Morgen liegen wieder welche auf dem Tisch.",
+                    text = Lang.t("Für heute alles abgeräumt. Morgen liegen wieder welche auf dem Tisch."),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
@@ -53,10 +54,10 @@ fun ContractPanel(state: GameState, actions: GameActions, modifier: Modifier = M
 
     PixelPanel(modifier = modifier.fillMaxWidth(), border = Positive, padding = 14) {
         Column {
-            PixelLabel("Aufträge", color = Positive, size = 14)
+            PixelLabel(Lang.t("Aufträge"), color = Positive, size = 14)
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Drei Ziele, die sich nachlegen. Bezahlt wird in Äonen.",
+                text = Lang.t("Drei Ziele, die sich nachlegen. Bezahlt wird in Äonen."),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
             )
@@ -97,7 +98,7 @@ private fun ContractRow(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = "${Numbers.format(contract.reward)} Äonen",
+                text = Lang.t("%s Äonen", Numbers.format(contract.reward)),
                 style = MaterialTheme.typography.bodySmall,
                 color = Ember,
                 maxLines = 1,

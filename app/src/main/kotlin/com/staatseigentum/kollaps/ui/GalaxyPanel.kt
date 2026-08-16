@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -68,8 +69,7 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
             PixelLabel("Der Himmel", color = Nebula, size = 14)
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "${parked.size} von ${Multiverse.SLOTS} Galaxien. Jede davon ist ein " +
-                    "Universum, das du zu Ende gespielt hast und das weiterläuft.",
+                text = Lang.t("%s von %s Galaxien. Jede davon ist ein Universum, das du zu Ende gespielt hast und das weiterläuft.", parked.size, Multiverse.SLOTS),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
             )
@@ -84,8 +84,7 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = "Noch ${Numbers.formatDuration(state.visitSecondsLeft.toLong())} " +
-                                "Spielzeit, dann geht es zurück ins neueste Universum. Alles, was " +
-                                "du hier tust, bleibt hier.",
+                                Lang.t("Spielzeit, dann geht es zurück ins neueste Universum. Alles, was du hier tust, bleibt hier."),
                             style = MaterialTheme.typography.bodySmall,
                             color = Muted,
                         )
@@ -97,7 +96,7 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
                         )
                         Spacer(Modifier.height(8.dp))
                         PixelButton(
-                            label = "Zurück ins neueste Universum",
+                            label = Lang.t("Zurück ins neueste Universum"),
                             onClick = { actions.leaveGalaxy() },
                             modifier = Modifier.fillMaxWidth(),
                             accent = Ember,
@@ -112,21 +111,20 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
             Spacer(Modifier.height(12.dp))
             SkyStat("Produktion", Numbers.formatMultiplier(Multiverse.multiplier(state)))
             SkyStat(
-                "Äonen",
+                Lang.t("Äonen"),
                 // Per day rather than per second, because per second is a row of zeroes. A galaxy
                 // earns on the scale of days, and a number nobody can watch move is a number that
                 // reads as broken.
                 if (perSecond > 0.0) "${Numbers.format(perSecond * 86_400.0)} pro Tag" else "—",
             )
             if (state.aeonFraction > 0.0) {
-                SkyStat("Nächstes Äon", Numbers.formatPercent(state.aeonFraction.coerceIn(0.0, 1.0)))
+                SkyStat(Lang.t("Nächstes Äon"), Numbers.formatPercent(state.aeonFraction.coerceIn(0.0, 1.0)))
             }
 
             if (parked.isEmpty()) {
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    text = "Noch leer. Der erste Urknall stellt das erste Universum hier ab, " +
-                        "statt es wegzuwerfen.",
+                    text = Lang.t("Noch leer. Der erste Urknall stellt das erste Universum hier ab, statt es wegzuwerfen."),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
@@ -136,8 +134,7 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
             if (!Multiverse.hasRoom(state)) {
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    text = "Der Himmel ist voll. Zwei Galaxien lassen sich verschweißen — die " +
-                        "verschmolzene trägt beide Ausrichtungen und macht einen Platz frei.",
+                    text = Lang.t("Der Himmel ist voll. Zwei Galaxien lassen sich verschweißen — die verschmolzene trägt beide Ausrichtungen und macht einen Platz frei."),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
@@ -309,8 +306,11 @@ private fun GalaxyRow(
             // While it changes over it does nothing, so the strip is replaced by the reason —
             // four chips that all look pressable would invite pressing them again.
             PixelLabel(
-                "Umstellung auf ${universe.job.label} · noch " +
+                Lang.t(
+                    "Umstellung auf %s · noch %s",
+                    universe.job.label,
                     Numbers.formatDuration(universe.rampSeconds.toLong()),
+                ),
                 color = Muted,
                 size = 11,
             )
@@ -340,7 +340,7 @@ private fun GalaxyRow(
             val absorbable = others.filter { Multiverse.canMerge(state, universe.slot, it.slot) }
             if (absorbable.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
-                PixelLabel("Hierher verschweißen", color = Muted, size = 10)
+                PixelLabel(Lang.t("Hierher verschweißen"), color = Muted, size = 10)
                 Spacer(Modifier.height(3.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -388,17 +388,17 @@ private fun GalaxyVisit(
     Column(modifier = modifier.fillMaxWidth()) {
         SkyStat("Tiefste Sprosse", Tiers.byIndex(universe.bestTier).label)
         SkyStat("Kollapse", universe.collapses.toString())
-        SkyStat("Singularitäten", Numbers.format(universe.singularities))
+        SkyStat(Lang.t("Singularitäten"), Numbers.format(universe.singularities))
         if (Multiverse.orbitBonusFor(state, universe) > 0.0) {
             SkyStat(
-                "Trabant auf Bahn ${universe.slot + 1}",
+                Lang.t("Trabant auf Bahn %s", universe.slot + 1),
                 "+${Numbers.formatMultiplier(1.0 + Multiverse.orbitBonusFor(state, universe))}",
             )
         }
 
         Spacer(Modifier.height(10.dp))
         PixelLabel(
-            "Ausbau ${universe.level} von ${Multiverse.MAX_LEVEL}",
+            Lang.t("Ausbau %s von %s", universe.level, Multiverse.MAX_LEVEL),
             color = if (finished) Positive else Nebula,
             size = 12,
         )
@@ -411,10 +411,9 @@ private fun GalaxyVisit(
         Spacer(Modifier.height(6.dp))
         Text(
             text = if (finished) {
-                "Vollständig ausgebaut. Mehr geht hier nicht."
+                Lang.t("Vollständig ausgebaut. Mehr geht hier nicht.")
             } else {
-                "Jede Stufe bringt der Galaxie dauerhaft mehr Gewicht — auch für ihre Äonen, " +
-                    "ihre Kometen und ihr Metall."
+                Lang.t("Jede Stufe bringt der Galaxie dauerhaft mehr Gewicht — auch für ihre Äonen, ihre Kometen und ihr Metall.")
             },
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
@@ -423,15 +422,13 @@ private fun GalaxyVisit(
         Spacer(Modifier.height(10.dp))
         when {
             state.visiting == universe.slot ->
-                PixelLabel("Du spielst gerade hier", color = Ember, size = 11)
+                PixelLabel(Lang.t("Du spielst gerade hier"), color = Ember, size = 11)
 
             else -> {
                 if (!universe.isRestored) {
                     Text(
                         text = "Diese Galaxie wurde geparkt, bevor Universen aufbewahrt wurden. " +
-                            "Sie wird aus ihrer Chronik aufgebaut: Sprosse, Kollapse und " +
-                            "Singularitäten stimmen, die Masse bekommst du ungenutzt zurück — " +
-                            "die Flotte musst du neu kaufen.",
+                            Lang.t("Sie wird aus ihrer Chronik aufgebaut: Sprosse, Kollapse und Singularitäten stimmen, die Masse bekommst du ungenutzt zurück — die Flotte musst du neu kaufen."),
                         style = MaterialTheme.typography.bodySmall,
                         color = Muted,
                     )
@@ -450,7 +447,7 @@ private fun GalaxyVisit(
         if (cost != null) {
             Spacer(Modifier.height(8.dp))
             PixelButton(
-                label = "Ausbauen · ${Numbers.format(cost)} Äonen",
+                label = Lang.t("Ausbauen · %s Äonen", Numbers.format(cost)),
                 onClick = { actions.developGalaxy(universe.slot) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = Multiverse.canDevelop(state, universe.slot),

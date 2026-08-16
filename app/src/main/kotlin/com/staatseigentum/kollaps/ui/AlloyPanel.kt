@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,8 +43,10 @@ fun AlloyPanel(state: GameState, actions: GameActions, modifier: Modifier = Modi
             PixelLabel("Schmiede", color = Ember, size = 14)
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Zwei schwere Elemente, in einem Guss. Einmal geschmiedet und für immer " +
-                    "behalten — auch durch den Urknall.",
+                text = Lang.t(
+                    "Zwei schwere Elemente, in einem Guss. Einmal geschmiedet und für immer " +
+                        "behalten — auch durch den Urknall.",
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
             )

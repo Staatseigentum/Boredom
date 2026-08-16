@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -832,7 +833,7 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
             )
             if (state.singularities > 0) {
                 Text(
-                    text = "• ${Numbers.format(state.singularities)} Singularitäten",
+                    text = Lang.t("• %s Singularitäten", Numbers.format(state.singularities)),
                     style = MaterialTheme.typography.labelLarge,
                     color = Ember,
                 )
@@ -879,7 +880,7 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
                         size = 12,
                     )
                     Text(
-                        text = "noch ${stats.buffSecondsLeft.toInt()} s",
+                        text = Lang.t("noch %s s", stats.buffSecondsLeft.toInt()),
                         style = MaterialTheme.typography.bodySmall,
                         color = Muted,
                     )
@@ -906,9 +907,9 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
                 "${stats.tier.label} · Katalog ab ${Multiverse.SLOTS} Galaxien " +
                     "(${Multiverse.count(state)})"
 
-            else -> "${stats.tier.label} — das Ende der Leiter"
+            else -> Lang.t("%s — das Ende der Leiter", stats.tier.label)
         }
-        val remaining = next?.let { "noch ${Numbers.formatMass(it.threshold - state.runMass)}" }
+        val remaining = next?.let { Lang.t("noch %s", Numbers.formatMass(it.threshold - state.runMass)) }
 
         if (compact) {
             // Where you are and how far to the next one, on one line with the bar under it.
@@ -1430,7 +1431,7 @@ private fun HeatMeter(heat: Double) {
     Spacer(Modifier.height(6.dp))
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         PixelLabel(
-            text = "Überhitzt " + Numbers.formatMultiplier(Heat.factor(heat)),
+            text = Lang.t("Überhitzt ") + Numbers.formatMultiplier(Heat.factor(heat)),
             color = Ember,
             size = 11,
         )

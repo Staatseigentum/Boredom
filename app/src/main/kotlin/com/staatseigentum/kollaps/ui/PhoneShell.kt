@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -75,7 +76,7 @@ import kotlinx.coroutines.delay
  * production, and whether that mass buys another machine or makes the machines you have better is a
  * smaller decision than which panel you are in.
  */
-enum class PhoneView(val label: String) {
+enum class PhoneView(private val germanLabel: String) {
     BODY("Körper"),
     FLEET("Flotte"),
     AUFBAU("Aufbau"),
@@ -83,6 +84,16 @@ enum class PhoneView(val label: String) {
     FUSION("Fusion"),
     COSMOS("Kosmos"),
     ;
+
+    /**
+     * What the cell says, in the language that is on *now*.
+     *
+     * A getter and not a constructor argument, which is not a style preference. An enum's
+     * arguments are evaluated once, when the class loads — so a translated label passed in there
+     * would be fixed to whatever language was current at startup and would keep saying it after
+     * the player switched. The same trap the mark upgrades fell into; see `Upgrade.compose`.
+     */
+    val label: String get() = Lang.t(germanLabel)
 
     companion object {
         /**
@@ -335,8 +346,14 @@ fun StatusBand(state: GameState, stats: Stats, modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f, fill = false),
             )
             val remaining = stats.nextTier?.let {
-                "${stats.tier.index + 1}/${Tiers.all.size} · noch " +
-                    Numbers.formatMass(it.threshold - state.runMass)
+                // One template rather than a translated prefix glued to a number: "noch 4 Mkg"
+                // and "4 Mkg to go" put the words on opposite sides of the figure.
+                Lang.t(
+                    "%s/%s · noch %s",
+                    stats.tier.index + 1,
+                    Tiers.all.size,
+                    Numbers.formatMass(it.threshold - state.runMass),
+                )
             }
             if (remaining != null) {
                 Spacer(Modifier.width(8.dp))
@@ -394,7 +411,7 @@ fun climbLine(state: GameState, stats: Stats): String {
         !Designations.isUnlocked(state) ->
             "${stats.tier.label} · Katalog ab ${Multiverse.SLOTS} Galaxien (${Multiverse.count(state)})"
 
-        else -> "${stats.tier.label} — das Ende der Leiter"
+        else -> Lang.t("%s — das Ende der Leiter", stats.tier.label)
     }
 }
 
@@ -500,7 +517,7 @@ fun NextBuyRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            PixelLabel(text = "Nächster Kauf", color = Positive, size = 10)
+            PixelLabel(text = Lang.t("Nächster Kauf"), color = Positive, size = 10)
             Spacer(Modifier.height(3.dp))
             Text(
                 text = if (offer.amount > 1) {

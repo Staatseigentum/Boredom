@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -377,8 +378,7 @@ private fun UpgradeGrid(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
     val sfx = LocalSfx.current
     if (offers.isEmpty()) {
         Text(
-            text = "Gerade nichts zu verbessern.\nKauf weitere Kollektoren, dann taucht hier " +
-                "Neues auf.",
+            text = Lang.t("Gerade nichts zu verbessern.\nKauf weitere Kollektoren, dann taucht hier Neues auf."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
             textAlign = TextAlign.Center,
@@ -454,9 +454,9 @@ private fun CollapseFooter(state: GameState, stats: Stats, onCollapse: () -> Uni
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = if (stats.canCollapse) {
-                    "Kollaps bringt ${Numbers.format(stats.pendingSingularities)} Singularitäten"
+                    Lang.t("Kollaps bringt %s Singularitäten", Numbers.format(stats.pendingSingularities))
                 } else {
-                    "Erreiche das Schwarze Loch, um zu kollabieren"
+                    Lang.t("Erreiche das Schwarze Loch, um zu kollabieren")
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (stats.canCollapse) Positive else Muted,

@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -133,11 +134,9 @@ private fun ArrivalNote(state: GameState) {
     val active = Accretion.isActive(state)
     val text = if (active) {
         val every = Accretion.interval(state)
-        "Etwa alle ${Numbers.format(every)} Sekunden fällt etwas ein. Tippe es an, bevor es " +
-            "aufschlägt — sonst prallt das meiste davon wieder ab."
+        Lang.t("Etwa alle %s Sekunden fällt etwas ein. Tippe es an, bevor es aufschlägt — sonst prallt das meiste davon wieder ab.", Numbers.format(every))
     } else {
-        "Der Körper ist zu groß geworden; kleine Brocken merkt er nicht mehr. Ab hier bringen " +
-            "die Kometen das Material des Himmels."
+        Lang.t("Der Körper ist zu groß geworden; kleine Brocken merkt er nicht mehr. Ab hier bringen die Kometen das Material des Himmels.")
     }
     Text(
         text = text,
@@ -261,8 +260,7 @@ private fun WorldRecord(state: GameState) {
         Spacer(Modifier.height(6.dp))
         Text(
             text = if (current == null) {
-                "Noch nichts Bestimmtes. Ab ${Depth.JUNG.atLeast} Schichten bekommt der Körper " +
-                    "einen Namen — und der bleibt eingetragen, auch nach dem Kollaps."
+                Lang.t("Noch nichts Bestimmtes. Ab %s Schichten bekommt der Körper einen Namen — und der bleibt eingetragen, auch nach dem Kollaps.", Depth.JUNG.atLeast)
             } else {
                 "Gerade: ${current.label} — ${current.flavor}"
             },

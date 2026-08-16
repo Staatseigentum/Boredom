@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,8 +50,7 @@ fun AutomationPanel(
         PixelLabel(text = "Automatik", color = Positive, size = 16)
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Jede Regel läuft für sich. Tippen schaltet weiter — nach der letzten " +
-                "Einstellung wieder aus.",
+            text = Lang.t("Jede Regel läuft für sich. Tippen schaltet weiter — nach der letzten Einstellung wieder aus."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -107,7 +107,7 @@ private fun RuleRow(state: GameState, rule: AutomationRule, onCycle: () -> Unit)
                     text = when {
                         !available -> lockedReason(rule)
                         on -> rule.flavor
-                        else -> "aus"
+                        else -> Lang.t("aus")
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
@@ -127,7 +127,7 @@ private fun RuleRow(state: GameState, rule: AutomationRule, onCycle: () -> Unit)
                         // the order rather than the number it was placed at — a rule that still
                         // read "50" after forty-nine runs would be telling the player nothing.
                         text = when (rule) {
-                            AutomationRule.COLLAPSE -> "noch ${state.collapseBudget}"
+                            AutomationRule.COLLAPSE -> Lang.t("noch %s", state.collapseBudget)
                             else -> rule.optionAt(setting).label
                         },
                         color = Ember,
@@ -141,9 +141,9 @@ private fun RuleRow(state: GameState, rule: AutomationRule, onCycle: () -> Unit)
 
 /** Why a rule cannot be switched on yet, in the player's terms rather than the code's. */
 private fun lockedReason(rule: AutomationRule): String = when (rule) {
-    AutomationRule.COLLECTORS, AutomationRule.UPGRADES -> "noch nicht freigeschaltet"
-    AutomationRule.FUSION -> "erst, wenn der Kern brennt"
-    AutomationRule.ORBITS -> "erst mit dem eigenen System"
-    AutomationRule.RESEARCH -> "erst mit dem Labor"
+    AutomationRule.COLLECTORS, AutomationRule.UPGRADES -> Lang.t("noch nicht freigeschaltet")
+    AutomationRule.FUSION -> Lang.t("erst, wenn der Kern brennt")
+    AutomationRule.ORBITS -> Lang.t("erst mit dem eigenen System")
+    AutomationRule.RESEARCH -> Lang.t("erst mit dem Labor")
     AutomationRule.COLLAPSE -> "erst nach dem ersten eigenen Kollaps"
 }

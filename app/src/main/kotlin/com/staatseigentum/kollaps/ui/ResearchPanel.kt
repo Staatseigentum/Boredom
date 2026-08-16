@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -69,8 +70,7 @@ fun ResearchPanel(
 
         if (running == null) {
             Text(
-                text = "Ein Projekt läuft auf der echten Uhr weiter — auch wenn das Spiel zu " +
-                    "ist. Es gibt nur eine Bank, also läuft immer nur eines.",
+                text = Lang.t("Ein Projekt läuft auf der echten Uhr weiter — auch wenn das Spiel zu ist. Es gibt nur eine Bank, also läuft immer nur eines."),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Muted,
             )
@@ -119,7 +119,7 @@ private fun RunningProject(
                 color = Starlight,
             )
             Text(
-                text = if (done) "fertig" else "noch ${Numbers.formatDuration(left.toLong())}",
+                text = if (done) "fertig" else Lang.t("noch %s", Numbers.formatDuration(left.toLong())),
                 style = MaterialTheme.typography.bodySmall,
                 color = if (done) Positive else Muted,
             )
@@ -146,7 +146,7 @@ private fun RunningProject(
         if (!done) {
             Spacer(Modifier.height(10.dp))
             PixelButton(
-                label = "Abbrechen (Masse ist weg)",
+                label = Lang.t("Abbrechen (Masse ist weg)"),
                 onClick = onCancel,
                 modifier = Modifier.fillMaxWidth(),
                 accent = Outline,

@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -113,7 +114,7 @@ fun LazyListScope.achievementItems(
                     if (state.bestHistory.isNotEmpty()) {
                         Spacer(Modifier.height(2.dp))
                         PixelLabel(
-                            "Grau: dein bester Lauf, ${Numbers.formatDuration(state.bestRunSeconds.toLong())}",
+                            Lang.t("Grau: dein bester Lauf, %s", Numbers.formatDuration(state.bestRunSeconds.toLong())),
                             color = Muted,
                             size = 10,
                         )
@@ -150,7 +151,7 @@ fun LazyListScope.achievementItems(
         if (shares.isNotEmpty()) {
             item {
                 PixelPanel(modifier = Modifier.fillMaxWidth()) {
-                    PixelLabel("Wer die Arbeit macht", size = 13)
+                    PixelLabel(Lang.t("Wer die Arbeit macht"), size = 13)
                     Spacer(Modifier.height(8.dp))
                     for (share in shares) {
                         Row(
@@ -255,7 +256,7 @@ fun PrestigeShop(state: GameState, onBuy: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            PixelLabel("Singularitäten ausgeben", color = Nebula, size = 15)
+            PixelLabel(Lang.t("Singularitäten ausgeben"), color = Nebula, size = 15)
             PixelLabel(Numbers.format(state.singularities), color = Ember, size = 13)
         }
         Spacer(Modifier.height(8.dp))
@@ -263,9 +264,9 @@ fun PrestigeShop(state: GameState, onBuy: (String) -> Unit) {
         if (offered.isEmpty()) {
             Text(
                 text = if (state.prestigeUpgrades.size == PrestigeUpgrades.all.size) {
-                    "Alles gekauft. Es gibt nichts mehr, was ein Neuanfang billiger machen könnte."
+                    Lang.t("Alles gekauft. Es gibt nichts mehr, was ein Neuanfang billiger machen könnte.")
                 } else {
-                    "Weitere Upgrades erscheinen, wenn du öfter kollabiert bist."
+                    Lang.t("Weitere Upgrades erscheinen, wenn du öfter kollabiert bist.")
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
@@ -349,10 +350,9 @@ fun SettingsSection(
         // zehn daran — Vorbeiflug, Fang, verpasster Komet, Kauf, Zündung, fertige Forschung,
         // Erfolg, Stufenaufstieg, bestandene Herausforderung — und ein Schalter, der mehr
         // abschaltet als sein Name sagt, ist ein Schalter, dem man nicht traut.
-        Toggle("Geräusche", state.soundOn) { onSound(!state.soundOn) }
+        Toggle(Lang.t("Geräusche"), state.soundOn) { onSound(!state.soundOn) }
         Text(
-            text = "Alle Klangeffekte: Tippen, vorbeiziehende und gefangene Kometen, Käufe, " +
-                "Zündung, fertige Forschung, neue Erfolge und der Kollaps.",
+            text = Lang.t("Alle Klangeffekte: Tippen, vorbeiziehende und gefangene Kometen, Käufe, Zündung, fertige Forschung, neue Erfolge und der Kollaps."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -361,22 +361,20 @@ fun SettingsSection(
         Spacer(Modifier.height(6.dp))
         Toggle("Musik", state.musicOn) { onMusic(!state.musicOn) }
         Text(
-            text = "Ein Klangteppich, der sich ändert, sobald aus dem Gestein eine Welt, aus der " +
-                "Welt ein Gasriese und aus dem Gasriesen ein Stern wird.",
+            text = Lang.t("Ein Klangteppich, der sich ändert, sobald aus dem Gestein eine Welt, aus der Welt ein Gasriese und aus dem Gasriesen ein Stern wird."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
         Spacer(Modifier.height(6.dp))
-        Toggle("Erinnerung, wenn der Speicher voll ist", state.remindersOn) {
+        Toggle(Lang.t("Erinnerung, wenn der Speicher voll ist"), state.remindersOn) {
             onReminders(!state.remindersOn)
         }
         Spacer(Modifier.height(6.dp))
-        Toggle("Laufende Anzeige, solange das Spiel zu ist", state.statusOn) {
+        Toggle(Lang.t("Laufende Anzeige, solange das Spiel zu ist"), state.statusOn) {
             onStatus(!state.statusOn)
         }
         Text(
-            text = "Eine stille Zeile mit Produktion und der Restzeit im Labor. Sie bleibt " +
-                "stehen, bis du das Spiel wieder öffnest.",
+            text = Lang.t("Eine stille Zeile mit Produktion und der Restzeit im Labor. Sie bleibt stehen, bis du das Spiel wieder öffnest."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -415,8 +413,7 @@ fun SettingsSection(
         PixelLabel("Spielstand", size = 13, color = Muted)
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Der Spielstand liegt nur auf diesem Gerät. Kopier ihn dir irgendwohin, " +
-                "sonst ist er weg, wenn die App es ist.",
+            text = Lang.t("Der Spielstand liegt nur auf diesem Gerät. Kopier ihn dir irgendwohin, sonst ist er weg, wenn die App es ist."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -426,12 +423,12 @@ fun SettingsSection(
                 label = "Kopieren",
                 onClick = {
                     clipboard.setText(AnnotatedString(onExport()))
-                    note = "In die Zwischenablage kopiert."
+                    note = Lang.t("In die Zwischenablage kopiert.")
                 },
                 modifier = Modifier.weight(1f),
             )
             PixelButton(
-                label = "Einfügen",
+                label = Lang.t("Einfügen"),
                 onClick = { importing = true },
                 modifier = Modifier.weight(1f),
                 accent = Ember,
@@ -446,8 +443,7 @@ fun SettingsSection(
         PixelLabel("Von vorn anfangen", size = 13, color = Muted)
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Löscht alles: Masse, Kollektoren, Erfolge, Singularitäten, Äonen, Forschung. " +
-                "Es gibt kein Zurück — kopier dir vorher den Spielstand, falls du unsicher bist.",
+            text = Lang.t("Löscht alles: Masse, Kollektoren, Erfolge, Singularitäten, Äonen, Forschung. Es gibt kein Zurück — kopier dir vorher den Spielstand, falls du unsicher bist."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -455,12 +451,12 @@ fun SettingsSection(
         // Two taps, and the first one is undone by leaving the panel. A single button here would
         // be the one control in the game that destroys hours of play by being brushed against.
         PixelButton(
-            label = if (erasing) "Wirklich? Alles wird gelöscht" else "Spielstand löschen",
+            label = if (erasing) Lang.t("Wirklich? Alles wird gelöscht") else Lang.t("Spielstand löschen"),
             onClick = {
                 if (erasing) {
                     onErase()
                     erasing = false
-                    note = "Alles gelöscht. Neuer Anfang."
+                    note = Lang.t("Alles gelöscht. Neuer Anfang.")
                 } else {
                     erasing = true
                 }
@@ -471,7 +467,7 @@ fun SettingsSection(
         if (erasing) {
             Spacer(Modifier.height(6.dp))
             PixelButton(
-                label = "Doch nicht",
+                label = Lang.t("Doch nicht"),
                 onClick = { erasing = false },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -486,7 +482,7 @@ fun SettingsSection(
                 note = if (onImport(block)) {
                     "Spielstand geladen."
                 } else {
-                    "Das war kein Kollaps-Spielstand."
+                    Lang.t("Das war kein Kollaps-Spielstand.")
                 }
             },
         )
@@ -516,11 +512,11 @@ private fun ImportDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
         onDismissRequest = onDismiss,
         containerColor = SpaceElevated,
         shape = RectangleShape,
-        title = { PixelLabel("Spielstand einfügen", size = 15) },
+        title = { PixelLabel(Lang.t("Spielstand einfügen"), size = 15) },
         text = {
             Column {
                 Text(
-                    text = "Achtung: das ersetzt den laufenden Spielstand vollständig.",
+                    text = Lang.t("Achtung: das ersetzt den laufenden Spielstand vollständig."),
                     style = MaterialTheme.typography.bodySmall,
                     color = Ember,
                 )
@@ -678,7 +674,7 @@ private fun SkinPicker(state: GameState, onPick: (String) -> Unit) {
                                 unlocked -> skin.flavor
                                 needs != null ->
                                     "Braucht den Erfolg: " +
-                                        (Achievements.byId(needs)?.name ?: "noch unbekannt") + "."
+                                        (Achievements.byId(needs)?.name ?: Lang.t("noch unbekannt")) + "."
 
                                 else ->
                                     "Ab ${skin.requiredAchievements} Erfolgen. " +

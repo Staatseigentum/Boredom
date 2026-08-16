@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -75,13 +76,17 @@ import com.staatseigentum.kollaps.ui.theme.Starlight
  * Naming them lets [ShopPanel] hold on to which tab is open across an unlock instead of quietly
  * sliding the player one panel to the left.
  */
-enum class ShopTab(val title: String) {
+enum class ShopTab(private val germanTitle: String) {
     COLLECTORS("Flotte"),
     UPGRADES("Upgrades"),
     AUFBAU("Aufbau"),
     ORBITS("Bahnen"),
     FUSION("Fusion"),
     COSMOS("Kosmos"),
+    ;
+
+    /** Read every time the strip is drawn, so switching language reaches it. See [PhoneView]. */
+    val title: String get() = Lang.t(germanTitle)
 }
 
 /**
@@ -327,8 +332,7 @@ private fun CollectorList(
 
         if (Roles.isUnlocked(state)) {
             Text(
-                text = "Ausrichtungen: ${Roles.assignedCount(state)} von ${Roles.slots(state)} " +
-                    "belegt — tippe auf die Zahl links, um eine zu vergeben.",
+                text = Lang.t("Ausrichtungen: %s von %s belegt — tippe auf die Zahl links, um eine zu vergeben.", Roles.assignedCount(state), Roles.slots(state)),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
@@ -419,7 +423,7 @@ private fun CollectorRow(
                                 append(" · ")
                                 append(Numbers.formatMultiplier(Milestones.factor(offer.owned)))
                             }
-                            offer.nextMilestoneAt?.let { append(" · nächster bei $it") }
+                            offer.nextMilestoneAt?.let { append(Lang.t(" · nächster bei %s", it)) }
                         }
                     } else {
                         offer.collector.flavor
@@ -483,7 +487,7 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
     val sfx = LocalSfx.current
     if (offers.isEmpty()) {
         EmptyHint(
-            "Gerade nichts zu verbessern.\nKauf weitere Kollektoren, dann tauchen hier neue Upgrades auf.",
+            Lang.t("Gerade nichts zu verbessern.\nKauf weitere Kollektoren, dann tauchen hier neue Upgrades auf."),
         )
         return
     }
@@ -541,7 +545,7 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
 
         // Only reachable through the search — the group chips never offer an empty shelf.
         if (shown.isEmpty()) {
-            EmptyHint("Nichts gefunden für „$query“.\nEs wird in Name, Wirkung und Beschreibung gesucht.")
+            EmptyHint(Lang.t("Nichts gefunden für „%s“.\nEs wird in Name, Wirkung und Beschreibung gesucht.", query))
             return@Column
         }
 
@@ -832,19 +836,19 @@ internal fun CosmosPanel(
                     item { StatRow("Produktion", Numbers.formatRate(stats.massPerSecond)) }
                     item { StatRow("Pro Tipp", Numbers.formatMass(stats.massPerTap)) }
                     item { StatRow("Kollektoren", state.collectors.values.sum().toString()) }
-                    item { StatRow("Upgrades", "${state.upgrades.size} von ${Upgrades.all.size}") }
+                    item { StatRow("Upgrades", Lang.t("%s von %s", state.upgrades.size, Upgrades.all.size)) }
                     // `label` and not `name`: on the catalogue ladder the name is the bare body and
                     // the designation is the whole of what distinguishes one rung from the six
                     // hundred and seventy-five others that share it.
                     item { StatRow("Beste Stufe", Tiers.byIndex(state.bestTier).label) }
                     item {
                         StatRow(
-                            "Bonus aus Singularitäten",
+                            Lang.t("Bonus aus Singularitäten"),
                             Numbers.formatMultiplier(stats.singularityMultiplier),
                         )
                     }
 
-                    item { SectionTitle("Wenn du weg bist") }
+                    item { SectionTitle(Lang.t("Wenn du weg bist")) }
                     item { StatRow("Offline-Ertrag", Numbers.formatPercent(stats.offlineEfficiency)) }
                     item {
                         StatRow("Offline-Grenze", Numbers.formatDuration(stats.offlineCapSeconds))
@@ -935,11 +939,9 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
         Spacer(Modifier.height(8.dp))
         Text(
             text = if (stats.canCollapse) {
-                "Lass dein Schwarzes Loch in sich zusammenfallen. Du verlierst Masse, " +
-                    "Kollektoren und Upgrades — behältst aber deine Singularitäten."
+                Lang.t("Lass dein Schwarzes Loch in sich zusammenfallen. Du verlierst Masse, Kollektoren und Upgrades — behältst aber deine Singularitäten.")
             } else {
-                "Erreiche das Schwarze Loch, um zu kollabieren. Jeder Kollaps bringt " +
-                    "Singularitäten, die jeden weiteren Durchlauf dauerhaft beschleunigen."
+                Lang.t("Erreiche das Schwarze Loch, um zu kollabieren. Jeder Kollaps bringt Singularitäten, die jeden weiteren Durchlauf dauerhaft beschleunigen.")
             },
             style = MaterialTheme.typography.bodyMedium,
             color = Muted,
@@ -947,8 +949,13 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
         )
         Spacer(Modifier.height(10.dp))
         Text(
-            text = "Jetzt zu holen: ${Numbers.format(stats.pendingSingularities)} Singularitäten " +
-                "(${Numbers.formatMultiplier(1.0 + GameEngine.SINGULARITY_BONUS * stats.pendingSingularities)} extra)",
+            text = Lang.t(
+                "Jetzt zu holen: %s Singularitäten (%s extra)",
+                Numbers.format(stats.pendingSingularities),
+                Numbers.formatMultiplier(
+                    1.0 + GameEngine.SINGULARITY_BONUS * stats.pendingSingularities,
+                ),
+            ),
             style = MaterialTheme.typography.bodyMedium,
             color = if (stats.canCollapse) Positive else Muted,
             modifier = Modifier.sog(SogDepth.CONTENT, Positive),

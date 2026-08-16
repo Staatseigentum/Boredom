@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -116,18 +117,17 @@ private fun LockedNotice(state: GameState, modifier: Modifier = Modifier) {
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PixelLabel(text = "Kein Feuer im Kern", color = Muted)
+        PixelLabel(text = Lang.t("Kein Feuer im Kern"), color = Muted)
         Spacer(Modifier.height(10.dp))
         Text(
-            text = "Fusion beginnt erst beim ${target.name}. Vorher ist in der Mitte nichts " +
-                "heiß genug, um irgendetwas zu verschmelzen.",
+            text = Lang.t("Fusion beginnt erst beim %s. Vorher ist in der Mitte nichts heiß genug, um irgendetwas zu verschmelzen.", target.name),
             style = MaterialTheme.typography.bodyMedium,
             color = Muted,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            text = "noch ${Numbers.formatMass((target.threshold - state.runMass).coerceAtLeast(0.0))}",
+            text = Lang.t("noch %s", Numbers.formatMass((target.threshold - state.runMass).coerceAtLeast(0.0))),
             style = MaterialTheme.typography.bodySmall,
             color = Ember,
         )
@@ -332,7 +332,7 @@ private fun FusionRow(offer: FusionOffer, onBuy: () -> Unit) {
                     text = when {
                         offer.level <= 0 -> stage.flavor
                         offer.starving && input != null ->
-                            "wartet auf ${input.label}: nur ${rate(offer)}"
+                            Lang.t("wartet auf %s: nur %s", input.label, rate(offer))
 
                         else -> "liefert ${rate(offer)}"
                     },

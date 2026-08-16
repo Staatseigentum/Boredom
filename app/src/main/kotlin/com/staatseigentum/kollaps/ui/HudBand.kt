@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -143,8 +144,12 @@ private fun rungLine(state: GameState, stats: Stats): String {
     } else {
         "Stufe ${stats.tier.index + 1}/${Tiers.all.size}"
     }
-    return "Stufe ${stats.tier.index + 1}/${Tiers.all.size} · noch " +
-        Numbers.formatMass(next.threshold - state.runMass)
+    return Lang.t(
+        "Stufe %s/%s · noch %s",
+        stats.tier.index + 1,
+        Tiers.all.size,
+        Numbers.formatMass(next.threshold - state.runMass),
+    )
 }
 
 @Composable

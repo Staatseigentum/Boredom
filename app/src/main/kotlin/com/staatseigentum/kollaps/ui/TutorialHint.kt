@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -138,7 +139,7 @@ fun TutorialHint(
                 // A word, not a button: the strip is already the smallest thing on screen and a
                 // framed control on it would weigh more than what it dismisses.
                 Text(
-                    text = "aus",
+                    text = Lang.t("aus"),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                     modifier = Modifier.clickable {

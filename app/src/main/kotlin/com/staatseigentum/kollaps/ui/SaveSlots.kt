@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -57,11 +58,10 @@ fun SaveSlotPanel(
     val sfx = LocalSfx.current
 
     PixelPanel(modifier = modifier.fillMaxWidth()) {
-        PixelLabel("Spielstände", size = 15)
+        PixelLabel(Lang.t("Spielstände"), size = 15)
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "Drei getrennte Spiele. Beim Wechseln wird der laufende Stand zuerst " +
-                "gespeichert — es geht nichts verloren.",
+            text = Lang.t("Drei getrennte Spiele. Beim Wechseln wird der laufende Stand zuerst gespeichert — es geht nichts verloren."),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -98,7 +98,7 @@ fun SaveSlotPanel(
                     }
                     Spacer(Modifier.width(8.dp))
                     if (slot.isActive) {
-                        PixelLabel("hier", color = Nebula, size = 12)
+                        PixelLabel(Lang.t("hier"), color = Nebula, size = 12)
                     } else {
                         PixelLabel(
                             text = if (slot.isEmpty) "neu" else "wechseln",

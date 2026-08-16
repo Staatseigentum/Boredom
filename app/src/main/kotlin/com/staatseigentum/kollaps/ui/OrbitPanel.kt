@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -83,9 +84,7 @@ fun OrbitPanel(
                 }
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "${Orbits.occupiedCount(state)} von ${opened.size} offenen Bahnen " +
-                        "besetzt. Innen wird schnell gefüttert und schnell zerrissen, außen " +
-                        "langsam und für immer.",
+                    text = Lang.t("%s von %s offenen Bahnen besetzt. Innen wird schnell gefüttert und schnell zerrissen, außen langsam und für immer.", Orbits.occupiedCount(state), opened.size),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
@@ -93,9 +92,12 @@ fun OrbitPanel(
                 // The rule itself, in one line. It was in the code and in the flavour text but
                 // never anywhere the player could act on it.
                 Text(
-                    text = "Bahnen, deren Nummern in einem kleinen Verhältnis stehen — 1:2, 2:3, " +
-                        "1:3, 3:4, 2:5 — koppeln aneinander. Jede gekoppelte Nachbarin gibt " +
-                        "beiden ${Numbers.formatPercent(Orbits.RESONANCE_BONUS)} mehr.",
+                    text = Lang.t(
+                        "Bahnen, deren Nummern in einem kleinen Verhältnis stehen — 1:2, 2:3, " +
+                            "1:3, 3:4, 2:5 — koppeln aneinander. Jede gekoppelte Nachbarin " +
+                            "gibt beiden %s mehr.",
+                        Numbers.formatPercent(Orbits.RESONANCE_BONUS),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = Nebula,
                 )
@@ -103,7 +105,7 @@ fun OrbitPanel(
                 if (next != null) {
                     Spacer(Modifier.height(10.dp))
                     PixelButton(
-                        label = "Bahn ${next.index + 1} öffnen · ${Numbers.formatMass(next.cost)}",
+                        label = Lang.t("Bahn %s öffnen · %s", next.index + 1, Numbers.formatMass(next.cost)),
                         onClick = actions::openOrbit,
                         modifier = Modifier.fillMaxWidth(),
                         enabled = next.cost <= state.mass,
@@ -139,18 +141,17 @@ private fun OrbitLockedNotice(state: GameState, modifier: Modifier = Modifier) {
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        PixelLabel(text = "Nichts, was bleiben würde", color = Muted)
+        PixelLabel(text = Lang.t("Nichts, was bleiben würde"), color = Muted)
         Spacer(Modifier.height(10.dp))
         Text(
-            text = "Erst ab dem ${target.name} hält deine Schwerkraft etwas auf einer Bahn. " +
-                "Vorher fällt alles entweder herunter oder weg.",
+            text = Lang.t("Erst ab dem %s hält deine Schwerkraft etwas auf einer Bahn. Vorher fällt alles entweder herunter oder weg.", target.name),
             style = MaterialTheme.typography.bodyMedium,
             color = Muted,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            text = "noch ${Numbers.formatMass((target.threshold - state.runMass).coerceAtLeast(0.0))}",
+            text = Lang.t("noch %s", Numbers.formatMass((target.threshold - state.runMass).coerceAtLeast(0.0))),
             style = MaterialTheme.typography.bodySmall,
             color = Ember,
         )
@@ -226,9 +227,9 @@ private fun OrbitRow(
                         val list = partners.joinToString { "${it.index + 1}" }
                         val factor = Numbers.formatMultiplier(Orbits.resonanceFactor(partners.size))
                         val text = if (occupied) {
-                            "Resonanz mit Bahn $list · $factor"
+                            Lang.t("Resonanz mit Bahn %s · %s", list, factor)
                         } else {
-                            "Hier läge Resonanz mit Bahn $list · $factor"
+                            Lang.t("Hier läge Resonanz mit Bahn %s · %s", list, factor)
                         }
                         text to Ember
                     }
@@ -276,8 +277,8 @@ private fun OrbitRow(
 private fun settlement(orbit: Orbit, perSecond: Double): String {
     val limit = orbit.equilibrium(perSecond)
     return if (limit.isFinite()) {
-        "pendelt sich bei ${Numbers.formatMass(limit)} ein"
+        Lang.t("pendelt sich bei %s ein", Numbers.formatMass(limit))
     } else {
-        "wächst ohne Grenze, dafür langsam"
+        Lang.t("wächst ohne Grenze, dafür langsam")
     }
 }

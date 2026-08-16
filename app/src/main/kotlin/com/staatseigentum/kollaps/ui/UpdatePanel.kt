@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -55,7 +56,7 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
 
             when (val current = state) {
                 UpdateState.Idle -> {
-                    Description("Noch nicht nachgesehen, ob es eine neuere Version gibt.")
+                    Description(Lang.t("Noch nicht nachgesehen, ob es eine neuere Version gibt."))
                     Action("Nach Updates suchen") { model.check() }
                 }
 
@@ -72,14 +73,13 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
                 }
 
                 UpdateState.UpToDate -> {
-                    Description("Du spielst die neueste Version.")
-                    Action("Nochmal prüfen") { model.check() }
+                    Description(Lang.t("Du spielst die neueste Version."))
+                    Action(Lang.t("Nochmal prüfen")) { model.check() }
                 }
 
                 is UpdateState.Available -> {
                     Description(
-                        "${current.update.title} ist verfügbar" +
-                            sizeSuffix(current.update),
+                        Lang.t("%s ist verfügbar%s", current.update.title, sizeSuffix(current.update)),
                     )
                     if (current.update.notes.isNotBlank()) {
                         Spacer(Modifier.height(6.dp))
@@ -107,14 +107,13 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
                 }
 
                 is UpdateState.Ready -> {
-                    Description("${current.update.title} ist geladen und wartet auf die Installation.")
+                    Description(Lang.t("%s ist geladen und wartet auf die Installation.", current.update.title))
                     Action("Installieren") { model.install() }
                 }
 
                 is UpdateState.NeedsPermission -> {
                     Description(
-                        "Damit die neue Version installiert werden kann, muss Kollaps in den " +
-                            "Systemeinstellungen als Quelle erlaubt werden.",
+                        Lang.t("Damit die neue Version installiert werden kann, muss Kollaps in den Systemeinstellungen als Quelle erlaubt werden."),
                     )
                     Action("Berechtigung erteilen") { model.install() }
                 }
@@ -163,7 +162,7 @@ fun UpdateDialog(model: UpdateViewModel) {
         shape = RectangleShape,
         title = {
             PixelLabel(
-                text = if (mandatory) "Diese Version musst du installieren" else "Neue Version verfügbar",
+                text = if (mandatory) Lang.t("Diese Version musst du installieren") else Lang.t("Neue Version verfügbar"),
                 size = 16,
             )
         },
@@ -176,9 +175,7 @@ fun UpdateDialog(model: UpdateViewModel) {
                 if (mandatory) {
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Ein großes Update ändert, was im Spielstand steht. Zwei " +
-                            "Fassungen nebeneinander vertragen sich dabei nicht — deshalb geht " +
-                            "es hier nur vorwärts.",
+                        text = Lang.t("Ein großes Update ändert, was im Spielstand steht. Zwei Fassungen nebeneinander vertragen sich dabei nicht — deshalb geht es hier nur vorwärts."),
                         style = MaterialTheme.typography.bodySmall,
                         color = Muted,
                     )
@@ -204,7 +201,7 @@ fun UpdateDialog(model: UpdateViewModel) {
             when (state) {
                 is UpdateState.Available -> PixelButton(label = "Herunterladen", onClick = model::download, accent = Ember)
 
-                is UpdateState.Downloading -> PixelButton(label = "Lädt …", onClick = {}, enabled = false)
+                is UpdateState.Downloading -> PixelButton(label = Lang.t("Lädt …"), onClick = {}, enabled = false)
 
                 is UpdateState.Ready -> PixelButton(label = "Installieren", onClick = model::install, accent = Ember)
 
@@ -217,7 +214,7 @@ fun UpdateDialog(model: UpdateViewModel) {
             // Absent while the update is both big and installable. It comes back the moment
             // either of those stops being true.
             if (!mandatory) {
-                PixelButton(label = "Später", onClick = model::dismissPrompt)
+                PixelButton(label = Lang.t("Später"), onClick = model::dismissPrompt)
             }
         },
     )
