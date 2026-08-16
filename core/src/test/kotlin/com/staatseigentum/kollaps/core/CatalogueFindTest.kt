@@ -14,7 +14,8 @@ class CatalogueFindTest {
     private fun climbing(rungs: Int): GameState = GameState.new(now).copy(
         bigBangs = Multiverse.SLOTS,
         universes = (0 until Multiverse.SLOTS).map { ParkedUniverse(slot = it, bestTier = 20) },
-        runMass = Tiers.last.threshold * Math.pow(Designations.THRESHOLD_GROWTH, rungs + 0.5),
+        runMass = Tiers.last.threshold * Designations.ENTRY_STEP *
+            Math.pow(Designations.THRESHOLD_GROWTH, rungs + 0.5),
         mass = 1e30,
         collapses = 40,
         collectors = mapOf("dust" to 100),

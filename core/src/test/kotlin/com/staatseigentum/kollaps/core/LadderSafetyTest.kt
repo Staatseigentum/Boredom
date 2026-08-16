@@ -18,7 +18,8 @@ class LadderSafetyTest {
     /** Somebody standing a long way up the catalogue ladder. */
     private fun high(rung: Int): GameState = GameState.new(now).copy(
         bestTier = Tiers.last.index + rung,
-        runMass = Tiers.last.threshold * Math.pow(Designations.THRESHOLD_GROWTH, rung.toDouble() + 0.5),
+        runMass = Tiers.last.threshold * Designations.ENTRY_STEP *
+            Math.pow(Designations.THRESHOLD_GROWTH, rung.toDouble() + 0.5),
         universes = (0 until Multiverse.SLOTS).map { ParkedUniverse(slot = it) },
         bigBangs = Multiverse.SLOTS,
         collapses = 40,

@@ -68,16 +68,44 @@ object Designations {
     /** Designations one body carries before the next body starts. */
     const val PER_BODY = LETTERS * LETTERS
 
-    /** How much more mass each rung above the black hole costs than the one below it. */
-    const val THRESHOLD_GROWTH = 1.0365
+    /**
+     * What the catalogue costs to set foot on at all, as a multiple of the black hole.
+     *
+     * The ladder used to start a single 3.65 % step above the black hole, and that was the whole
+     * problem with it: anybody who has earned the eight galaxies it takes to unlock is producing
+     * many orders of magnitude past 2.7e24 kg, so the first hundreds of rungs went by in the time
+     * it took to read them. A million times over is the price of the first designation, and it
+     * turns entering the catalogue into something that happens rather than something that has
+     * already happened.
+     */
+    const val ENTRY_STEP = 1e6
+
+    /**
+     * How much more mass each rung above the black hole costs than the one below it.
+     *
+     * Close to as steep as this ladder can be made, and that is an arithmetic fact rather than a
+     * balance decision. There are [COUNT] rungs, the threshold is a geometric series over all of
+     * them, and a `Double` stops at about 1e308 — so the growth, the [ENTRY_STEP] and the
+     * anchor together have only about 283 decades to spend. At this rate the last rung lands
+     * near 1e301, which is as much headroom as is safe to leave. Raising it further would not
+     * make the climb harder; it would make the top of the ladder infinite.
+     */
+    const val THRESHOLD_GROWTH = 1.0375
 
     /**
      * And how much more it produces.
      *
      * Below [THRESHOLD_GROWTH], which is the only reason this lands anywhere useful: every rung is
-     * a hair harder than the last, so the climb slows exactly as gently as it should.
+     * harder than the last, so the climb slows as it goes.
+     *
+     * The gap between the two is the whole difficulty of the catalogue, and it is the one lever
+     * the `Double` ceiling does not cap — which is why *this* number moved further than the one
+     * above it. At 3.30 % against 3.65 % each rung was 0.34 % harder than the last and the ladder
+     * barely slowed at all; at 3.00 % against 3.75 % each rung is 0.73 %, and because that
+     * compounds, the two-thousandth rung went from being nine hundred times the first to two
+     * million times it.
      */
-    const val PRODUCTION_GROWTH = 1.0330
+    const val PRODUCTION_GROWTH = 1.0300
 
     /**
      * Whether this save has earned the ladder above the black hole.
@@ -151,7 +179,7 @@ object Designations {
             // Saturn that every unlock, challenge and event chain points at, rather than one of
             // its six hundred and seventy-six catalogue entries. Only what is drawn changes.
             designation = position.mod(PER_BODY),
-            threshold = anchor.threshold * THRESHOLD_GROWTH.pow(step),
+            threshold = anchor.threshold * ENTRY_STEP * THRESHOLD_GROWTH.pow(step),
             productionMultiplier = anchor.productionMultiplier * PRODUCTION_GROWTH.pow(step),
         )
     }
@@ -165,7 +193,10 @@ object Designations {
      */
     fun forMass(mass: Double): CelestialTier {
         val anchor = Tiers.last
-        if (mass < anchor.threshold) return anchor
+        // Everything between the black hole and the price of the first designation is still the
+        // black hole. That stretch is [ENTRY_STEP] wide and it is the point of the entry step.
+        val entry = anchor.threshold * ENTRY_STEP
+        if (mass < entry) return anchor
         /*
          * The nudge is not cosmetic.
          *
@@ -176,7 +207,7 @@ object Designations {
          * billion is far below any gap between rungs (they are 3.65 % apart) and far above the
          * error being corrected.
          */
-        val steps = floor(ln(mass / anchor.threshold) / ln(THRESHOLD_GROWTH) + 1e-9).toInt()
+        val steps = floor(ln(mass / entry) / ln(THRESHOLD_GROWTH) + 1e-9).toInt()
         if (steps < 1) return anchor
         return at(FIRST_INDEX + steps - 1)
     }

@@ -29,7 +29,10 @@ class RewardingResetsTest {
     @Test
     fun `climbing the catalogue pays more than the mass alone would`() {
         val gate = deep(Tiers.last.threshold)
-        val climbed = deep(Tiers.last.threshold * Math.pow(Designations.THRESHOLD_GROWTH, 100.0))
+        val climbed = deep(
+            Tiers.last.threshold * Designations.ENTRY_STEP *
+                Math.pow(Designations.THRESHOLD_GROWTH, 100.0),
+        )
 
         val rungs = GameEngine.tierOf(climbed).index - Tiers.last.index
         assertTrue(rungs >= 99, "Der Aufbau steht nur $rungs Sprossen höher")

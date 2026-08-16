@@ -20,7 +20,8 @@ class LabSecondStoreyTest {
     /** A save deep enough that all four systems are actually running. */
     private fun deep(): GameState = GameState(
         mass = 1e24,
-        runMass = Tiers.last.threshold * 10,
+        // Past the catalogue's entry step, so this really is the deep save it says it is.
+        runMass = Tiers.last.threshold * Designations.ENTRY_STEP * 10,
         bestTier = Tiers.last.index,
         collectors = Collectors.all.take(6).associate { it.id to 200 },
         collapses = 40,

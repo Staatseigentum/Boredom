@@ -49,7 +49,7 @@ class DesignationTest {
 
     @Test
     fun `the ladder is locked until the sky is full`() {
-        val far = Tiers.last.threshold * 1_000_000.0
+        val far = Tiers.last.threshold * Designations.ENTRY_STEP * 1_000.0
 
         // Seven galaxies is not a full sky, however many big bangs the counter claims.
         val shallow = GameState.new(0).copy(
@@ -126,7 +126,7 @@ class DesignationTest {
     @Test
     fun `reaching a catalogue rung actually pays more`() {
         val atHole = deep(Tiers.last.threshold)
-        val farUp = deep(Tiers.last.threshold * 1e6)
+        val farUp = deep(Tiers.last.threshold * Designations.ENTRY_STEP * 1e6)
 
         assertTrue(
             GameEngine.massPerSecond(farUp) > GameEngine.massPerSecond(atHole),
@@ -151,7 +151,7 @@ class DesignationTest {
         // save above the hole would suddenly be unable to collapse at all.
         assertTrue(Tiers.last.isFinal)
         assertEquals(Tiers.all.lastIndex, Tiers.last.index)
-        val far = deep(Tiers.last.threshold * 1e10)
+        val far = deep(Tiers.last.threshold * Designations.ENTRY_STEP * 1e10)
         assertTrue(GameEngine.canCollapse(far), "Über dem Loch lässt sich nicht mehr kollabieren")
     }
 }
@@ -194,5 +194,53 @@ class BigBangPacingTest {
         )
         assertFalse(BigBang.canBang(onePast), "Der Urknall geht eine Stufe zu früh")
         assertTrue(BigBang.canBang(onePast.copy(collapses = BigBang.requiredFor(2))))
+    }
+
+    /**
+     * The two things about the catalogue's price that must not drift.
+     *
+     * The ladder is a geometric series over sixteen thousand rungs, and a `Double` stops near
+     * 1e308. That makes the growth rate a number with a hard ceiling rather than a taste
+     * decision: raise it far enough and the top of the ladder becomes `Infinity`, at which point
+     * [Tiers.next] promises a rung nobody can reach and the mass on screen reads as nonsense.
+     *
+     * The entry step is the other half. Anybody who has earned the eight galaxies the catalogue
+     * costs is producing many orders of magnitude past the black hole, so without a wall at the
+     * bottom the first hundreds of rungs go by unread.
+     */
+    @Test
+    fun `the catalogue stays expensive and stays finite`() {
+        val anchor = Tiers.last.threshold
+
+        // Nothing between the black hole and the entry step counts as catalogue.
+        assertFalse(Tiers.forMass(anchor * 100, deep = true).isDesignated, "Der Katalog fängt zu früh an")
+        assertFalse(
+            Tiers.forMass(anchor * Designations.ENTRY_STEP * 0.99, deep = true).isDesignated,
+            "Knapp unter der Einstiegsstufe steht schon eine Kennung",
+        )
+        // The first designation sits one growth step above the entry, exactly as every rung sits
+        // one above the rung below it — the entry step moves the foot of the ladder, it is not
+        // itself a rung.
+        assertTrue(
+            Tiers.forMass(
+                anchor * Designations.ENTRY_STEP * Designations.THRESHOLD_GROWTH * 1.01,
+                deep = true,
+            ).isDesignated,
+            "Über der Einstiegsstufe fängt der Katalog nicht an",
+        )
+
+        // And the far end is a number rather than infinity.
+        val top = Designations.at(Designations.TOTAL - 1)
+        assertTrue(top.threshold.isFinite(), "Die letzte Sprosse kostet unendlich viel")
+        assertTrue(
+            top.productionMultiplier.isFinite(),
+            "Die letzte Sprosse produziert unendlich viel",
+        )
+
+        // Each rung must cost more than it pays, or the ladder would get easier as it went.
+        assertTrue(
+            Designations.THRESHOLD_GROWTH > Designations.PRODUCTION_GROWTH,
+            "Die Leiter wird nach oben hin leichter statt schwerer",
+        )
     }
 }
