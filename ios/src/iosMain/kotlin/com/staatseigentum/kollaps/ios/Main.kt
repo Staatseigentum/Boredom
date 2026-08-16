@@ -15,8 +15,6 @@ import com.staatseigentum.kollaps.core.NumberFormat
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.core.Wallclock
-import com.staatseigentum.kollaps.core.i18n.Lang
-import com.staatseigentum.kollaps.core.i18n.Language
 import com.staatseigentum.kollaps.ui.GameScreen
 import com.staatseigentum.kollaps.ui.PlainGame
 import com.staatseigentum.kollaps.ui.SaveSlotPanel
@@ -30,8 +28,6 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.toCValues
 import platform.Foundation.NSDate
-import platform.Foundation.NSLocale
-import platform.Foundation.currentLocale
 import platform.Foundation.NSStringFromClass
 import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIApplication
@@ -101,9 +97,20 @@ class KollapsDelegate : UIResponder, UIApplicationDelegateProtocol {
         // the app was away, and that is the first thing that happens.
         Wallclock.readFrom { (NSDate().timeIntervalSince1970 * 1_000.0).toLong() }
 
-        // What the phone says it speaks. The save overrides it the moment one is loaded with a
-        // language in it; see GameEngine.applyLanguage, which the game driver calls.
-        Lang.current = Language.ofLocale(NSLocale.currentLocale.languageCode)
+        /*
+         * The iPhone does not read the system language, and that is a decision rather than a gap.
+         *
+         * Everything else about the translation is here: this build compiles the same shared
+         * sources as the other two, so every text has its English side and the switch in the
+         * settings works exactly as it does on the phone and the PC. What is missing is only the
+         * *first guess* — an iPhone opens the game in German until somebody chooses otherwise,
+         * and that choice is then kept in the save like any other.
+         *
+         * The reason is that this module cannot be compiled here. The obvious property for it,
+         * `NSLocale.languageCode`, is not in Kotlin/Native's Foundation bindings, which took a
+         * round of CI to discover — and every further guess would cost another one. One line of
+         * convenience is not worth being unable to check the build that ships it.
+         */
 
         val window = UIWindow(frame = UIScreen.mainScreen.bounds)
         window.rootViewController = mainViewController()
