@@ -1136,6 +1136,18 @@ internal object Translations {
 
     /** The chronicle: one line per rung, and a handful for each kind of reset. */
     private val LORE: Map<String, String> = mapOf(
+        // ---- the units under the numbers
+        "unendlich" to "infinite",
+        "%s Sek" to "%s s",
+        "%s Min" to "%s min",
+        "%s Std" to "%s h",
+        "%s Std %s Min" to "%s h %s min",
+        "%s Tage" to "%s days",
+        "%s Tage %s Std" to "%s days %s h",
+        "Namen" to "Names",
+        "Wissenschaftlich" to "Scientific",
+        "Kurzform" to "Compact",
+
         "%s. Kollaps" to "Collapse %s",
         "%s. Urknall" to "Big Bang %s",
         "Es fängt mit einem Stein an, der niemandem gehört. Du legst die Hand darauf." to

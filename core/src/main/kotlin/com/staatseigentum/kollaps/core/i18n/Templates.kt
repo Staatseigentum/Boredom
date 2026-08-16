@@ -91,5 +91,18 @@ internal object Templates {
         // ---- the chronicle
         "%s. Kollaps",
         "%s. Urknall",
+
+        // ---- what a number is written in. See Numbers, which owns the separator and the
+        // spacing; these are only the words.
+        "unendlich",
+        "%s Sek",
+        "%s Min",
+        "%s Std",
+        "%s Std %s Min",
+        "%s Tage",
+        "%s Tage %s Std",
+        "Namen",
+        "Wissenschaftlich",
+        "Kurzform",
     )
 }
