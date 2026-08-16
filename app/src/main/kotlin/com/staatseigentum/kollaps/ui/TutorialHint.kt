@@ -100,7 +100,7 @@ fun TutorialHint(
                     ) {
                         PixelLabel(shown.title, color = Ember, size = 13, maxLines = 1)
                         PixelLabel(
-                            text = "${Tutorial.position(state)}/${Tutorial.total}",
+                            text = Lang.t("%s/%s", Tutorial.position(state), Tutorial.total),
                             color = Muted,
                             size = 11,
                             maxLines = 1,
@@ -124,7 +124,7 @@ fun TutorialHint(
                     shown.spot?.let { spot ->
                         Spacer(Modifier.height(6.dp))
                         PixelLabel(
-                            text = "→ ${spot.label} zeigen",
+                            text = Lang.t("→ %s zeigen", spot.label),
                             color = Ember,
                             size = 11,
                             maxLines = 1,

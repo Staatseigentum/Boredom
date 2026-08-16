@@ -92,7 +92,7 @@ fun AufbauPanel(
 @Composable
 private fun MaterialStock(state: GameState) {
     PixelPanel(modifier = Modifier.fillMaxWidth()) {
-        PixelLabel(text = "Material", color = Starlight, size = 12)
+        PixelLabel(text = Lang.t("Material"), color = Starlight, size = 12)
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             for (material in Material.entries) {
@@ -170,7 +170,7 @@ private fun ShellRow(state: GameState, shell: Shell, onBuild: () -> Unit) {
             PixelLabel(text = shell.label, color = Starlight, size = 12)
             Spacer(Modifier.weight(1f))
             PixelLabel(
-                text = "$level / ${Shells.MAX_LEVEL}",
+                text = Lang.t("%s / %s", level, Shells.MAX_LEVEL),
                 color = if (maxed) Ember else Muted,
                 size = 11,
                 maxLines = 1,
@@ -196,7 +196,7 @@ private fun ShellRow(state: GameState, shell: Shell, onBuild: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (maxed) {
-                PixelLabel(text = "Fertig gebaut", color = Ember, size = 11)
+                PixelLabel(text = Lang.t("Fertig gebaut"), color = Ember, size = 11)
             } else {
                 for ((material, amount) in cost) {
                     val enough = Shells.amountOf(state, material) >= amount
@@ -221,7 +221,7 @@ private fun ShellRow(state: GameState, shell: Shell, onBuild: () -> Unit) {
             }
             Spacer(Modifier.weight(1f))
             PixelButton(
-                label = "Bauen",
+                label = Lang.t("Bauen"),
                 onClick = onBuild,
                 enabled = affordable,
                 accent = Positive,
@@ -247,10 +247,10 @@ private fun WorldRecord(state: GameState) {
 
     PixelPanel(modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            PixelLabel(text = "Weltentypen", color = Starlight, size = 12)
+            PixelLabel(text = Lang.t("Weltentypen"), color = Starlight, size = 12)
             Spacer(Modifier.weight(1f))
             PixelLabel(
-                text = "${state.worldTypes.size} / ${Worlds.all.size}",
+                text = Lang.t("%s / %s", state.worldTypes.size, Worlds.all.size),
                 color = Muted,
                 size = 11,
                 maxLines = 1,
@@ -310,7 +310,7 @@ private fun WorldRecord(state: GameState) {
 
         Spacer(Modifier.height(4.dp))
         PixelLabel(
-            text = "Bonus ${Numbers.formatMultiplier(bonus)}",
+            text = Lang.t("Bonus %s", Numbers.formatMultiplier(bonus)),
             color = if (bonus > 1.0) Positive else Muted,
             size = 11,
         )

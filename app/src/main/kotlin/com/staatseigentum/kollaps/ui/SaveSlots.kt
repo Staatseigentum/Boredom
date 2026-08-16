@@ -86,7 +86,7 @@ fun SaveSlotPanel(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Platz ${slot.index + 1}",
+                            text = Lang.t("Platz %s", slot.index + 1),
                             style = MaterialTheme.typography.bodyLarge,
                             color = if (slot.isEmpty && !slot.isActive) Muted else Starlight,
                         )

@@ -3,13 +3,29 @@ package com.staatseigentum.kollaps.core.i18n
 import kotlin.concurrent.Volatile
 
 /** The languages the game speaks. */
-enum class Language(val id: String, val label: String) {
+enum class Language(val id: String, private val germanLabel: String) {
     DE("de", "Deutsch"),
     EN("en", "English"),
     ;
 
+    /** What the option says in the picker — written in its own language, never translated. */
+    val label: String get() = germanLabel
+
     companion object {
         fun byId(id: String?): Language = entries.firstOrNull { it.id == id } ?: DE
+
+        /**
+         * The language a platform's locale tag asks for, defaulting to German.
+         *
+         * Takes the tag whole — "en", "en-GB", "en_US" — because every platform spells it
+         * differently and none of them agree on the separator. Anything that is not English is
+         * German, which is the honest reading of a game that speaks two languages: a Norwegian
+         * phone gets the original rather than a language nobody chose.
+         */
+        fun ofLocale(tag: String?): Language {
+            val head = tag.orEmpty().lowercase().takeWhile { it.isLetter() }
+            return entries.firstOrNull { it.id == head } ?: DE
+        }
     }
 }
 

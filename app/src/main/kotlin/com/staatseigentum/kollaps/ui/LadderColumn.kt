@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -86,7 +87,7 @@ fun LadderColumn(state: GameState, stats: Stats, modifier: Modifier = Modifier) 
             .sog(SogDepth.SHELL, Nebula),
     ) {
         PixelLabel(
-            text = "Leiter ${standing + 1}/${Tiers.all.size}",
+            text = Lang.t("Leiter %s/%s", standing + 1, Tiers.all.size),
             color = Muted,
             size = 10,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
@@ -140,7 +141,7 @@ fun LadderColumn(state: GameState, stats: Stats, modifier: Modifier = Modifier) 
         val fragment = Lore.forTier(shown)
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp)) {
             PixelLabel(
-                text = "Chronik · ${Tiers.all[shown].label}",
+                text = Lang.t("Chronik · %s", Tiers.all[shown].label),
                 color = Nebula,
                 size = 9,
             )

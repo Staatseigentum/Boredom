@@ -1,5 +1,7 @@
 package com.staatseigentum.kollaps.core
 
+import com.staatseigentum.kollaps.core.i18n.Lang
+import com.staatseigentum.kollaps.core.i18n.Language
 import com.staatseigentum.kollaps.core.pixel.Skins
 import kotlin.concurrent.Volatile
 import kotlin.math.floor
@@ -1760,6 +1762,32 @@ object GameEngine {
     fun setNumberFormat(state: GameState, format: NumberFormat): GameState {
         Numbers.format = format
         return state.copy(numberFormat = format.name)
+    }
+
+    /**
+     * Picks the language.
+     *
+     * Applied to [Lang] as well as recorded, for the same reason [setNumberFormat] is: the save is
+     * the record, the object is what draws. Without the first line the screen would keep speaking
+     * the old language until the next launch.
+     */
+    fun setLanguage(state: GameState, language: Language): GameState {
+        Lang.current = language
+        return state.copy(language = language.id)
+    }
+
+    /**
+     * Puts the save's language into effect, or the platform's if the save has none.
+     *
+     * Called once on the way in, by whatever built the screen. [fallback] is what the device says
+     * it speaks — so a first launch on an English phone is in English, and one visit to the
+     * settings pins it for good.
+     */
+    fun applyLanguage(state: GameState, fallback: Language): GameState {
+        val chosen = state.language?.let { Language.byId(it) } ?: fallback
+        Lang.current = chosen
+        Numbers.format = NumberFormat.byName(state.numberFormat)
+        return state
     }
 
     /** Whether the automatic buyer has been unlocked at all. */

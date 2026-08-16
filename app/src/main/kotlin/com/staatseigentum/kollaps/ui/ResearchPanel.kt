@@ -65,7 +65,7 @@ fun ResearchPanel(
     }
 
     PixelPanel(modifier = modifier.fillMaxWidth(), border = Nebula) {
-        PixelLabel(text = "Labor", color = Nebula, size = 16)
+        PixelLabel(text = Lang.t("Labor"), color = Nebula, size = 16)
         Spacer(Modifier.height(8.dp))
 
         if (running == null) {
@@ -193,7 +193,7 @@ private fun ProjectRow(
             Spacer(Modifier.width(10.dp))
 
             if (done) {
-                PixelLabel(text = "fertig", color = Positive, size = 10)
+                PixelLabel(text = Lang.t("fertig"), color = Positive, size = 10)
             } else {
                 Column(horizontalAlignment = Alignment.End) {
                     Text(

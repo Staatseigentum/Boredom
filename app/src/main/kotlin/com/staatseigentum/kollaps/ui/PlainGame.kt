@@ -10,6 +10,7 @@ import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Impact
 import com.staatseigentum.kollaps.core.NumberFormat
+import com.staatseigentum.kollaps.core.i18n.Language
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.OfflineReport
 import com.staatseigentum.kollaps.core.Roles
@@ -307,6 +308,10 @@ open class PlainGame(start: GameState = GameState.new(NOW)) : GameActions {
      */
     override fun setPaused(on: Boolean) {
         paused = on
+    }
+
+    override fun setLanguage(language: Language) {
+        state = GameEngine.setLanguage(state, language)
     }
 
     override fun setNumberFormat(format: NumberFormat) {

@@ -70,7 +70,7 @@ fun ContractPanel(state: GameState, actions: GameActions, modifier: Modifier = M
 
             if (state.contractsDone > 0) {
                 Spacer(Modifier.height(4.dp))
-                PixelLabel("${state.contractsDone} erledigt", color = Muted, size = 10)
+                PixelLabel(Lang.t("%s erledigt", state.contractsDone), color = Muted, size = 10)
             }
         }
     }
@@ -128,7 +128,7 @@ private fun ContractRow(
         if (met) {
             Spacer(Modifier.height(8.dp))
             PixelButton(
-                label = "Abgeben",
+                label = Lang.t("Abgeben"),
                 onClick = onClaim,
                 modifier = Modifier.fillMaxWidth(),
                 accent = Positive,

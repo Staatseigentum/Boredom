@@ -20,7 +20,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.i18n.Language
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.core.Wallclock
 import com.staatseigentum.kollaps.ui.GameScreen
@@ -58,6 +60,9 @@ private fun window(args: Array<String>) = application {
     val game = remember {
         val loaded = if (ignoreSave) null else DesktopSave.load()
         DesktopGame(loaded ?: GameState.new(System.currentTimeMillis())).also { fresh ->
+            // The save decides, and where it has no opinion the machine does. Before the first
+            // frame, so nothing is ever drawn in a language the player is about to be moved off.
+            GameEngine.applyLanguage(fresh.state, Language.ofLocale(java.util.Locale.getDefault().language))
             startTier?.let { fresh.seekToTier(it) }
             // Credited before the first frame, so the report is on screen when the window opens
             // rather than a second later.

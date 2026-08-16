@@ -71,6 +71,7 @@ import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
 import com.staatseigentum.kollaps.core.Heat
 import com.staatseigentum.kollaps.core.NumberFormat
+import com.staatseigentum.kollaps.core.i18n.Language
 import com.staatseigentum.kollaps.core.Multiverse
 import com.staatseigentum.kollaps.core.Numbers
 import com.staatseigentum.kollaps.core.OfflineReport
@@ -223,6 +224,9 @@ interface GameActions {
 
     /** Picks how the very large numbers are written. */
     fun setNumberFormat(format: NumberFormat)
+
+    /** Picks which language the game speaks. */
+    fun setLanguage(language: Language)
 
     /** Replaces the running game with an exported one. False when the block was not readable. */
     fun importSave(block: String): Boolean
@@ -856,7 +860,7 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
         )
 
         Text(
-            text = "${Numbers.formatRate(stats.massPerSecond)}  ·  ${Numbers.format(stats.massPerTap)} pro Tipp",
+            text = Lang.t("%s  ·  %s pro Tipp", Numbers.formatRate(stats.massPerSecond), Numbers.format(stats.massPerTap)),
             style = MaterialTheme.typography.bodyMedium,
             color = Muted,
             modifier = Modifier.sog(SogDepth.CONTENT, Muted).urknall(Muted),
@@ -875,7 +879,7 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     PixelLabel(
-                        text = "${buff.label} ${Numbers.formatMultiplier(buff.factor)}",
+                        text = Lang.t("%s %s", buff.label, Numbers.formatMultiplier(buff.factor)),
                         color = Ember,
                         size = 12,
                     )
@@ -898,7 +902,7 @@ private fun Header(state: GameState, stats: Stats, compact: Boolean) {
         val next = stats.nextTier
         val glow = Color(stats.tier.glowColor)
         val climb = when {
-            next != null -> "${stats.tier.label} > ${next.label}"
+            next != null -> Lang.t("%s > %s", stats.tier.label, next.label)
             // Above the gate with the catalogue still shut. Not the end of anything — there are
             // sixteen thousand rungs over this one — and saying "das Ende der Leiter" to somebody
             // fifty orders of magnitude past it is the interface calling a locked door a wall. The
@@ -997,7 +1001,7 @@ private fun ResearchTicker(state: GameState) {
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = "Labor: ${running.name}",
+            text = Lang.t("Labor: %s", running.name),
             style = MaterialTheme.typography.bodySmall,
             color = Muted,
         )
@@ -1345,7 +1349,7 @@ private fun TapFeedback(effect: TapEffect, color: Color, onFinished: () -> Unit)
         // journey up the screen is the decoration.
         val climb = if (quiet) 0f else quantise(progress.value, TAP_NUMBER_STEPS)
         Text(
-            text = "+${effect.label}",
+            text = Lang.t("+%s", effect.label),
             color = Color.White,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
@@ -1431,7 +1435,7 @@ private fun HeatMeter(heat: Double) {
     Spacer(Modifier.height(6.dp))
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         PixelLabel(
-            text = Lang.t("Überhitzt ") + Numbers.formatMultiplier(Heat.factor(heat)),
+            text = Lang.t("Überhitzt %s", Numbers.formatMultiplier(Heat.factor(heat))),
             color = Ember,
             size = 11,
         )

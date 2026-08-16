@@ -194,7 +194,7 @@ private fun HeavyStrip(state: GameState) {
             .padding(bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PixelLabel(text = "Danach", color = Muted, size = 10)
+        PixelLabel(text = Lang.t("Danach"), color = Muted, size = 10)
         Spacer(Modifier.width(8.dp))
 
         HeavyElement.entries.forEach { element ->
@@ -334,7 +334,7 @@ private fun FusionRow(offer: FusionOffer, onBuy: () -> Unit) {
                         offer.starving && input != null ->
                             Lang.t("wartet auf %s: nur %s", input.label, rate(offer))
 
-                        else -> "liefert ${rate(offer)}"
+                        else -> Lang.t("liefert %s", rate(offer))
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = if (offer.starving) Ember else Muted,
@@ -351,7 +351,7 @@ private fun FusionRow(offer: FusionOffer, onBuy: () -> Unit) {
                 )
                 if (offer.amount > 1) {
                     Text(
-                        text = "+${offer.amount}",
+                        text = Lang.t("+%s", offer.amount),
                         style = MaterialTheme.typography.labelSmall,
                         color = Muted,
                     )

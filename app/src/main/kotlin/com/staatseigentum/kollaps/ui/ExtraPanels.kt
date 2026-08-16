@@ -47,6 +47,7 @@ import com.staatseigentum.kollaps.core.PrestigeUpgrades
 import com.staatseigentum.kollaps.core.Statistics
 import com.staatseigentum.kollaps.ui.theme.Ember
 import com.staatseigentum.kollaps.ui.theme.Muted
+import com.staatseigentum.kollaps.ui.theme.SpaceCard
 import com.staatseigentum.kollaps.ui.theme.Nebula
 import com.staatseigentum.kollaps.ui.theme.Outline
 import com.staatseigentum.kollaps.ui.theme.Positive
@@ -60,6 +61,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import com.staatseigentum.kollaps.core.NumberFormat
+import com.staatseigentum.kollaps.core.i18n.Language
 
 /**
  * Achievements, and the statistics that explain how they were earned.
@@ -87,7 +89,7 @@ fun LazyListScope.achievementItems(
 
         item {
             PixelPanel(modifier = Modifier.fillMaxWidth(), border = Ember) {
-                PixelLabel("Statistik", color = Ember, size = 15)
+                PixelLabel(Lang.t("Statistik"), color = Ember, size = 15)
                 Spacer(Modifier.height(8.dp))
                 for (line in Statistics.lines(state)) {
                     Row(
@@ -110,7 +112,7 @@ fun LazyListScope.achievementItems(
         if (History.isWorthShowing(state.history)) {
             item {
                 PixelPanel(modifier = Modifier.fillMaxWidth()) {
-                    PixelLabel("Produktion, letzte halbe Stunde", size = 13)
+                    PixelLabel(Lang.t("Produktion, letzte halbe Stunde"), size = 13)
                     if (state.bestHistory.isNotEmpty()) {
                         Spacer(Modifier.height(2.dp))
                         PixelLabel(
@@ -216,7 +218,7 @@ fun LazyListScope.achievementItems(
 
         item {
             PixelLabel(
-                text = "Erfolge ${earned.size}/${Achievements.all.size}",
+                text = Lang.t("Erfolge %s/%s", earned.size, Achievements.all.size),
                 color = Positive,
                 size = 15,
                 modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
@@ -305,7 +307,7 @@ fun PrestigeShop(state: GameState, onBuy: (String) -> Unit) {
                     PixelButton(
                         // Same marker the header uses for singularities; the pixel fonts are
                         // thin on symbols, so the whole game spends this one.
-                        label = "• ${Numbers.format(upgrade.cost)}",
+                        label = Lang.t("• %s", Numbers.format(upgrade.cost)),
                         onClick = { onBuy(upgrade.id) },
                         enabled = affordable,
                         accent = Nebula,
@@ -333,6 +335,7 @@ fun SettingsSection(
     onReminders: (Boolean) -> Unit,
     onStatus: (Boolean) -> Unit,
     onNumberFormat: (NumberFormat) -> Unit,
+    onLanguage: (Language) -> Unit,
     onExport: () -> String,
     onImport: (String) -> Boolean,
     onErase: () -> Unit,
@@ -343,7 +346,7 @@ fun SettingsSection(
     var note by remember { mutableStateOf<String?>(null) }
 
     PixelPanel(modifier = Modifier.fillMaxWidth()) {
-        PixelLabel("Einstellungen", size = 15)
+        PixelLabel(Lang.t("Einstellungen"), size = 15)
         Spacer(Modifier.height(10.dp))
 
         // "Klickgeräusch" hieß der Schalter, als es genau ein Geräusch gab. Inzwischen hängen
@@ -379,8 +382,39 @@ fun SettingsSection(
             color = Muted,
         )
 
+        /*
+         * The language, above the numbers because it decides how they are written.
+         *
+         * Each option is written in its own language — "Deutsch", "English" — and never
+         * translated. Somebody looking for their language is looking for the word they know, and a
+         * list that says "German" to a German is a list they have to work out.
+         */
         Spacer(Modifier.height(14.dp))
-        PixelLabel("Zahlen", size = 13, color = Muted)
+        PixelLabel(Lang.t("Sprache"), size = 13, color = Muted)
+        Spacer(Modifier.height(4.dp))
+        val speaking = Language.byId(state.language)
+        Row(modifier = Modifier.fillMaxWidth()) {
+            for (option in Language.entries) {
+                val selected = option == speaking
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(if (selected) Nebula else SpaceCard)
+                        .clickable { onLanguage(option) }
+                        .padding(vertical = 9.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    PixelLabel(
+                        text = option.label,
+                        color = if (selected) Starlight else Muted,
+                        size = 11,
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+        PixelLabel(Lang.t("Zahlen"), size = 13, color = Muted)
         Spacer(Modifier.height(4.dp))
         // Each option is labelled with what it actually looks like. "Wissenschaftlich" tells
         // nobody anything; `1,23e9` next to it decides the question in one glance.
@@ -410,7 +444,7 @@ fun SettingsSection(
         // and a second control for the same setting would only be a way to disagree with itself.
 
         Spacer(Modifier.height(14.dp))
-        PixelLabel("Spielstand", size = 13, color = Muted)
+        PixelLabel(Lang.t("Spielstand"), size = 13, color = Muted)
         Spacer(Modifier.height(4.dp))
         Text(
             text = Lang.t("Der Spielstand liegt nur auf diesem Gerät. Kopier ihn dir irgendwohin, sonst ist er weg, wenn die App es ist."),
@@ -420,7 +454,7 @@ fun SettingsSection(
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             PixelButton(
-                label = "Kopieren",
+                label = Lang.t("Kopieren"),
                 onClick = {
                     clipboard.setText(AnnotatedString(onExport()))
                     note = Lang.t("In die Zwischenablage kopiert.")
@@ -440,7 +474,7 @@ fun SettingsSection(
         }
 
         Spacer(Modifier.height(14.dp))
-        PixelLabel("Von vorn anfangen", size = 13, color = Muted)
+        PixelLabel(Lang.t("Von vorn anfangen"), size = 13, color = Muted)
         Spacer(Modifier.height(4.dp))
         Text(
             text = Lang.t("Löscht alles: Masse, Kollektoren, Erfolge, Singularitäten, Äonen, Forschung. Es gibt kein Zurück — kopier dir vorher den Spielstand, falls du unsicher bist."),
@@ -540,13 +574,13 @@ private fun ImportDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
         },
         confirmButton = {
             PixelButton(
-                label = "Laden",
+                label = Lang.t("Laden"),
                 onClick = { onConfirm(text) },
                 enabled = text.isNotBlank(),
                 accent = Ember,
             )
         },
-        dismissButton = { PixelButton(label = "Abbrechen", onClick = onDismiss) },
+        dismissButton = { PixelButton(label = Lang.t("Abbrechen"), onClick = onDismiss) },
     )
 }
 
@@ -630,9 +664,9 @@ private fun SkinPicker(state: GameState, onPick: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            PixelLabel("Farben", color = Nebula, size = 15)
+            PixelLabel(Lang.t("Farben"), color = Nebula, size = 15)
             PixelLabel(
-                text = "${Skins.unlocked(earned).size}/${Skins.all.size}",
+                text = Lang.t("%s/%s", Skins.unlocked(earned).size, Skins.all.size),
                 color = Muted,
                 size = 13,
             )
@@ -699,7 +733,7 @@ private fun SkinPicker(state: GameState, onPick: (String) -> Unit) {
                     }
                     if (chosen) {
                         Spacer(Modifier.width(8.dp))
-                        PixelLabel("aktiv", color = Nebula, size = 12)
+                        PixelLabel(Lang.t("aktiv"), color = Nebula, size = 12)
                     }
                 }
             }

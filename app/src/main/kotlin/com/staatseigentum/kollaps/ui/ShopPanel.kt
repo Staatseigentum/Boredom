@@ -440,7 +440,7 @@ private fun CollectorRow(
                 }
                 if (role != null) {
                     Text(
-                        text = "${role.label}: ${role.effectText}",
+                        text = Lang.t("%s: %s", role.label, role.effectText),
                         style = MaterialTheme.typography.bodySmall,
                         color = Nebula,
                     )
@@ -457,8 +457,8 @@ private fun CollectorRow(
                     // A rule beats the cap beats the price. Naming the rule matters most: the
                     // other two are states the player can see coming, and this one is a door.
                     text = when {
-                        offer.lockedReason != null -> "gesperrt"
-                        full -> "voll"
+                        offer.lockedReason != null -> Lang.t("gesperrt")
+                        full -> Lang.t("voll")
                         else -> Numbers.formatMass(offer.cost)
                     },
                     color = when {
@@ -470,7 +470,7 @@ private fun CollectorRow(
                 )
                 if (!full && offer.amount > 1) {
                     Text(
-                        text = "×${offer.amount}",
+                        text = Lang.t("×%s", offer.amount),
                         style = MaterialTheme.typography.bodySmall,
                         color = Muted,
                     )
@@ -527,7 +527,7 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             FilterChip(
-                label = "Alle ${found.size}",
+                label = Lang.t("Alle %s", found.size),
                 selected = filter == null,
                 onClick = { filter = null },
             )
@@ -536,7 +536,7 @@ private fun UpgradeList(offers: List<UpgradeOffer>, onBuy: (String) -> Unit) {
             for (group in UpgradeGroup.entries) {
                 val count = counts[group] ?: continue
                 FilterChip(
-                    label = "${group.label} $count",
+                    label = Lang.t("%s %s", group.label, count),
                     selected = filter == group,
                     onClick = { filter = if (filter == group) null else group },
                 )
@@ -620,7 +620,7 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
         Box(modifier = Modifier.weight(1f)) {
             if (query.isEmpty()) {
                 Text(
-                    text = "Upgrade suchen …",
+                    text = Lang.t("Upgrade suchen …"),
                     style = MaterialTheme.typography.bodyLarge,
                     color = Muted,
                 )
@@ -866,6 +866,7 @@ internal fun CosmosPanel(
                             onReminders = actions::setReminders,
                             onStatus = actions::setStatus,
                             onNumberFormat = actions::setNumberFormat,
+                            onLanguage = actions::setLanguage,
                             onExport = actions::exportSave,
                             onImport = actions::importSave,
                             onErase = actions::eraseSave,
@@ -931,7 +932,7 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
         border = Ember,
     ) {
         PixelLabel(
-            text = "Kollaps",
+            text = Lang.t("Kollaps"),
             color = Ember,
             size = 16,
             modifier = Modifier.sog(SogDepth.CONTENT, Ember),
@@ -970,8 +971,11 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
             if (soon > stats.pendingSingularities) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "In zwanzig Minuten: ${Numbers.format(soon)} — " +
-                        "letzter Lauf: ${Numbers.format(state.lastRunSingularities)}",
+                    text = Lang.t(
+                        "In zwanzig Minuten: %s — letzter Lauf: %s",
+                        Numbers.format(soon),
+                        Numbers.format(state.lastRunSingularities),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                     modifier = Modifier.sog(SogDepth.CONTENT, Muted),
@@ -996,11 +1000,14 @@ private fun CollapseCard(state: GameState, stats: Stats, onCollapse: () -> Unit)
         if (forged.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "Im Zusammenbruch entsteht: " + HeavyElement.entries
-                    .mapNotNull { element ->
-                        forged[element.id]?.let { "${Numbers.format(it)} ${element.label}" }
-                    }
-                    .joinToString(", "),
+                text = Lang.t(
+                    "Im Zusammenbruch entsteht: %s",
+                    HeavyElement.entries
+                        .mapNotNull { element ->
+                            forged[element.id]?.let { "${Numbers.format(it)} ${element.label}" }
+                        }
+                        .joinToString(", "),
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = Ember,
             )

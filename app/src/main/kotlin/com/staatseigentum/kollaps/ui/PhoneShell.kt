@@ -325,7 +325,7 @@ fun StatusBand(state: GameState, stats: Stats, modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.width(8.dp))
             PixelLabel(
-                text = "+${Numbers.formatRate(stats.massPerSecond)}",
+                text = Lang.t("+%s", Numbers.formatRate(stats.massPerSecond)),
                 color = Positive,
                 size = 11,
                 maxLines = 1,
@@ -404,7 +404,7 @@ private fun massSize(mass: String): Int = when {
 fun climbLine(state: GameState, stats: Stats): String {
     val next = stats.nextTier
     return when {
-        next != null -> "${stats.tier.label} > ${next.label}"
+        next != null -> Lang.t("%s > %s", stats.tier.label, next.label)
         // Above the gate with the catalogue still shut. Not the end of anything — there are
         // sixteen thousand rungs over this one — and saying "das Ende der Leiter" to somebody
         // fifty orders of magnitude past it is the interface calling a locked door a wall.

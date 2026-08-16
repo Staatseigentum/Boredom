@@ -67,7 +67,7 @@ fun BigBangPanel(
             modifier = Modifier.fillMaxWidth().urknall(Nebula),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            PixelLabel("Urknall", color = Nebula, size = 16)
+            PixelLabel(Lang.t("Urknall"), color = Nebula, size = 16)
             if (state.aeons > 0.0) {
                 PixelLabel(Lang.t("%s Äonen", Numbers.format(state.aeons)), color = Ember, size = 13)
             }
@@ -119,7 +119,7 @@ fun BigBangPanel(
             Path.of(state)?.let { running ->
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Dieses Universum: ${running.label}",
+                    text = Lang.t("Dieses Universum: %s", running.label),
                     style = MaterialTheme.typography.bodySmall,
                     color = Ember,
                     modifier = Modifier.urknall(Ember),
@@ -212,7 +212,7 @@ private fun PathTreePanel(state: GameState, nodes: List<PathNode>, onBuy: (Strin
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             PixelLabel(path.label, color = Ember, size = 15)
-            PixelLabel("$owned/${nodes.size}", color = Muted, size = 13)
+            PixelLabel(Lang.t("%s/%s", owned, nodes.size), color = Muted, size = 13)
         }
         Spacer(Modifier.height(4.dp))
         Text(
@@ -259,8 +259,8 @@ private fun PathTreePanel(state: GameState, nodes: List<PathNode>, onBuy: (Strin
                     }
                     Spacer(Modifier.width(8.dp))
                     when {
-                        bought -> PixelLabel("gekauft", color = Positive, size = 12)
-                        locked -> PixelLabel("gesperrt", color = Muted, size = 12)
+                        bought -> PixelLabel(Lang.t("gekauft"), color = Positive, size = 12)
+                        locked -> PixelLabel(Lang.t("gesperrt"), color = Muted, size = 12)
                         else -> PixelButton(
                             label = Numbers.format(node.cost),
                             onClick = { onBuy(node.id) },
@@ -364,7 +364,7 @@ private fun PathChoice(path: Path, onChoose: () -> Unit) {
             Spacer(Modifier.height(4.dp))
             for (line in path.effectTexts) {
                 Text(
-                    text = "· $line",
+                    text = Lang.t("· %s", line),
                     style = MaterialTheme.typography.bodySmall,
                     color = Positive,
                 )

@@ -77,8 +77,8 @@ fun ChallengePanel(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            PixelLabel("Herausforderungen", color = Nebula, size = 15)
-            PixelLabel("$done/${Challenge.entries.size}", color = Muted, size = 13)
+            PixelLabel(Lang.t("Herausforderungen"), color = Nebula, size = 15)
+            PixelLabel(Lang.t("%s/%s", done, Challenge.entries.size), color = Muted, size = 13)
         }
         Spacer(Modifier.height(8.dp))
 
@@ -146,9 +146,9 @@ fun ChallengePanel(
         Spacer(Modifier.height(6.dp))
         PixelButton(
             label = when {
-                confirming -> "Lauf wirklich neu starten?"
-                duo -> "Beide annehmen"
-                else -> "Annehmen"
+                confirming -> Lang.t("Lauf wirklich neu starten?")
+                duo -> Lang.t("Beide annehmen")
+                else -> Lang.t("Annehmen")
             },
             onClick = { if (confirming) onStart(picked.toSet()) else confirming = true },
             modifier = Modifier.fillMaxWidth(),
@@ -292,7 +292,7 @@ private fun RunningChallenges(
                 )
                 Spacer(Modifier.height(8.dp))
                 PixelButton(
-                    label = "Neu ansetzen",
+                    label = Lang.t("Neu ansetzen"),
                     onClick = onAbort,
                     modifier = Modifier.fillMaxWidth(),
                     accent = Ember,

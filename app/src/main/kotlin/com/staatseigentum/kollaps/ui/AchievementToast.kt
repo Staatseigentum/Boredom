@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -142,7 +143,7 @@ fun AchievementToast(
             padding = 10,
         ) {
             Column {
-                PixelLabel("Erfolg", color = Positive, size = 12)
+                PixelLabel(Lang.t("Erfolg"), color = Positive, size = 12)
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = achievement.name,

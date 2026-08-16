@@ -124,7 +124,7 @@ private fun FleetSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            PixelLabel(text = "Flotte", color = Starlight, size = 12)
+            PixelLabel(text = Lang.t("Flotte"), color = Starlight, size = 12)
             // Flush against each other rather than spaced: four buttons with gaps read as four
             // choices, one segmented strip reads as one setting with four positions, which is
             // what it is.
@@ -464,7 +464,7 @@ private fun CollapseFooter(state: GameState, stats: Stats, onCollapse: () -> Uni
             if (stats.canCollapse && soon > stats.pendingSingularities) {
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = "in 20 min: ${Numbers.format(soon)}",
+                    text = Lang.t("in 20 min: %s", Numbers.format(soon)),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )

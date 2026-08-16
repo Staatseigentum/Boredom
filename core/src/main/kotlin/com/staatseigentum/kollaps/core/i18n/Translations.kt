@@ -1728,6 +1728,9 @@ internal object Translations {
         "Singularitäten" to "Singularities",
         "Äonen" to "Aeons",
         "Geräusche" to "Sound",
+        "Sprache" to "Language",
+        "Version %s" to "Version %s",
+        "unbekannt" to "unknown",
         "Singularitäten ausgeben" to "Spend singularities",
         "Äonen ausgeben" to "Spend Aeons",
         "Spielstand einfügen" to "Paste save",
@@ -1924,6 +1927,94 @@ internal object Translations {
             "Two heavy elements, cast together. Forged once and kept for good — through the Big Bang too.",
     )
 
+
+    /**
+     * The last of the screens: short labels, and the layouts that are only a number.
+     *
+     * A handful of these translate to themselves — "%s / %s" is a layout, not a sentence. They are
+     * listed anyway rather than filtered out of the collector, because "this needs no translation"
+     * is a judgement somebody made, and the map is where judgements are written down.
+     */
+    private val SCREENS_MORE: Map<String, String> = mapOf(
+        // ---- pure layout
+        "%s" to "%s",
+        "%s / %s" to "%s / %s",
+        "%s > %s" to "%s > %s",
+        "%s/%s" to "%s/%s",
+        "%s: %s" to "%s: %s",
+        "%s ×%s" to "%s ×%s",
+        "+%s" to "+%s",
+        "×%s" to "×%s",
+        "· %s" to "· %s",
+        "• %s" to "• %s",
+        "↓ %s" to "↓ %s",
+
+        // ---- short labels
+        "Material" to "Material",
+        "Bauen" to "Build",
+        "Weltentypen" to "World types",
+        "Fertig gebaut" to "Fully built",
+        "Bonus %s" to "Bonus %s",
+        "Schmiede" to "Forge",
+        "Schmieden" to "Forge it",
+        "Geschmiedet" to "Forged",
+        "Das System" to "The System",
+        "Investitionen" to "Investments",
+        "Katalogfund" to "Catalogue find",
+        "Erfolg" to "Achievement",
+        "Erfolge %s/%s" to "Achievements %s/%s",
+        "App-Update" to "App update",
+        "Installieren" to "Install",
+        "Erlauben" to "Allow",
+        "Abgeben" to "Hand in",
+        "Verstanden" to "Got it",
+        "Neu freigeschaltet" to "Newly unlocked",
+        "Von vorn anfangen" to "Start over",
+        "Weiter geht's" to "Carry on",
+        "Lauf wirklich neu starten?" to "Really restart the run?",
+        "Danach" to "Then",
+        "voll" to "full",
+        "fertig" to "done",
+        "ohne Ausrichtung" to "no leaning",
+        "Alle Bahnen offen" to "Every orbit open",
+        "Koppelt an keine Bahn" to "Couples to no orbit",
+        "erst nach dem ersten eigenen Kollaps" to "not until your first collapse",
+        "Produktion, letzte halbe Stunde" to "Production, last half hour",
+
+        // ---- lines with a value
+        "%s  ·  %s pro Tipp" to "%s  ·  %s per tap",
+        "%s pro Tipp" to "%s per tap",
+        "%s erledigt" to "%s done",
+        "%s · %s Kollapse · %s" to "%s · %s collapses · %s",
+        "%s angerechnet, zu %s." to "%s credited, at %s.",
+        "Du warst %s weg." to "You were away for %s.",
+        "Du bist in %s" to "You are in %s",
+        "Dieses Universum: %s" to "This universe: %s",
+        "Alle %s" to "All %s",
+        "Chronik · %s" to "Chronicle · %s",
+        "Leiter %s/%s" to "Ladder %s/%s",
+        "Platz %s" to "Slot %s",
+        "Labor: %s" to "Lab: %s",
+        "Zu finden: %s" to "Where to find it: %s",
+        "Koppelt an Bahn %s" to "Couples to orbit %s",
+        "Hineingehen · %s" to "Go inside · %s",
+        "liefert %s" to "delivers %s",
+        "in 20 min: %s" to "in 20 min: %s",
+        "Produktion jetzt %s" to "Production now %s",
+        "Überhitzt %s" to "Overheated %s",
+        "→ %s zeigen" to "→ show %s",
+        "Tippen zum Weitermachen · Katalog %s" to "Tap to carry on · catalogue %s",
+        "Im Zusammenbruch entsteht: %s" to "The collapse forges: %s",
+        "In zwanzig Minuten: %s — letzter Lauf: %s" to
+            "In twenty minutes: %s — last run: %s",
+        "Die Offline-Grenze war voll — %s blieben liegen. Ein größerer Speicher hätte sie mitgenommen." to
+            "The offline cap was full — %s were left behind. A bigger store would have taken them along.",
+        "Diese Galaxie wurde geparkt, bevor Universen aufbewahrt wurden. Sie wird aus ihrer Chronik aufgebaut: Sprosse, Kollapse und Singularitäten stimmen, die Masse bekommst du ungenutzt zurück — die Flotte musst du neu kaufen." to
+            "This galaxy was parked before universes were kept. It is rebuilt from its own record: rung, collapses and singularities are right, the mass comes back unspent — the fleet you have to buy again.",
+        "Noch %s Spielzeit, dann geht es zurück ins neueste Universum. Alles, was du hier tust, bleibt hier." to
+            "%s of play time left, then it goes back to the newest universe. Everything you do here stays here.",
+    )
+
     /** Everything, in one map. Areas are added here as each one is finished. */
     val EN: Map<String, String> = buildMap {
         putAll(UI)
@@ -1954,5 +2045,6 @@ internal object Translations {
         putAll(COLLECTORS_LATE)
         putAll(NUMERALS)
         putAll(SCREENS)
+        putAll(SCREENS_MORE)
     }
 }

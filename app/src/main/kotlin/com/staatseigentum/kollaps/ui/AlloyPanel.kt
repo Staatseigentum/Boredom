@@ -40,7 +40,7 @@ fun AlloyPanel(state: GameState, actions: GameActions, modifier: Modifier = Modi
 
     PixelPanel(modifier = modifier.fillMaxWidth(), border = Ember, padding = 14) {
         Column {
-            PixelLabel("Schmiede", color = Ember, size = 14)
+            PixelLabel(Lang.t("Schmiede"), color = Ember, size = 14)
             Spacer(Modifier.height(4.dp))
             Text(
                 text = Lang.t(
@@ -101,7 +101,7 @@ private fun AlloyRow(
 
         Spacer(Modifier.height(8.dp))
         if (forged) {
-            PixelLabel("Geschmiedet", color = Positive, size = 11)
+            PixelLabel(Lang.t("Geschmiedet"), color = Positive, size = 11)
         } else {
             // What is in hand against what it takes, on one line, because the piles only grow at
             // a collapse and the gap is the thing worth watching between two of them.
@@ -115,7 +115,7 @@ private fun AlloyRow(
             )
             Spacer(Modifier.height(6.dp))
             PixelButton(
-                label = "Schmieden",
+                label = Lang.t("Schmieden"),
                 onClick = onForge,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = canForge,

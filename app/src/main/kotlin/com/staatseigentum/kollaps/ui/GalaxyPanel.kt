@@ -66,7 +66,7 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
 
     PixelPanel(modifier = modifier.fillMaxWidth(), border = Nebula, padding = 14) {
         Column {
-            PixelLabel("Der Himmel", color = Nebula, size = 14)
+            PixelLabel(Lang.t("Der Himmel"), color = Nebula, size = 14)
             Spacer(Modifier.height(4.dp))
             Text(
                 text = Lang.t("%s von %s Galaxien. Jede davon ist ein Universum, das du zu Ende gespielt hast und das weiterläuft.", parked.size, Multiverse.SLOTS),
@@ -80,11 +80,10 @@ fun GalaxyPanel(state: GameState, actions: GameActions, modifier: Modifier = Mod
                 Spacer(Modifier.height(10.dp))
                 PixelPanel(border = Ember, padding = 10) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        PixelLabel("Du bist in ${here.name}", color = Ember, size = 13)
+                        PixelLabel(Lang.t("Du bist in %s", here.name), color = Ember, size = 13)
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "Noch ${Numbers.formatDuration(state.visitSecondsLeft.toLong())} " +
-                                Lang.t("Spielzeit, dann geht es zurück ins neueste Universum. Alles, was du hier tust, bleibt hier."),
+                            text = Lang.t("Noch %s Spielzeit, dann geht es zurück ins neueste Universum. Alles, was du hier tust, bleibt hier.", Numbers.formatDuration(state.visitSecondsLeft.toLong())),
                             style = MaterialTheme.typography.bodySmall,
                             color = Muted,
                         )
@@ -214,7 +213,7 @@ private fun GalaxyRing(parked: List<ParkedUniverse>, modifier: Modifier = Modifi
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "${parked.size}/${Multiverse.SLOTS}",
+            text = Lang.t("%s/%s", parked.size, Multiverse.SLOTS),
             style = MaterialTheme.typography.titleMedium,
             color = if (parked.size >= Multiverse.SLOTS) Positive else Starlight,
             textAlign = TextAlign.Center,
@@ -260,11 +259,15 @@ private fun GalaxyRow(
                 maxLines = 1,
             )
             Text(
-                text = "${body.label} · ${universe.collapses} Kollapse · " +
+                text = Lang.t(
+                    "%s · %s Kollapse · %s",
+                    body.label,
+                    universe.collapses,
                     when {
                         universe.paths.size > 1 -> universe.paths.joinToString(" + ") { it.label }
-                        else -> path?.label ?: "ohne Ausrichtung"
+                        else -> path?.label ?: Lang.t("ohne Ausrichtung")
                     },
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = Muted,
                 maxLines = 1,
@@ -427,15 +430,14 @@ private fun GalaxyVisit(
             else -> {
                 if (!universe.isRestored) {
                     Text(
-                        text = "Diese Galaxie wurde geparkt, bevor Universen aufbewahrt wurden. " +
-                            Lang.t("Sie wird aus ihrer Chronik aufgebaut: Sprosse, Kollapse und Singularitäten stimmen, die Masse bekommst du ungenutzt zurück — die Flotte musst du neu kaufen."),
+                        text = Lang.t("Diese Galaxie wurde geparkt, bevor Universen aufbewahrt wurden. Sie wird aus ihrer Chronik aufgebaut: Sprosse, Kollapse und Singularitäten stimmen, die Masse bekommst du ungenutzt zurück — die Flotte musst du neu kaufen."),
                         style = MaterialTheme.typography.bodySmall,
                         color = Muted,
                     )
                     Spacer(Modifier.height(8.dp))
                 }
                 PixelButton(
-                    label = "Hineingehen · ${Numbers.formatDuration(Multiverse.VISIT_SECONDS.toLong())}",
+                    label = Lang.t("Hineingehen · %s", Numbers.formatDuration(Multiverse.VISIT_SECONDS.toLong())),
                     onClick = { actions.visitGalaxy(universe.slot) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = Multiverse.canVisit(state, universe.slot),

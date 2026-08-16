@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.ui
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,7 +51,7 @@ fun IntroDialog(intro: FeatureIntro, onDismiss: () -> Unit) {
             padding = 16,
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                PixelLabel("Neu freigeschaltet", color = Muted, size = 10)
+                PixelLabel(Lang.t("Neu freigeschaltet"), color = Muted, size = 10)
                 Spacer(Modifier.height(6.dp))
                 PixelLabel(intro.title, color = Nebula, size = 18)
 
@@ -70,7 +71,7 @@ fun IntroDialog(intro: FeatureIntro, onDismiss: () -> Unit) {
                         .background(SpaceElevated)
                         .padding(horizontal = 10.dp, vertical = 8.dp),
                 ) {
-                    PixelLabel("Zu finden: ${intro.where}", color = Ember, size = 11)
+                    PixelLabel(Lang.t("Zu finden: %s", intro.where), color = Ember, size = 11)
                 }
 
                 Spacer(Modifier.height(12.dp))
@@ -82,7 +83,7 @@ fun IntroDialog(intro: FeatureIntro, onDismiss: () -> Unit) {
 
                 Spacer(Modifier.height(16.dp))
                 PixelButton(
-                    label = "Verstanden",
+                    label = Lang.t("Verstanden"),
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth(),
                     accent = Nebula,

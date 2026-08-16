@@ -75,7 +75,7 @@ fun OrbitPanel(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    PixelLabel("Das System", color = Nebula, size = 15)
+                    PixelLabel(Lang.t("Das System"), color = Nebula, size = 15)
                     PixelLabel(
                         Numbers.formatMultiplier(Orbits.multiplier(state)),
                         color = Ember,
@@ -113,7 +113,7 @@ fun OrbitPanel(
                     )
                 } else {
                     Spacer(Modifier.height(8.dp))
-                    PixelLabel("Alle Bahnen offen", color = Positive, size = 11)
+                    PixelLabel(Lang.t("Alle Bahnen offen"), color = Positive, size = 11)
                 }
             }
         }
@@ -189,7 +189,7 @@ private fun OrbitRow(
                 contentAlignment = Alignment.Center,
             ) {
                 PixelLabel(
-                    text = "${orbit.index + 1}",
+                    text = Lang.t("%s", orbit.index + 1),
                     color = if (occupied) Ember else Muted,
                 )
             }
@@ -234,9 +234,12 @@ private fun OrbitRow(
                         text to Ember
                     }
 
-                    couplings.isEmpty() -> "Koppelt an keine Bahn" to Muted
+                    couplings.isEmpty() -> Lang.t("Koppelt an keine Bahn") to Muted
 
-                    else -> "Koppelt an Bahn ${couplings.joinToString { "${it.index + 1}" }}" to Muted
+                    else -> {
+                        val list = couplings.joinToString { "${it.index + 1}" }
+                        Lang.t("Koppelt an Bahn %s", list) to Muted
+                    }
                 }
 
                 resonance?.let { (text, color) ->
@@ -261,7 +264,7 @@ private fun OrbitRow(
                 // One tap, no mode: a body falls onto the nearest one below it. Choosing a target
                 // would mean arming the row and then picking, for a decision with one sane answer.
                 PixelButton(
-                    label = "↓ ${target.index + 1}",
+                    label = Lang.t("↓ %s", target.index + 1),
                     onClick = {
                         sfx?.purchase()
                         actions.mergeSatellites(orbit.index, target.index)

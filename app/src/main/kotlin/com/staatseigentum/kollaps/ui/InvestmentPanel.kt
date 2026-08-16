@@ -75,7 +75,7 @@ fun InvestmentPanel(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            PixelLabel("Investitionen", color = Nebula, size = 15)
+            PixelLabel(Lang.t("Investitionen"), color = Nebula, size = 15)
             PixelLabel(Numbers.format(state.singularities), color = Ember, size = 13)
         }
         Spacer(Modifier.height(6.dp))
@@ -188,7 +188,7 @@ private fun InvestmentRow(
 
             Column(horizontalAlignment = Alignment.End) {
                 if (maxed) {
-                    PixelLabel(text = "voll", color = Positive, size = 10)
+                    PixelLabel(text = Lang.t("voll"), color = Positive, size = 10)
                 } else {
                     Text(
                         text = Numbers.format(cost.coerceAtLeast(investment.costAt(level))),
@@ -197,7 +197,7 @@ private fun InvestmentRow(
                     )
                     if (wanted > 1) {
                         Text(
-                            text = "+$wanted",
+                            text = Lang.t("+%s", wanted),
                             style = MaterialTheme.typography.labelSmall,
                             color = Muted,
                         )

@@ -51,19 +51,18 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
         text = {
             Column {
                 Text(
-                    text = "Du warst ${Numbers.formatDuration(report.awaySeconds)} weg.",
+                    text = Lang.t("Du warst %s weg.", Numbers.formatDuration(report.awaySeconds)),
                     color = Muted,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "+${Numbers.formatMass(report.gained)}",
+                    text = Lang.t("+%s", Numbers.formatMass(report.gained)),
                     style = MaterialTheme.typography.displayMedium,
                     color = Ember,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "${Numbers.formatDuration(report.seconds)} angerechnet, " +
-                        Lang.t("zu %s.", Numbers.formatPercent(report.efficiency)),
+                    text = Lang.t("%s angerechnet, zu %s.", Numbers.formatDuration(report.seconds), Numbers.formatPercent(report.efficiency)),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
@@ -73,8 +72,7 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
                 if (report.cappedOut) {
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = "Die Offline-Grenze war voll — ${Numbers.formatMass(report.lostToCap)} " +
-                            Lang.t("blieben liegen. Ein größerer Speicher hätte sie mitgenommen."),
+                        text = Lang.t("Die Offline-Grenze war voll — %s blieben liegen. Ein größerer Speicher hätte sie mitgenommen.", Numbers.formatMass(report.lostToCap)),
                         style = MaterialTheme.typography.bodySmall,
                         color = Ember,
                     )
@@ -90,7 +88,7 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
                             horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Text(
-                                text = "${share.collector.name} ×${share.owned}",
+                                text = Lang.t("%s ×%s", share.collector.name, share.owned),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Starlight,
                             )
@@ -112,7 +110,7 @@ fun OfflineDialog(report: OfflineReport, onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            PixelButton(label = "Weiter geht's", onClick = onDismiss, accent = Ember)
+            PixelButton(label = Lang.t("Weiter geht's"), onClick = onDismiss, accent = Ember)
         },
     )
 }
@@ -204,7 +202,7 @@ fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
             }
             Spacer(Modifier.height(12.dp))
             Text(
-                text = "Produktion jetzt ${Numbers.formatMultiplier(tier.productionMultiplier)}",
+                text = Lang.t("Produktion jetzt %s", Numbers.formatMultiplier(tier.productionMultiplier)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Ember,
             )
@@ -214,7 +212,7 @@ fun TierCelebration(tier: CelestialTier, onDismiss: () -> Unit) {
                     // Above the black hole there is no "how many left" worth printing — the
                     // catalogue ladder is sixteen thousand rungs, and saying so is not encouraging,
                     // it is discouraging. The designation itself is the progress.
-                    tier.isDesignated -> "Tippen zum Weitermachen · Katalog ${tier.label}"
+                    tier.isDesignated -> Lang.t("Tippen zum Weitermachen · Katalog %s", tier.label)
                     tier.isFinal ->
                         Lang.t("Du hast die Leiter zu Ende geklettert. Im Reiter Kosmos kannst du kollabieren und mit Singularitäten neu anfangen.")
                     else -> Lang.t("Tippen zum Weitermachen · noch %s Stufen", Tiers.all.size - tier.index - 1)

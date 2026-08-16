@@ -50,7 +50,7 @@ fun FindDialog(state: GameState, onAnswer: (String) -> Unit, modifier: Modifier 
             padding = 16,
         ) {
             Column {
-                PixelLabel("Katalogfund", color = Nebula, size = 12)
+                PixelLabel(Lang.t("Katalogfund"), color = Nebula, size = 12)
                 Spacer(Modifier.height(8.dp))
                 Text(find.title, style = MaterialTheme.typography.titleMedium, color = Starlight)
                 Spacer(Modifier.height(6.dp))

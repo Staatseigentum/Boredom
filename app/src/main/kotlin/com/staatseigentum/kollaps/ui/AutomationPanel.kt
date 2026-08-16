@@ -47,7 +47,7 @@ fun AutomationPanel(
     if (!Automation.isUnlocked(state)) return
 
     PixelPanel(modifier = modifier.fillMaxWidth(), border = Positive) {
-        PixelLabel(text = "Automatik", color = Positive, size = 16)
+        PixelLabel(text = Lang.t("Automatik"), color = Positive, size = 16)
         Spacer(Modifier.height(8.dp))
         Text(
             text = Lang.t("Jede Regel läuft für sich. Tippen schaltet weiter — nach der letzten Einstellung wieder aus."),
@@ -145,5 +145,5 @@ private fun lockedReason(rule: AutomationRule): String = when (rule) {
     AutomationRule.FUSION -> Lang.t("erst, wenn der Kern brennt")
     AutomationRule.ORBITS -> Lang.t("erst mit dem eigenen System")
     AutomationRule.RESEARCH -> Lang.t("erst mit dem Labor")
-    AutomationRule.COLLAPSE -> "erst nach dem ersten eigenen Kollaps"
+    AutomationRule.COLLAPSE -> Lang.t("erst nach dem ersten eigenen Kollaps")
 }

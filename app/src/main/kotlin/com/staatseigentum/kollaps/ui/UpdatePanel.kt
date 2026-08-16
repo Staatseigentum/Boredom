@@ -44,9 +44,9 @@ fun UpdateCard(model: UpdateViewModel, modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PixelLabel(text = "App-Update", color = Ember, size = 16)
+                PixelLabel(text = Lang.t("App-Update"), color = Ember, size = 16)
                 Text(
-                    text = "Version ${model.installedVersion?.raw ?: "unbekannt"}",
+                    text = Lang.t("Version %s", model.installedVersion?.raw ?: Lang.t("unbekannt")),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )
@@ -199,13 +199,13 @@ fun UpdateDialog(model: UpdateViewModel) {
         },
         confirmButton = {
             when (state) {
-                is UpdateState.Available -> PixelButton(label = "Herunterladen", onClick = model::download, accent = Ember)
+                is UpdateState.Available -> PixelButton(label = Lang.t("Herunterladen"), onClick = model::download, accent = Ember)
 
                 is UpdateState.Downloading -> PixelButton(label = Lang.t("Lädt …"), onClick = {}, enabled = false)
 
-                is UpdateState.Ready -> PixelButton(label = "Installieren", onClick = model::install, accent = Ember)
+                is UpdateState.Ready -> PixelButton(label = Lang.t("Installieren"), onClick = model::install, accent = Ember)
 
-                is UpdateState.NeedsPermission -> PixelButton(label = "Erlauben", onClick = model::install, accent = Ember)
+                is UpdateState.NeedsPermission -> PixelButton(label = Lang.t("Erlauben"), onClick = model::install, accent = Ember)
 
                 else -> Unit
             }

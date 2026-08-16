@@ -65,7 +65,7 @@ fun HudBand(state: GameState, stats: Stats, modifier: Modifier = Modifier) {
                     .sog(SogDepth.CONTENT, Starlight)
                     .urknall(Starlight),
             ) {
-                PixelLabel(text = "Masse", color = Muted, size = 10)
+                PixelLabel(text = Lang.t("Masse"), color = Muted, size = 10)
                 Spacer(Modifier.height(6.dp))
                 // The largest thing on the screen that is not the body, which is right: it is the
                 // number the whole game is about.
@@ -80,12 +80,12 @@ fun HudBand(state: GameState, stats: Stats, modifier: Modifier = Modifier) {
                     .sog(SogDepth.CONTENT, Positive)
                     .urknall(Positive),
             ) {
-                PixelLabel(text = "Produktion", color = Muted, size = 10)
+                PixelLabel(text = Lang.t("Produktion"), color = Muted, size = 10)
                 Spacer(Modifier.height(6.dp))
                 PixelLabel(text = Numbers.formatRate(stats.massPerSecond), color = Positive, size = 18)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "${Numbers.format(stats.massPerTap)} pro Tipp",
+                    text = Lang.t("%s pro Tipp", Numbers.format(stats.massPerTap)),
                     style = MaterialTheme.typography.bodySmall,
                     color = Muted,
                 )

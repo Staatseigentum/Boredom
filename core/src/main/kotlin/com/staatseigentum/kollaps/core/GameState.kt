@@ -321,6 +321,16 @@ data class GameState(
     val numberFormat: String? = null,
 
     /**
+     * Which language the game speaks, by [com.staatseigentum.kollaps.core.i18n.Language.id].
+     *
+     * Null means "nobody has chosen", which is different from "German": on the first launch the
+     * platform decides from the device's own language, and only a visit to the settings writes
+     * anything here. A save that carried "de" by default could never follow a player who moved
+     * their phone to English.
+     */
+    val language: String? = null,
+
+    /**
      * Whether the first-five-minutes nudge has been sent away for good.
      *
      * Only ever set by the player pressing the button on it. Finishing the last step hides it

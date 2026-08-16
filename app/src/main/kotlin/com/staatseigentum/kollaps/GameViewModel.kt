@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import com.staatseigentum.kollaps.core.NumberFormat
+import com.staatseigentum.kollaps.core.i18n.Language
 
 /**
  * Owns the game state and drives the simulation while the app is in the foreground.
@@ -89,6 +90,12 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             store.load()?.let { _state.value = it }
+            // The save's language if it has one, the phone's if it does not — settled before the
+            // first frame, so nothing is drawn in a language the player is about to be moved off.
+            GameEngine.applyLanguage(
+                _state.value,
+                Language.ofLocale(java.util.Locale.getDefault().language),
+            )
             restored = true
             creditOfflineTime()
             _ready.value = true
@@ -366,6 +373,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setAutoBuy(on: Boolean) {
         _state.value = GameEngine.setAutoBuy(_state.value, on)
+        persist()
+    }
+
+    fun setLanguage(language: Language) {
+        _state.value = GameEngine.setLanguage(_state.value, language)
         persist()
     }
 

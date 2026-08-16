@@ -14,6 +14,7 @@ import com.staatseigentum.kollaps.core.Comet
 import com.staatseigentum.kollaps.core.Impact
 import com.staatseigentum.kollaps.update.UpdateViewModel
 import com.staatseigentum.kollaps.core.NumberFormat
+import com.staatseigentum.kollaps.core.i18n.Language
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
@@ -103,6 +104,7 @@ fun GameScreen(model: GameViewModel, updateModel: UpdateViewModel) {
             override fun dismissIntro() = model.dismissIntro()
             override fun setPaused(on: Boolean) = model.setPaused(on)
             override fun setNumberFormat(format: NumberFormat) = model.setNumberFormat(format)
+            override fun setLanguage(language: Language) = model.setLanguage(language)
             override fun importSave(block: String): Boolean = model.importSave(block)
             override fun exportSave(): String = model.exportSave()
         }
