@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The German originals.
+
+    Android picks these by the *device's* locale, not by the switch in the settings, and that is
+    right for what is in here: these are the names Android itself shows in the system notification
+    settings, next to every other app's. A player who set their phone to English wants that list
+    in English even if they play the game in German.
+-->
+<resources>
+    <string name="channel_yield">Ertrag</string>
+    <string name="channel_yield_description">Meldet sich, wenn die Kollektoren voll gelaufen sind.</string>
+    <string name="notification_title">Deine Kollektoren haben gearbeitet</string>
+    <string name="channel_status">Laufender Stand</string>
+    <string name="channel_status_description">Eine stille Zeile mit Produktion und Forschung, solange das Spiel zu ist.</string>
+</resources>

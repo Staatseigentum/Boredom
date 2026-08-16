@@ -22,6 +22,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.staatseigentum.kollaps.core.GameEngine
 import com.staatseigentum.kollaps.core.GameState
+import com.staatseigentum.kollaps.core.i18n.Lang
 import com.staatseigentum.kollaps.core.i18n.Language
 import com.staatseigentum.kollaps.core.Tiers
 import com.staatseigentum.kollaps.core.Wallclock
@@ -197,7 +198,7 @@ private fun DesktopSlots(game: DesktopGame) {
 
 /** One line saying what is in a slot, or that there is nothing in it. */
 private fun describeSlot(state: GameState?): String {
-    if (state == null) return "Leer — hier fängt ein neues Spiel an."
+    if (state == null) return Lang.t("Leer — hier fängt ein neues Spiel an.")
     val parts = buildList {
         add(Tiers.forMass(state.runMass).name)
         if (state.collapses > 0) add("${state.collapses} Kollapse")

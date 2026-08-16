@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.update
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
@@ -139,7 +140,7 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
                 }
                 .onFailure { failure ->
                     _state.value = UpdateState.Failed(
-                        failure.message ?: "Update-Prüfung fehlgeschlagen",
+                        failure.message ?: Lang.t("Update-Prüfung fehlgeschlagen"),
                     )
                 }
         }
@@ -175,7 +176,7 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
                     return
                 }
                 if (!service.install(current.file)) {
-                    _state.value = UpdateState.Failed("Der Installer ließ sich nicht öffnen")
+                    _state.value = UpdateState.Failed(Lang.t("Der Installer ließ sich nicht öffnen"))
                 }
             }
 

@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    The default, which is English rather than German on purpose.
+
+    A resource file without a locale suffix is what every device that is not German falls back to,
+    so this is the file a Norwegian or Brazilian phone reads. English serves them; German would
+    serve only the one country that already has values-de.
+
+    The app's name is here and nowhere else: it is the same word in both languages.
+-->
 <resources>
     <string name="app_name">Kollaps</string>
 
-    <string name="channel_yield">Ertrag</string>
-    <string name="channel_yield_description">Meldet sich, wenn die Kollektoren voll gelaufen sind.</string>
-    <string name="notification_title">Deine Kollektoren haben gearbeitet</string>
-    <string name="channel_status">Laufender Stand</string>
-    <string name="channel_status_description">Eine stille Zeile mit Produktion und Forschung, solange das Spiel zu ist.</string>
+    <string name="channel_yield">Yield</string>
+    <string name="channel_yield_description">Speaks up when the collectors have filled up.</string>
+    <string name="notification_title">Your collectors have been working</string>
+    <string name="channel_status">Running status</string>
+    <string name="channel_status_description">A quiet line with production and research while the game is shut.</string>
 </resources>

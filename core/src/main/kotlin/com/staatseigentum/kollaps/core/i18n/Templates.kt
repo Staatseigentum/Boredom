@@ -104,5 +104,16 @@ internal object Templates {
         "Namen",
         "Wissenschaftlich",
         "Kurzform",
+
+        // ---- the updater and the save slots, which are interface but not a panel
+        "Der Installer ließ sich nicht öffnen",
+        "Die heruntergeladene Datei ist leer",
+        "Eigene Version nicht lesbar",
+        "Einstellungsseite nicht erreichbar",
+        "GitHub hat die Anfrage abgelehnt. Später nochmal versuchen.",
+        "Installation konnte nicht gestartet werden",
+        "Keine Veröffentlichungen gefunden. Ist das Repository öffentlich?",
+        "Leer — hier fängt ein neues Spiel an.",
+        "Update-Prüfung fehlgeschlagen",
     )
 }

@@ -1935,6 +1935,27 @@ internal object Translations {
      * listed anyway rather than filtered out of the collector, because "this needs no translation"
      * is a judgement somebody made, and the map is where judgements are written down.
      */
+    /**
+     * The updater and the save slots, which live outside the screens.
+     *
+     * They are the one part of the interface that is not in a panel: the update card's error
+     * lines come from the service that fetches, and the slot summary from the file layer. Both
+     * end up in front of a player all the same.
+     */
+    private val PLUMBING: Map<String, String> = mapOf(
+        "Der Installer ließ sich nicht öffnen" to "The installer would not open",
+        "Die heruntergeladene Datei ist leer" to "The downloaded file is empty",
+        "Eigene Version nicht lesbar" to "Cannot read this build's own version",
+        "Einstellungsseite nicht erreichbar" to "The settings page is not reachable",
+        "GitHub hat die Anfrage abgelehnt. Später nochmal versuchen." to
+            "GitHub turned the request down. Try again later.",
+        "Installation konnte nicht gestartet werden" to "The installation could not be started",
+        "Keine Veröffentlichungen gefunden. Ist das Repository öffentlich?" to
+            "No releases found. Is the repository public?",
+        "Leer — hier fängt ein neues Spiel an." to "Empty — a new game starts here.",
+        "Update-Prüfung fehlgeschlagen" to "The update check failed",
+    )
+
     private val SCREENS_MORE: Map<String, String> = mapOf(
         // ---- pure layout
         "%s" to "%s",
@@ -2046,5 +2067,6 @@ internal object Translations {
         putAll(NUMERALS)
         putAll(SCREENS)
         putAll(SCREENS_MORE)
+        putAll(PLUMBING)
     }
 }

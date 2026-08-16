@@ -1,5 +1,6 @@
 package com.staatseigentum.kollaps.update
 
+import com.staatseigentum.kollaps.core.i18n.Lang
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -37,7 +38,7 @@ class UpdateService(private val context: Context) {
         val info = context.packageManager.getPackageInfo(context.packageName, 0)
         AppVersion.parse(info.versionName)
     } catch (e: Exception) {
-        Log.w(TAG, "Eigene Version nicht lesbar", e)
+        Log.w(TAG, Lang.t("Eigene Version nicht lesbar"), e)
         null
     }
 
@@ -95,7 +96,7 @@ class UpdateService(private val context: Context) {
                 connection.disconnect()
             }
 
-            if (target.length() <= 0L) throw IOException("Die heruntergeladene Datei ist leer")
+            if (target.length() <= 0L) throw IOException(Lang.t("Die heruntergeladene Datei ist leer"))
             onProgress(1f)
             target
         }.onFailure { if (it is CancellationException) throw it }
@@ -119,7 +120,7 @@ class UpdateService(private val context: Context) {
                     Uri.parse("package:${context.packageName}"),
                 ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             )
-        }.onFailure { Log.w(TAG, "Einstellungsseite nicht erreichbar", it) }
+        }.onFailure { Log.w(TAG, Lang.t("Einstellungsseite nicht erreichbar"), it) }
     }
 
     /** Hands the downloaded APK to the system installer. The user still confirms the install. */
@@ -133,7 +134,7 @@ class UpdateService(private val context: Context) {
         )
         true
     }.getOrElse {
-        Log.w(TAG, "Installation konnte nicht gestartet werden", it)
+        Log.w(TAG, Lang.t("Installation konnte nicht gestartet werden"), it)
         false
     }
 
@@ -150,10 +151,10 @@ class UpdateService(private val context: Context) {
             when (val code = connection.responseCode) {
                 in 200..299 -> Unit
                 HttpURLConnection.HTTP_NOT_FOUND -> throw IOException(
-                    "Keine Veröffentlichungen gefunden. Ist das Repository öffentlich?",
+                    Lang.t("Keine Veröffentlichungen gefunden. Ist das Repository öffentlich?"),
                 )
 
-                403 -> throw IOException("GitHub hat die Anfrage abgelehnt. Später nochmal versuchen.")
+                403 -> throw IOException(Lang.t("GitHub hat die Anfrage abgelehnt. Später nochmal versuchen."))
                 else -> throw IOException("Server antwortete mit HTTP $code")
             }
             return connection.inputStream.bufferedReader().use { it.readText() }
