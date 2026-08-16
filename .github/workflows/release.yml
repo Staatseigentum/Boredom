@@ -258,11 +258,23 @@ jobs:
       - name: Veröffentlichen
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.version.outputs.tag }}
         run: |
-          gh release create "${{ needs.version.outputs.tag }}" \
-            dist/* \
-            --title "Kollaps ${{ needs.version.outputs.tag }}" \
-            --generate-notes
+          set -euo pipefail
+
+          # Zweimal dieselbe Version zu bauen ist kein Unfall, sondern der Normalfall, wenn hinten
+          # etwas schiefging: 5.1.3 lag als Release längst richtig da und nur der itch-Job war rot.
+          # Ein `gh release create`, das darauf mit "already exists" abbricht, macht aus einem
+          # reparierten Lauf wieder einen roten und lässt die Dateien, wie sie waren.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG steht schon — Dateien werden ersetzt."
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" \
+              dist/* \
+              --title "Kollaps $TAG" \
+              --generate-notes
+          fi
 
   # Dieselben Dateien noch einmal, nur nach itch.io.
   #
@@ -308,10 +320,23 @@ jobs:
           chmod +x butler
           ./butler -V
 
+          # Die tragbare Fassung geht als Ordner hoch, nicht als .zip.
+          #
+          # butler packt ein Archiv zwar selbst aus, aber nur beim ersten Mal folgenlos: beim
+          # zweiten Push vergleicht es gegen den ausgepackten Vorgänger und läuft dabei durch den
+          # Zip-*Dateinamen* hindurch, als wäre er ein Ordner — "lstat …zip/runtime/legal: not a
+          # directory" — und bricht ab. Genau daran ist 5.1.3 gescheitert, während 5.1.2 durchlief,
+          # weil es noch keinen Vorgänger gab. Packen wir selbst aus, bekommt butler den echten
+          # Baum, den es vergleichen will.
+          portable=$(ls -1d dist/*-windows-portabel.zip 2>/dev/null | head -n 1 || true)
+          if [ -n "$portable" ]; then
+            mkdir -p windows-portabel
+            unzip -q "$portable" -d windows-portabel
+          fi
+
           # Ein Kanal je Fassung, und jeder trägt dieselbe Versionsnummer wie das Release.
           # `--if-changed` heißt: was gleich geblieben ist, wird nicht noch einmal als neuer
-          # Build gezählt. Die tragbare Fassung geht als .zip hoch — butler packt sie selbst aus,
-          # damit die itch-App sie starten kann statt sie nur herunterzuladen.
+          # Build gezählt.
           #
           # Über ein Muster statt über den ausgeschriebenen Namen: die vier Dateien werden an vier
           # verschiedenen Stellen benannt — zwei davon in einem PowerShell-Schritt und eine in
@@ -320,7 +345,8 @@ jobs:
           push() {
             channel="$1"
             pattern="$2"
-            file=$(ls -1 $pattern 2>/dev/null | head -n 1 || true)
+            # `-d`, damit ein Ordner als er selbst herauskommt und nicht als seine erste Datei.
+            file=$(ls -1d $pattern 2>/dev/null | head -n 1 || true)
             if [ -z "$file" ]; then
               echo "::warning::Nichts für $pattern gefunden — Kanal $channel bleibt, wie er ist."
               return 0
@@ -330,7 +356,7 @@ jobs:
           }
 
           push android 'dist/*.apk'
-          push windows 'dist/*-windows-portabel.zip'
+          push windows 'windows-portabel'
           push windows-installer 'dist/*-setup.msi'
           push ios 'dist/*.ipa'
 
