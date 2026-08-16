@@ -69,41 +69,44 @@ object Designations {
     const val PER_BODY = LETTERS * LETTERS
 
     /**
-     * What the catalogue costs to set foot on at all, as a multiple of the black hole.
+     * What the first designation costs, in seconds of play.
      *
-     * The ladder used to start a single 3.65 % step above the black hole, and that was the whole
-     * problem with it: anybody who has earned the eight galaxies it takes to unlock is producing
-     * many orders of magnitude past 2.7e24 kg, so the first hundreds of rungs went by in the time
-     * it took to read them. A million times over is the price of the first designation, and it
-     * turns entering the catalogue into something that happens rather than something that has
-     * already happened.
+     * The catalogue used to be priced in kilograms and that could not work. A fixed ladder of
+     * masses is crossed at whatever speed production happens to be, and by the time eight
+     * galaxies are standing that speed is not a number anybody has intuitions about: a bot built
+     * to that point walked the whole AA–ZZ round — two thousand seven hundred rungs — in *three
+     * seconds*, its mass doubling every twenty-one milliseconds. Raising the thresholds cannot
+     * fix it. They are a geometric series bounded by what a `Double` holds; production is bounded
+     * by nothing, because singularities, investments, fusion and the multiverse all multiply and
+     * every kilogram in hand buys more fleet.
+     *
+     * So a rung is not a quantity, it is a *wait* — [GameState.runSeconds] of it. Production
+     * cancels out entirely: a player making a hundred times more climbs at exactly the same rate,
+     * which is the only way an endless ladder can be paced at all.
+     *
+     * Read off the run clock rather than off production, and that is not a detail. Production is
+     * a function of the rung (a designation pays more), so pricing a rung in production would ask
+     * the tier to know itself — it did, briefly, and the recursion went all the way down.
      */
-    const val ENTRY_STEP = 1e6
+    const val ENTRY_SECONDS = 60.0
 
     /**
-     * How much more mass each rung above the black hole costs than the one below it.
+     * How much longer each rung takes than the one below it.
      *
-     * Close to as steep as this ladder can be made, and that is an arithmetic fact rather than a
-     * balance decision. There are [COUNT] rungs, the threshold is a geometric series over all of
-     * them, and a `Double` stops at about 1e308 — so the growth, the [ENTRY_STEP] and the
-     * anchor together have only about 283 decades to spend. At this rate the last rung lands
-     * near 1e301, which is as much headroom as is safe to leave. Raising it further would not
-     * make the climb harder; it would make the top of the ladder infinite.
+     * The wait for rung *n* is `ENTRY_SECONDS × TIME_GROWTH^(n-1)`, so the whole climb to rung
+     * *n* is that series summed — see [secondsFor]. At this rate one full round of designations,
+     * AA through ZZ, is six hundred and seventy-six rungs and about five days of play: a minute
+     * for the first, some forty minutes for the last.
      */
-    const val THRESHOLD_GROWTH = 1.0375
+    const val TIME_GROWTH = 1.0055
 
     /**
-     * And how much more it produces.
+     * And how much more each rung produces.
      *
-     * Below [THRESHOLD_GROWTH], which is the only reason this lands anywhere useful: every rung is
-     * harder than the last, so the climb slows as it goes.
-     *
-     * The gap between the two is the whole difficulty of the catalogue, and it is the one lever
-     * the `Double` ceiling does not cap — which is why *this* number moved further than the one
-     * above it. At 3.30 % against 3.65 % each rung was 0.34 % harder than the last and the ladder
-     * barely slowed at all; at 3.00 % against 3.75 % each rung is 0.73 %, and because that
-     * compounds, the two-thousandth rung went from being nine hundred times the first to two
-     * million times it.
+     * Unchanged in spirit and now free of the job it used to do. It no longer has to stay below a
+     * threshold growth to keep the ladder honest, because the threshold is not a mass any more —
+     * a rung that pays more simply buys the same wait sooner in kilograms and not at all in
+     * seconds.
      */
     const val PRODUCTION_GROWTH = 1.0300
 
@@ -179,36 +182,77 @@ object Designations {
             // Saturn that every unlock, challenge and event chain points at, rather than one of
             // its six hundred and seventy-six catalogue entries. Only what is drawn changes.
             designation = position.mod(PER_BODY),
-            threshold = anchor.threshold * ENTRY_STEP * THRESHOLD_GROWTH.pow(step),
+            // A stand-in: the real price of a rung depends on the run that is climbing it,
+            // and [forRun] stamps that on. This is what a caller sees who has an index and
+            // no game — the ladder screen's pictures, mostly.
+            threshold = massFor(step),
             productionMultiplier = anchor.productionMultiplier * PRODUCTION_GROWTH.pow(step),
         )
     }
 
     /**
-     * The rung [mass] has reached, for any mass at or above the black hole.
+     * Seconds of play needed to *reach* rung [step], counted from the black hole.
      *
-     * Closed form rather than a walk. Half a dozen call sites ask this on every frame, and a loop
-     * over sixteen thousand rungs to answer it would be absurd when the thresholds are a geometric
-     * series and the answer is one logarithm.
+     * The waits are geometric, so the climb is their sum. Closed form because half a dozen call
+     * sites ask this on every frame and a loop over sixteen thousand rungs would be absurd.
      */
-    fun forMass(mass: Double): CelestialTier {
+    fun secondsFor(step: Int): Double =
+        ENTRY_SECONDS * (TIME_GROWTH.pow(step) - 1.0) / (TIME_GROWTH - 1.0)
+
+    /**
+     * The mass rung [step] asks for, on top of the wait.
+     *
+     * A second gate, and a loose one. Time is what binds for anybody actually climbing; this only
+     * catches the case time cannot see — a run holding far more mass than it could have made,
+     * which is what an imported save or a fixture looks like rather than a played one.
+     */
+    fun massFor(step: Int): Double = Tiers.last.threshold * MASS_GROWTH.pow(step)
+
+    /** How much more mass each rung asks than the one below. The looser of the two gates. */
+    const val MASS_GROWTH = 1.0375
+
+    /**
+     * The rung a run stands on: it has to have put in the time *and* have the mass.
+     *
+     * Both, and the lower of the two readings. Neither on its own is a rule — time alone would
+     * hand rungs to a save that sat still with a huge fleet, and mass alone is what let the whole
+     * ladder go by in three seconds.
+     */
+    fun forRun(runMass: Double, runSeconds: Double): CelestialTier {
         val anchor = Tiers.last
-        // Everything between the black hole and the price of the first designation is still the
-        // black hole. That stretch is [ENTRY_STEP] wide and it is the point of the entry step.
-        val entry = anchor.threshold * ENTRY_STEP
-        if (mass < entry) return anchor
-        /*
-         * The nudge is not cosmetic.
-         *
-         * A rung's threshold is `anchor * growth^n`, so asking which rung that exact number
-         * reaches divides `ln(growth^n)` by `ln(growth)` and should land on `n`. In binary it
-         * lands on 1.9999999999999998, and `floor` then hands back the rung below — so standing
-         * on a rung's threshold to the kilogram would show the previous rung. One part in a
-         * billion is far below any gap between rungs (they are 3.65 % apart) and far above the
-         * error being corrected.
-         */
-        val steps = floor(ln(mass / entry) / ln(THRESHOLD_GROWTH) + 1e-9).toInt()
+        if (runMass < anchor.threshold || runSeconds < ENTRY_SECONDS) return anchor
+
+        // Inverse of [secondsFor]. The nudge covers the last bit of binary error, which would
+        // otherwise park a run one rung below the wait it has actually served.
+        val grown = 1.0 + runSeconds * (TIME_GROWTH - 1.0) / ENTRY_SECONDS
+        val byTime = floor(ln(grown) / ln(TIME_GROWTH) + 1e-9).toInt()
+        val byMass = floor(ln(runMass / anchor.threshold) / ln(MASS_GROWTH) + 1e-9).toInt()
+
+        val steps = minOf(byTime, byMass)
         if (steps < 1) return anchor
-        return at(FIRST_INDEX + steps - 1)
+        val index = (FIRST_INDEX + steps - 1).coerceAtMost(TOTAL - 1)
+        return at(index)
+    }
+
+    /**
+     * The rung a bare mass reads as, with no fleet to price it against.
+     *
+     * A weaker question than [forRun] and it exists for the two callers that can only ask it: the
+     * record kept of a parked universe, and the achievements that compare a mass to a rung. Both
+     * are looking at something finished rather than pricing a climb, so the stand-in thresholds
+     * from [build] are the right answer and the fleet is none of their business.
+     */
+    fun forNominalMass(mass: Double): CelestialTier {
+        val anchor = Tiers.last
+        if (mass < anchor.threshold) return anchor
+        val steps = floor(ln(mass / anchor.threshold) / ln(MASS_GROWTH) + 1e-9).toInt()
+        if (steps < 1) return anchor
+        return at((FIRST_INDEX + steps - 1).coerceAtMost(TOTAL - 1))
+    }
+
+    /** The rung above [tier], or `null` at the very top. */
+    fun above(tier: CelestialTier): CelestialTier? {
+        val index = tier.index + 1
+        return if (index >= TOTAL) null else at(index)
     }
 }

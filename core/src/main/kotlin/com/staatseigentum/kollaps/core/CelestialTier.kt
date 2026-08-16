@@ -437,7 +437,7 @@ object Tiers {
      * the deep one explicitly through [forState].
      */
     fun forMass(lifetimeMass: Double, deep: Boolean = false): CelestialTier {
-        if (deep && lifetimeMass >= last.threshold) return Designations.forMass(lifetimeMass)
+        if (deep && lifetimeMass >= last.threshold) return Designations.forNominalMass(lifetimeMass)
         var result = all.first()
         for (tier in all) {
             if (lifetimeMass >= tier.threshold) result = tier else break
@@ -445,9 +445,20 @@ object Tiers {
         return result
     }
 
-    /** The rung this save is standing on, catalogue entries included once they are earned. */
-    fun forState(state: GameState): CelestialTier =
-        forMass(state.runMass, Designations.isUnlocked(state))
+    /**
+     * The rung this save is standing on, catalogue entries included once they are earned.
+     *
+     * Below the black hole this is a question about mass alone. Above it, it is a question about
+     * *time*: a designation asks for as much mass as the fleet makes in a given number of seconds,
+     * so the answer needs the fleet as well as the mass. See [Designations.forRun] for why the
+     * catalogue had to stop being priced in kilograms.
+     */
+    fun forState(state: GameState): CelestialTier {
+        if (!Designations.isUnlocked(state) || state.runMass < last.threshold) {
+            return forMass(state.runMass)
+        }
+        return Designations.forRun(state.runMass, state.runSeconds)
+    }
 
     /**
      * The tier after [tier], or `null` where there is nothing above it.

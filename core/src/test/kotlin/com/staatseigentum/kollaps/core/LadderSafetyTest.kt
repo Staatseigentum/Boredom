@@ -16,14 +16,23 @@ class LadderSafetyTest {
     private val now = 1_700_000_000_000L
 
     /** Somebody standing a long way up the catalogue ladder. */
-    private fun high(rung: Int): GameState = GameState.new(now).copy(
-        bestTier = Tiers.last.index + rung,
-        runMass = Tiers.last.threshold * Designations.ENTRY_STEP *
-            Math.pow(Designations.THRESHOLD_GROWTH, rung.toDouble() + 0.5),
-        universes = (0 until Multiverse.SLOTS).map { ParkedUniverse(slot = it) },
-        bigBangs = Multiverse.SLOTS,
-        collapses = 40,
-    )
+    private fun high(rung: Int): GameState {
+        val base = GameState.new(now).copy(
+            bestTier = Tiers.last.index + rung,
+            universes = (0 until Multiverse.SLOTS).map { ParkedUniverse(slot = it) },
+            bigBangs = Multiverse.SLOTS,
+            collapses = 40,
+            collectors = mapOf("dust" to 100),
+        )
+        // A rung is so many seconds of the fleet's output, so the fleet comes first and the mass
+        // that stands on the rung is worked out from it.
+        // A rung asks for the time *and* the mass, so a save that stands on one has both.
+        val step = rung.coerceAtLeast(1)
+        return base.copy(
+            runSeconds = Designations.secondsFor(step) * 1.001,
+            runMass = Designations.massFor(step) * 1.001,
+        )
+    }
 
     @Test
     fun `the statistics screen survives a catalogue rung`() {

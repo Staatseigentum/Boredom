@@ -15,10 +15,17 @@ class DesignationTest {
         ParkedUniverse(slot = it, bestTier = Tiers.all.lastIndex, collapses = 20)
     }
 
+    /**
+     * A save on the catalogue ladder.
+     *
+     * The run clock is set as well as the mass, because a designation asks for both — see
+     * [Designations.forRun]. A year of play is past every rung any of these tests reach.
+     */
     private fun deep(mass: Double): GameState = GameState.new(0).copy(
         bigBangs = Multiverse.SLOTS,
         universes = fullSky(),
         runMass = mass,
+        runSeconds = 365.0 * 86_400.0,
         collectors = mapOf("dust" to 100),
     )
 
@@ -49,7 +56,7 @@ class DesignationTest {
 
     @Test
     fun `the ladder is locked until the sky is full`() {
-        val far = Tiers.last.threshold * Designations.ENTRY_STEP * 1_000.0
+        val far = Tiers.last.threshold * 1_000.0
 
         // Seven galaxies is not a full sky, however many big bangs the counter claims.
         val shallow = GameState.new(0).copy(
@@ -88,13 +95,13 @@ class DesignationTest {
         // by one.
         for (step in listOf(1, 2, 3, 50, 677, 1_000, 5_000, Designations.COUNT - 1)) {
             val rung = Designations.at(Designations.FIRST_INDEX + step - 1)
-            assertEquals(rung.index, Designations.forMass(rung.threshold).index, "bei Schritt $step")
+            assertEquals(rung.index, Designations.forNominalMass(rung.threshold).index, "bei Schritt $step")
             assertEquals(
                 rung.index,
-                Designations.forMass(rung.threshold * 1.001).index,
+                Designations.forNominalMass(rung.threshold * 1.001).index,
                 "knapp über Schritt $step",
             )
-            val below = Designations.forMass(rung.threshold * 0.999).index
+            val below = Designations.forNominalMass(rung.threshold * 0.999).index
             assertTrue(below < rung.index, "knapp unter Schritt $step liegt nicht darunter")
         }
     }
@@ -106,7 +113,7 @@ class DesignationTest {
         assertTrue(top.productionMultiplier.isFinite(), "Die oberste Stufe bringt unendlich viel")
         assertNull(Tiers.next(top), "Über der obersten Stufe steht noch etwas")
         // And nothing above it, however much mass is thrown at it.
-        assertEquals(top.index, Designations.forMass(Double.MAX_VALUE).index)
+        assertEquals(top.index, Designations.forNominalMass(Double.MAX_VALUE).index)
     }
 
     @Test
@@ -126,7 +133,7 @@ class DesignationTest {
     @Test
     fun `reaching a catalogue rung actually pays more`() {
         val atHole = deep(Tiers.last.threshold)
-        val farUp = deep(Tiers.last.threshold * Designations.ENTRY_STEP * 1e6)
+        val farUp = deep(Tiers.last.threshold * 1e6)
 
         assertTrue(
             GameEngine.massPerSecond(farUp) > GameEngine.massPerSecond(atHole),
@@ -151,8 +158,77 @@ class DesignationTest {
         // save above the hole would suddenly be unable to collapse at all.
         assertTrue(Tiers.last.isFinal)
         assertEquals(Tiers.all.lastIndex, Tiers.last.index)
-        val far = deep(Tiers.last.threshold * Designations.ENTRY_STEP * 1e10)
+        val far = deep(Tiers.last.threshold * 1e10)
         assertTrue(GameEngine.canCollapse(far), "Über dem Loch lässt sich nicht mehr kollabieren")
+    }
+
+    /**
+     * The catalogue is priced in time, and that is the whole of its difficulty.
+     *
+     * It used to be priced in kilograms, and a bot built to the point where the ladder unlocks
+     * walked the entire AA–ZZ round — two thousand seven hundred rungs — in three seconds. No
+     * threshold could have fixed that: thresholds are a geometric series bounded by what a
+     * `Double` holds, and production is bounded by nothing at all.
+     */
+    @Test
+    fun `a rung is a wait, and production does not shorten it`() {
+        val step = 200
+        val slow = GameState.new(0).copy(
+            bigBangs = Multiverse.SLOTS,
+            universes = fullSky(),
+            collectors = mapOf("dust" to 10),
+            runSeconds = Designations.secondsFor(step) * 1.001,
+            runMass = Designations.massFor(step) * 1.001,
+        )
+        val fast = slow.copy(collectors = Collectors.all.associate { it.id to 500 })
+
+        assertTrue(GameEngine.massPerSecond(fast) > GameEngine.massPerSecond(slow) * 1_000)
+        assertEquals(
+            Tiers.forState(slow).index,
+            Tiers.forState(fast).index,
+            "Die tausendfache Produktion kauft Sprossen — dann pacet sich die Leiter nicht selbst",
+        )
+    }
+
+    /**
+     * Time away counts towards the climb, which is what makes this an idle game still.
+     *
+     * The ladder is priced in [GameState.runSeconds], and until this was wired the clock only ran
+     * while the app was open — a five-day ladder would have meant five days of staring at it.
+     */
+    @Test
+    fun `the run clock runs while the app is shut`() {
+        val start = GameState.new(0).copy(
+            bigBangs = Multiverse.SLOTS,
+            universes = fullSky(),
+            collectors = mapOf("dust" to 100),
+            runMass = Designations.massFor(50),
+            runSeconds = Designations.secondsFor(1),
+            // A real moment: `applyOffline` treats a zero here as "never seen" and bails.
+            lastSeenAt = 1_700_000_000_000L,
+        )
+        val day = 1_700_000_000_000L + 24L * 3_600 * 1_000
+        val after = GameEngine.applyOffline(start, day).state
+
+        assertTrue(
+            after.runSeconds >= start.runSeconds + 86_000,
+            "Ein Tag Abwesenheit bringt der Laufuhr nur ${after.runSeconds - start.runSeconds}s",
+        )
+        assertTrue(
+            Tiers.forState(after).index > Tiers.forState(start).index,
+            "Ein Tag Abwesenheit bringt keine einzige Sprosse",
+        )
+    }
+
+    /** And a full round of designations is measured in days of play rather than in seconds. */
+    @Test
+    fun `one full round of the catalogue takes days`() {
+        val days = Designations.secondsFor(Designations.PER_BODY) / 86_400.0
+        assertTrue(days > 2.0, "Eine volle AA-ZZ-Runde dauert nur %.2f Tage".format(days))
+        assertTrue(
+            days < 30.0,
+            "Eine volle AA-ZZ-Runde dauert %.1f Tage — das ist keine Leiter mehr".format(days),
+        )
     }
 }
 
@@ -196,51 +272,16 @@ class BigBangPacingTest {
         assertTrue(BigBang.canBang(onePast.copy(collapses = BigBang.requiredFor(2))))
     }
 
-    /**
-     * The two things about the catalogue's price that must not drift.
-     *
-     * The ladder is a geometric series over sixteen thousand rungs, and a `Double` stops near
-     * 1e308. That makes the growth rate a number with a hard ceiling rather than a taste
-     * decision: raise it far enough and the top of the ladder becomes `Infinity`, at which point
-     * [Tiers.next] promises a rung nobody can reach and the mass on screen reads as nonsense.
-     *
-     * The entry step is the other half. Anybody who has earned the eight galaxies the catalogue
-     * costs is producing many orders of magnitude past the black hole, so without a wall at the
-     * bottom the first hundreds of rungs go by unread.
-     */
+    /** And the far end stays a number rather than an infinity. */
     @Test
-    fun `the catalogue stays expensive and stays finite`() {
-        val anchor = Tiers.last.threshold
-
-        // Nothing between the black hole and the entry step counts as catalogue.
-        assertFalse(Tiers.forMass(anchor * 100, deep = true).isDesignated, "Der Katalog fängt zu früh an")
-        assertFalse(
-            Tiers.forMass(anchor * Designations.ENTRY_STEP * 0.99, deep = true).isDesignated,
-            "Knapp unter der Einstiegsstufe steht schon eine Kennung",
-        )
-        // The first designation sits one growth step above the entry, exactly as every rung sits
-        // one above the rung below it — the entry step moves the foot of the ladder, it is not
-        // itself a rung.
-        assertTrue(
-            Tiers.forMass(
-                anchor * Designations.ENTRY_STEP * Designations.THRESHOLD_GROWTH * 1.01,
-                deep = true,
-            ).isDesignated,
-            "Über der Einstiegsstufe fängt der Katalog nicht an",
-        )
-
-        // And the far end is a number rather than infinity.
+    fun `the whole ladder stays priceable`() {
         val top = Designations.at(Designations.TOTAL - 1)
         assertTrue(top.threshold.isFinite(), "Die letzte Sprosse kostet unendlich viel")
+        assertTrue(top.productionMultiplier.isFinite(), "Die letzte Sprosse produziert unendlich viel")
         assertTrue(
-            top.productionMultiplier.isFinite(),
-            "Die letzte Sprosse produziert unendlich viel",
-        )
-
-        // Each rung must cost more than it pays, or the ladder would get easier as it went.
-        assertTrue(
-            Designations.THRESHOLD_GROWTH > Designations.PRODUCTION_GROWTH,
-            "Die Leiter wird nach oben hin leichter statt schwerer",
+            Designations.secondsFor(Designations.COUNT).isFinite(),
+            "Die letzte Sprosse verlangt unendlich lange",
         )
     }
 }
+

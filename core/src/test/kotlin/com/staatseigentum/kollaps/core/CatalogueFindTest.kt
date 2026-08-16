@@ -11,15 +11,28 @@ class CatalogueFindTest {
 
     private val now = 1_700_000_000_000L
 
-    private fun climbing(rungs: Int): GameState = GameState.new(now).copy(
-        bigBangs = Multiverse.SLOTS,
-        universes = (0 until Multiverse.SLOTS).map { ParkedUniverse(slot = it, bestTier = 20) },
-        runMass = Tiers.last.threshold * Designations.ENTRY_STEP *
-            Math.pow(Designations.THRESHOLD_GROWTH, rungs + 0.5),
-        mass = 1e30,
-        collapses = 40,
-        collectors = mapOf("dust" to 100),
-    )
+    /**
+     * A save standing [rungs] up the catalogue.
+     *
+     * Built in two passes because a rung is priced in seconds of the fleet's output rather than
+     * in kilograms — the fleet has to exist before the mass that stands on a rung can be worked
+     * out. See [Designations.forRun].
+     */
+    private fun climbing(rungs: Int): GameState {
+        val base = GameState.new(now).copy(
+            bigBangs = Multiverse.SLOTS,
+            universes = (0 until Multiverse.SLOTS).map { ParkedUniverse(slot = it, bestTier = 20) },
+            mass = 1e30,
+            collapses = 40,
+            collectors = mapOf("dust" to 100),
+        )
+        // A rung asks for the time *and* the mass, so a save that stands on one has both.
+        val step = rungs.coerceAtLeast(1)
+        return base.copy(
+            runSeconds = Designations.secondsFor(step) * 1.001,
+            runMass = Designations.massFor(step) * 1.001,
+        )
+    }
 
     @Test
     fun `nothing is found below the ladder or below the first fifty rungs`() {

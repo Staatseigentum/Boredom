@@ -11,6 +11,7 @@ class RewardingResetsTest {
 
     /** A save with the catalogue ladder open, so overshooting is possible at all. */
     private fun deep(runMass: Double): GameState = GameState.new(now).copy(
+        runSeconds = 365.0 * 86_400.0,
         runMass = runMass,
         mass = runMass,
         collapses = 40,
@@ -29,10 +30,7 @@ class RewardingResetsTest {
     @Test
     fun `climbing the catalogue pays more than the mass alone would`() {
         val gate = deep(Tiers.last.threshold)
-        val climbed = deep(
-            Tiers.last.threshold * Designations.ENTRY_STEP *
-                Math.pow(Designations.THRESHOLD_GROWTH, 100.0),
-        )
+        val climbed = deep(Designations.massFor(100) * 1.001)
 
         val rungs = GameEngine.tierOf(climbed).index - Tiers.last.index
         assertTrue(rungs >= 99, "Der Aufbau steht nur $rungs Sprossen höher")
@@ -51,7 +49,7 @@ class RewardingResetsTest {
         val rungs = listOf(1, 10, 100, 1_000, 10_000)
         val paid = rungs.map { step ->
             GameEngine.pendingSingularities(
-                deep(Tiers.last.threshold * Math.pow(Designations.THRESHOLD_GROWTH, step + 0.5)),
+                deep(Tiers.last.threshold * Math.pow(Designations.MASS_GROWTH, step + 0.5)),
             )
         }
         assertTrue(paid.zipWithNext().all { (a, b) -> b > a }, "Höher steigen bringt nicht mehr: $paid")

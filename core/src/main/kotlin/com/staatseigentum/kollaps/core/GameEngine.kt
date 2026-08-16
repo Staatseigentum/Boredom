@@ -173,8 +173,8 @@ object GameEngine {
     fun stats(state: GameState): Stats {
         val mods = modifiersOf(state)
         val tier = Tiers.forState(state)
-        val next = Tiers.next(tier, Designations.isUnlocked(state))
         val perSecond = massPerSecond(state, mods, tier)
+        val next = Tiers.next(tier, Designations.isUnlocked(state))
 
         return Stats(
             tier = tier,
@@ -221,6 +221,7 @@ object GameEngine {
     }
 
     fun tierOf(state: GameState): CelestialTier = Tiers.forState(state)
+
 
     // ---------------------------------------------------------------- actions
 
@@ -1864,7 +1865,19 @@ object GameEngine {
         val credited = Multiverse.advanceRamps(
             Multiverse.advanceMetal(Multiverse.advance(credit(cold, gained), away), away),
             away,
-        ).copy(lastSeenAt = nowMillis)
+        ).copy(
+            lastSeenAt = nowMillis,
+            /*
+             * The run clock runs while nobody is watching, and it has to.
+             *
+             * It is what the catalogue ladder is priced in — see [Designations.forRun] — and a
+             * ladder that only advanced while the app was open would be an idle game asking to be
+             * stared at for days. So the whole absence counts, uncapped: the caps above are about
+             * how much *production* an unattended fleet may be credited with, which is a
+             * different question from how long the run has been going.
+             */
+            runSeconds = state.runSeconds + elapsedSeconds.toDouble(),
+        )
         return OfflineReport(
             state = credited,
             seconds = capped.toLong(),
