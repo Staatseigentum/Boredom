@@ -160,6 +160,34 @@ class UiTextTest {
         )
     }
 
+    /**
+     * That a file saying `Lang.t` has actually imported it.
+     *
+     * A compiler question, and it is here because for four of these files there is no compiler
+     * within reach. `:desktop` builds most of the app module from the same sources, which is what
+     * catches a mistake in a screen before it is ever pushed — but the view model, the two update
+     * services and the phone's update card are excluded from that build, and `:app` needs the
+     * Android SDK. So those four are only ever compiled by CI, and a missing import in them costs
+     * a full round trip to find out.
+     *
+     * That is exactly what happened: the view model got six `Lang.t` calls and no import, the
+     * desktop build was green because it never reads that file, and CI failed on it minutes later.
+     * Reading for the import takes no compiler and catches the whole class before the push.
+     */
+    @Test
+    fun `every file that translates has imported the translator`() {
+        val without = screens().filter { file ->
+            val source = file.readText()
+            source.contains("Lang.t(") &&
+                !source.contains("import com.staatseigentum.kollaps.core.i18n.Lang")
+        }
+        assertTrue(
+            without.isEmpty(),
+            "${without.size} Dateien rufen Lang.t auf, ohne Lang zu importieren: " +
+                without.map { it.name },
+        )
+    }
+
     /** And the list has to be a list, not a bag with the same sentence in it twice. */
     @Test
     fun `no text is listed twice`() {

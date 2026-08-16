@@ -18,6 +18,7 @@ import com.staatseigentum.kollaps.core.Roles
 import com.staatseigentum.kollaps.core.Stats
 import com.staatseigentum.kollaps.core.UpgradeOffer
 import com.staatseigentum.kollaps.core.Wallclock
+import com.staatseigentum.kollaps.core.i18n.Lang
 import com.staatseigentum.kollaps.data.SaveStore
 import com.staatseigentum.kollaps.data.SlotPreference
 import com.staatseigentum.kollaps.ui.SAVE_SLOTS
