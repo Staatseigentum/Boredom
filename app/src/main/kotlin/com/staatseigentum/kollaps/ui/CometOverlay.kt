@@ -86,7 +86,11 @@ fun CometOverlay(
             // the tap handler. That is the only place a miss can be told from a catch, because
             // the animation runs to the end either way.
             if (flight != null) {
-                sfx?.missed()
+                // Silent once the sky is busy. The sound means "that was a quarter of an hour of
+                // production and you were looking elsewhere", which is worth saying twice an hour
+                // and is nagging two hundred times an hour — and a player with the frequency
+                // fully built is not meant to be catching all of them. See [Comets.isBusySky].
+                if (!Comets.isBusySky(frequency)) sfx?.missed()
                 flight = null
             }
         }

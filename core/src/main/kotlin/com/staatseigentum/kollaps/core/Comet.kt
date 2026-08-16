@@ -174,10 +174,42 @@ object Comets {
     /** Nothing appears until the player is past the first couple of tiers. */
     const val FIRST_TIER = 2
 
+    /**
+     * The least quiet the sky is ever allowed to get, however much prestige is stacked on it.
+     *
+     * [cometFrequency][GameEngine.cometFrequency] is a product of five independent multipliers —
+     * an investment, a fusion bonus, the heavy elements, the multiverse and a prestige upgrade —
+     * and nobody had ever bounded the product. Fully built it reaches about thirty-eight, which
+     * turned a wait of two to five minutes into one of four to nine seconds. With a crossing of
+     * [VISIBLE_SECONDS] on top, something was on screen roughly two thirds of the time and one of
+     * the two comet sounds fired every nine seconds, for ever, on a screen where the player had
+     * long since stopped chasing them. A busy sky is what the upgrades are for; a metronome is
+     * not.
+     *
+     * Twenty seconds, and it costs less than it looks. The schedule is sequential — one comet
+     * crosses before the next is drawn — so past about tenfold the flight time dominates and more
+     * frequency buys very little: tenfold already yields 103 comets an hour and thirty-eightfold
+     * only 209. The floor lands at 116, so what a maxed player actually gives up is a fifth of an
+     * income measured in whole hours of production per hour.
+     */
+    const val MIN_GAP_SECONDS = 20.0
+
+    /**
+     * Whether comets are common enough that letting one go is ordinary rather than a loss.
+     *
+     * The miss sound exists to say "that was a quarter of an hour of production, and you were
+     * looking elsewhere". True when they arrive twice an hour. Said two hundred times an hour it
+     * is not information, it is nagging — so above the point where [MIN_GAP_SECONDS] starts
+     * binding, a comet leaves in silence.
+     */
+    fun isBusySky(frequency: Double): Boolean =
+        MIN_SECONDS / frequency.coerceAtLeast(0.1) <= MIN_GAP_SECONDS
+
     /** Seconds until the next comet, given how much more often prestige makes them come. */
     fun nextDelay(random: Random, frequency: Double = 1.0): Double {
         val span = MAX_SECONDS - MIN_SECONDS
-        return (MIN_SECONDS + random.nextDouble() * span) / frequency.coerceAtLeast(0.1)
+        val scaled = (MIN_SECONDS + random.nextDouble() * span) / frequency.coerceAtLeast(0.1)
+        return scaled.coerceAtLeast(MIN_GAP_SECONDS)
     }
 
     /** Picks one, honouring the weights. */

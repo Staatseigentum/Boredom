@@ -224,4 +224,38 @@ class CometAndRuleTest {
             Tiers.byName(goalTier)
         }
     }
+
+    /**
+     * However much prestige is stacked on the frequency, the sky keeps a floor of quiet.
+     *
+     * [GameEngine.cometFrequency] is a product of five independent multipliers and nothing ever
+     * bounded the product. Fully built it reaches about thirty-eight, which put a comet on screen
+     * two thirds of the time and fired one of the two comet sounds every nine seconds for the
+     * rest of the session.
+     */
+    @Test
+    fun `the gap between comets has a floor`() {
+        val random = Random(7)
+        for (frequency in listOf(1.0, 5.0, 20.0, 38.5, 1_000.0)) {
+            repeat(50) {
+                val delay = Comets.nextDelay(random, frequency)
+                assertTrue(
+                    delay >= Comets.MIN_GAP_SECONDS,
+                    "Bei Frequenz $frequency kommt der nächste Komet nach ${delay}s",
+                )
+            }
+        }
+
+        // And the floor only binds where it is meant to: an ordinary sky is untouched.
+        val plain = Comets.nextDelay(Random(7), frequency = 1.0)
+        assertTrue(plain > Comets.MIN_GAP_SECONDS, "Der Boden greift schon ohne Prestige")
+    }
+
+    /** And a miss stops being news once they arrive that often. */
+    @Test
+    fun `a busy sky says nothing when one gets away`() {
+        assertFalse(Comets.isBusySky(1.0), "Am Anfang wäre ein verpasster Komet keine Nachricht")
+        assertFalse(Comets.isBusySky(5.0), "Fünffach ist noch kein Fließband")
+        assertTrue(Comets.isBusySky(38.5), "Voll ausgebaut meldet sich jeder verpasste Komet")
+    }
 }
