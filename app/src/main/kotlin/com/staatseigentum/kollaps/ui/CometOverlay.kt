@@ -63,10 +63,22 @@ fun CometOverlay(
     // captured sound object goes on making noise long after the setting was switched off.
     val sfx by rememberUpdatedState(LocalSfx.current)
 
-    LaunchedEffect(appears, frequency) {
+    /*
+     * The rate is read, not keyed on.
+     *
+     * It used to be part of the key, and a key is a thing that tears the loop down and starts it
+     * over. The rate is a product of five prestige multipliers and moves whenever any of them
+     * does, so on a built-up save every purchase threw away a comet that was halfway across the
+     * screen and began the wait again. Read through [rememberUpdatedState] the schedule simply
+     * carries on and the next wait uses the new rate, which is what "comets come more often" was
+     * always supposed to mean.
+     */
+    val rate by rememberUpdatedState(frequency)
+
+    LaunchedEffect(appears) {
         if (!appears) return@LaunchedEffect
         while (true) {
-            waitSeconds(Comets.nextDelay(random, frequency))
+            waitSeconds(Comets.nextDelay(random, rate))
             flight = Flight(
                 comet = Comets.pick(random),
                 fromTop = 0.15f + random.nextFloat() * 0.5f,
@@ -90,7 +102,7 @@ fun CometOverlay(
                 // production and you were looking elsewhere", which is worth saying twice an hour
                 // and is nagging two hundred times an hour — and a player with the frequency
                 // fully built is not meant to be catching all of them. See [Comets.isBusySky].
-                if (!Comets.isBusySky(frequency)) sfx?.missed()
+                if (!Comets.isBusySky(rate)) sfx?.missed()
                 flight = null
             }
         }

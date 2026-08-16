@@ -251,6 +251,29 @@ class CometAndRuleTest {
         assertTrue(plain > Comets.MIN_GAP_SECONDS, "Der Boden greift schon ohne Prestige")
     }
 
+    /**
+     * The case that was actually shipping, taken from a recording.
+     *
+     * A fully built save reaches a frequency of about thirteen hundred — the rate is a product of
+     * five multipliers and nothing bounded the product. That turned a wait of 150 to 330 seconds
+     * into one of 113 to 248 *milli*seconds, and since the fly-by sound is 390 ms long, three or
+     * four of them overlapped into a continuous full-scale rattle for as long as the body screen
+     * was open. The floor is what makes that arithmetic impossible.
+     */
+    @Test
+    fun `even an absurd frequency cannot make the fly-by sound overlap itself`() {
+        val flyBySeconds = 0.39
+        val random = Random(11)
+        repeat(200) {
+            val delay = Comets.nextDelay(random, frequency = 1_329.0)
+            assertTrue(
+                delay > flyBySeconds,
+                "Bei Frequenz 1329 folgt der nächste Komet nach ${delay}s auf einen Ton von " +
+                    "${flyBySeconds}s — die Töne überlagern sich",
+            )
+        }
+    }
+
     /** And a miss stops being news once they arrive that often. */
     @Test
     fun `a busy sky says nothing when one gets away`() {
