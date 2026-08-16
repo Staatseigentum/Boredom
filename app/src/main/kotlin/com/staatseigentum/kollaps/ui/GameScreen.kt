@@ -40,6 +40,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -331,38 +332,75 @@ fun GameScreen(
     val shownState = if (showingOld) held.state else state
     val shownStats = if (showingOld) held.stats else stats
 
+    /*
+     * One sequence per burst of collapses, not one per collapse.
+     *
+     * This was `LaunchedEffect(state.collapses)`, and the counter is exactly the wrong key. A key
+     * that changes tears the running effect down and starts it again — which is harmless while a
+     * collapse is a thing a player presses, and is a machine gun the moment the automation rule
+     * ends runs on its own. Measured on a fully built save: the rule collapses once per wall-clock
+     * tick, ten times a second, because a tenth of a second of production is already many orders
+     * of magnitude past the black hole. Each of those restarted the effect, so the rumble and the
+     * detonation were re-fired every hundred milliseconds and neither ever finished. A rattle.
+     *
+     * So the key is [Unit] and the counter is watched instead. [snapshotFlow] conflates, which is
+     * the property that matters: everything that happens while the sequence is playing collapses
+     * into one emission, and the line after it swallows the rest of the burst outright. Fifty
+     * automatic runs are one animation and one bang, then a changed number — which is what a bulk
+     * operation should look like.
+     *
+     * The same shape as [AchievementToast]'s queue, and for the same reason. Read through
+     * [rememberUpdatedState] because a parameter is not snapshot state: a flow that read `state`
+     * directly would see the value from the first composition for ever.
+     */
     val collapsesAtStart = remember { state.collapses }
-    LaunchedEffect(state.collapses) {
-        if (state.collapses <= collapsesAtStart) return@LaunchedEffect
+    val liveState by rememberUpdatedState(state)
+    LaunchedEffect(Unit) {
+        var seen = collapsesAtStart
+        snapshotFlow { liveState.collapses }.collect { count ->
+            if (count <= seen) return@collect
+            seen = count
 
-        val detonate: () -> Unit = {
-            blast = state.collapses to BlastKind.KOLLAPS
-            blastSfx?.explosion()
-        }
+            val detonate: () -> Unit = {
+                blast = count to BlastKind.KOLLAPS
+                blastSfx?.explosion()
+            }
 
-        // Straight to the bang when the system has been told to keep still. Not a shortened
-        // version of the same thing — somebody who switched animations off does not want a
-        // politer spiral, they want it over with.
-        if (reduceMotion) {
-            detonate()
-            held.resets = resets
-            return@LaunchedEffect
-        }
+            // Straight to the bang when the system has been told to keep still. Not a shortened
+            // version of the same thing — somebody who switched animations off does not want a
+            // politer spiral, they want it over with.
+            if (reduceMotion) {
+                detonate()
+                // Off the live state, not the `resets` in scope: with the effect keyed on [Unit]
+                // that one is captured once and would hand the screen a number from the first
+                // composition for ever.
+                held.resets = liveState.collapses + liveState.bigBangs
+                // The one thing the short path still owes the ear. Without the sequence there is
+                // nothing to hold the next collapse off, and the rule would land ten bangs a
+                // second flat out; this is what turns a burst into a few of them.
+                delay(QUIET_BLAST_GAP_MILLIS)
+                seen = liveState.collapses
+                return@collect
+            }
 
-        // Fired once and then left alone. The rumble is exactly as long as the pull and ends in
-        // silence of its own accord, so there is nothing to stop and nothing to keep in step —
-        // and an app closed halfway through simply takes it along.
-        blastSfx?.collapse()
+            // Fired once and then left alone. The rumble is exactly as long as the pull and ends
+            // in silence of its own accord, so there is nothing to stop and nothing to keep in
+            // step — and an app closed halfway through simply takes it along.
+            blastSfx?.collapse()
 
-        // In a `finally` so that a screen torn down mid-fall still hands the game back: were it
-        // not, the next composition would go on showing a run that ended six seconds ago, and the
-        // one after that would find the game still paused.
-        actions.setPaused(true)
-        try {
-            collapse.run(detonate)
-        } finally {
-            actions.setPaused(false)
-            held.resets = resets
+            // In a `finally` so that a screen torn down mid-fall still hands the game back: were
+            // it not, the next composition would go on showing a run that ended six seconds ago,
+            // and the one after that would find the game still paused.
+            actions.setPaused(true)
+            try {
+                collapse.run(detonate)
+            } finally {
+                actions.setPaused(false)
+                held.resets = liveState.collapses + liveState.bigBangs
+            }
+            // Everything the rule got through behind the animation is already in the state and
+            // already paid for. It does not each want a bang.
+            seen = liveState.collapses
         }
     }
 
@@ -1526,4 +1564,13 @@ private val LADDER_WIDTH = 172.dp
  * the screen stays empty — which it has to, because one achievement depends on somebody being
  * able to tap it on purpose.
  */
+/**
+ * The least time between two detonations when the animations are switched off.
+ *
+ * Only the reduced-motion path needs it. The full sequence paces itself — it pauses the game for
+ * its own length, so nothing else can land while it plays — and the short path has no length at
+ * all, which left the automation rule free to fire a bang every hundred milliseconds.
+ */
+private const val QUIET_BLAST_GAP_MILLIS = 1_200L
+
 private const val HIT_FORGIVENESS = 1.1f
